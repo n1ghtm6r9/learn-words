@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { nextSrsState, selectDueWords, type SrsState } from './srs';
-import type { Word } from '../db/db';
+import { nextSrsState, qualityFromVerdict, selectDueWords, type SrsState } from './srs';
+import type { Word } from '../db/word.type';
 
 describe('nextSrsState', () => {
   const initial: SrsState = { easinessFactor: 2.5, interval: 0, repetitions: 0 };
@@ -47,6 +47,14 @@ describe('nextSrsState', () => {
       state = nextSrsState(state, 0);
     }
     expect(state.easinessFactor).toBeGreaterThanOrEqual(1.3);
+  });
+});
+
+describe('qualityFromVerdict', () => {
+  it('сопоставляет вердикт с SM-2 качеством ответа', () => {
+    expect(qualityFromVerdict('correct')).toBe(5);
+    expect(qualityFromVerdict('almost')).toBe(4);
+    expect(qualityFromVerdict('wrong')).toBe(2);
   });
 });
 

@@ -1,4 +1,5 @@
-import type { Word } from '../db/db';
+import type { Word } from '../db/word.type';
+import type { MatchVerdict } from './fuzzyMatch';
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -32,6 +33,12 @@ export function nextSrsState(state: SrsState, quality: number): SrsState {
   }
 
   return { easinessFactor, interval, repetitions };
+}
+
+export function qualityFromVerdict(verdict: MatchVerdict): number {
+  if (verdict === 'correct') return 5;
+  if (verdict === 'almost') return 4;
+  return 2;
 }
 
 export function selectDueWords(words: Word[], now: number, limit = 20): Word[] {

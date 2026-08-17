@@ -1,5 +1,7 @@
-import type { ReviewLog, Word } from '../db/db';
+import type { ReviewLog } from '../db/reviewLog.type';
+import type { Word } from '../db/word.type';
 import { DAY_MS } from './srs';
+import { masteryStatus } from './mastery';
 
 export function computeAccuracy(reviews: ReviewLog[], sinceDays: number, now: number): number {
   const since = now - sinceDays * DAY_MS;
@@ -11,7 +13,11 @@ export function computeAccuracy(reviews: ReviewLog[], sinceDays: number, now: nu
 }
 
 function dayKey(timestamp: number): string {
-  return new Date(timestamp).toISOString().slice(0, 10);
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export function computeStreak(reviews: ReviewLog[], now: number): number {
@@ -28,7 +34,7 @@ export function computeStreak(reviews: ReviewLog[], now: number): number {
 }
 
 export function countMastered(words: Word[], thresholdDays = 21): number {
-  return words.filter((w) => w.interval >= thresholdDays).length;
+  return words.filter((w) => masteryStatus(w.interval, thresholdDays) === 'mastered').length;
 }
 
 export function last30DaysActivity(reviews: ReviewLog[], now: number): boolean[] {

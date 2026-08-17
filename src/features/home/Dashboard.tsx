@@ -8,9 +8,13 @@ import { computeStreak } from '@/lib/stats';
 import { useUIStore } from '@/store/useUIStore';
 
 export function Dashboard() {
-  const words = useLiveQuery(() => db.words.toArray(), []) ?? [];
-  const reviews = useLiveQuery(() => db.reviews.toArray(), []) ?? [];
+  const words = useLiveQuery(() => db.words.toArray(), []);
+  const reviews = useLiveQuery(() => db.reviews.toArray(), []);
   const setScreen = useUIStore((s) => s.setScreen);
+
+  if (!words || !reviews) {
+    return <p className="text-sm text-muted-foreground">Загрузка...</p>;
+  }
 
   const now = Date.now();
   const dueCount = selectDueWords(words, now, Number.POSITIVE_INFINITY).length;

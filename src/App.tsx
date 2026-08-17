@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { NavBar } from '@/components/layout/NavBar';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
@@ -13,7 +13,7 @@ function App() {
   const screen = useUIStore((s) => s.screen);
   const theme = useUIStore((s) => s.theme);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 

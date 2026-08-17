@@ -3,28 +3,38 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { db, type Word } from '@/db/db';
+import { db } from '@/db/db';
+import type { Word } from '@/db/word.type';
 import { MASTERY_LABEL } from '@/lib/masteryLabel';
 import { STATUS_DOT_CLASS } from '@/lib/statusDotClass';
 import { WordForm } from './WordForm';
 import { WordItem } from './WordItem';
 
 export function WordList() {
-  const words = useLiveQuery(() => db.words.orderBy('term').toArray(), []) ?? [];
+  const words = useLiveQuery(() => db.words.toArray(), []);
   const [search, setSearch] = useState('');
   const [editingWord, setEditingWord] = useState<Word | null>(null);
 
+  const sorted = useMemo(
+    () => [...(words ?? [])].sort((a, b) => a.term.localeCompare(b.term)),
+    [words],
+  );
+
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return words;
-    return words.filter(
+    if (!query) return sorted;
+    return sorted.filter(
       (w) => w.term.toLowerCase().includes(query) || w.translation.toLowerCase().includes(query),
     );
-  }, [words, search]);
+  }, [sorted, search]);
 
   async function handleDelete(id?: number) {
     if (id == null) return;
     await db.words.delete(id);
+  }
+
+  if (!words) {
+    return <p className="text-sm text-muted-foreground">Загрузка...</p>;
   }
 
   return (
@@ -51,7 +61,9 @@ export function WordList() {
       )}
 
       {filtered.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Слов пока нет.</p>
+        <p className="text-sm text-muted-foreground">
+          {words.length === 0 ? 'Слов пока нет.' : 'Ничего не найдено.'}
+        </p>
       ) : (
         <ul className="flex flex-col gap-2">
           {filtered.map((word) => (

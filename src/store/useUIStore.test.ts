@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useUIStore } from './useUIStore';
-import type { Word } from '../db/db';
+import type { Word } from '../db/word.type';
 
 function word(id: number): Word {
   return {
@@ -17,7 +17,7 @@ function word(id: number): Word {
 
 describe('useUIStore', () => {
   beforeEach(() => {
-    useUIStore.setState({ screen: 'home', session: null });
+    useUIStore.setState({ screen: 'home', session: null, theme: 'light' });
     window.localStorage.clear();
   });
 

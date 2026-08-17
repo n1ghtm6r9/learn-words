@@ -3,9 +3,11 @@ import { motion } from 'motion/react';
 import { Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CARD_CLASS } from '@/lib/cardClass';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
-import { db, type Word } from '@/db/db';
-import { DAY_MS, nextSrsState } from '@/lib/srs';
+import { db } from '@/db/db';
+import type { Word } from '@/db/word.type';
+import { DAY_MS, nextSrsState, qualityFromVerdict } from '@/lib/srs';
 import { matchAnswer, type MatchVerdict } from '@/lib/fuzzyMatch';
 import { speak, isSpeechSupported } from '@/lib/tts';
 import { useUIStore } from '@/store/useUIStore';
@@ -34,26 +36,39 @@ const FEEDBACK_COLOR: Record<MatchVerdict, string> = {
 export function Flashcard({ word }: FlashcardProps) {
   const [input, setInput] = useState('');
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const recordAnswer = useUIStore((s) => s.recordAnswer);
 
   async function handleCheck(event: React.FormEvent) {
     event.preventDefault();
+    if (isSubmitting) return;
 
     const verdict = matchAnswer(input, word.translation);
-    const quality = verdict === 'correct' ? 5 : verdict === 'almost' ? 4 : 2;
+    const quality = qualityFromVerdict(verdict);
     const next = nextSrsState(word, quality);
     const now = Date.now();
+    const wordId = word.id;
 
-    if (word.id != null) {
-      await db.words.update(word.id, {
-        ...next,
-        dueDate: now + next.interval * DAY_MS,
-        lastReviewedAt: now,
-      });
-      await db.reviews.add({ wordId: word.id, reviewedAt: now, correct: verdict !== 'wrong' });
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      if (wordId != null) {
+        await db.transaction('rw', db.words, db.reviews, async () => {
+          await db.words.update(wordId, {
+            ...next,
+            dueDate: now + next.interval * DAY_MS,
+            lastReviewedAt: now,
+          });
+          await db.reviews.add({ wordId, reviewedAt: now, correct: verdict !== 'wrong' });
+        });
+      }
+      setFeedback({ verdict, correctAnswer: word.translation });
+    } catch {
+      setError('Не удалось сохранить ответ. Попробуйте ещё раз.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setFeedback({ verdict, correctAnswer: word.translation });
   }
 
   function handleNext() {
@@ -67,7 +82,7 @@ export function Flashcard({ word }: FlashcardProps) {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`${CARD_CLASS} flex flex-col gap-5 p-6`}
+      className={cn(CARD_CLASS, 'flex flex-col gap-5 p-6')}
     >
       <div className="flex items-center justify-between gap-3 border-b border-dashed border-border pb-4">
         <span className="font-mono text-2xl font-semibold tracking-tight">{word.term}</span>
@@ -92,7 +107,10 @@ export function Flashcard({ word }: FlashcardProps) {
             autoFocus
             className="font-mono"
           />
-          <Button type="submit">Проверить</Button>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <Button type="submit" disabled={isSubmitting}>
+            Проверить
+          </Button>
         </form>
       ) : (
         <div className="flex flex-col gap-3">

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { computeAccuracy, computeStreak, countMastered, last30DaysActivity } from './stats';
 import { DAY_MS } from './srs';
-import type { ReviewLog, Word } from '../db/db';
+import type { ReviewLog } from '../db/reviewLog.type';
+import type { Word } from '../db/word.type';
 
 const NOW = Date.parse('2026-08-17T12:00:00.000Z');
 

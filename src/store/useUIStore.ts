@@ -1,17 +1,9 @@
 import { create } from 'zustand';
-import type { Word } from '../db/db';
+import type { Word } from '../db/word.type';
 import type { MatchVerdict } from '../lib/fuzzyMatch';
-
-export type Screen = 'home' | 'add' | 'study' | 'words' | 'stats';
-export type Theme = 'light' | 'dark';
-
-export interface StudySessionState {
-  queue: Word[];
-  index: number;
-  correct: number;
-  almost: number;
-  wrong: number;
-}
+import type { Screen } from './screen.type';
+import type { Theme } from './theme.type';
+import type { StudySessionState } from './studySessionState.type';
 
 interface UIStore {
   screen: Screen;

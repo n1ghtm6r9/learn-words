@@ -1,7 +1,8 @@
 import { motion } from 'motion/react';
 import { BarChart3, House, ListChecks, Plus, SquareLibrary } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useUIStore, type Screen } from '@/store/useUIStore';
+import { useUIStore } from '@/store/useUIStore';
+import type { Screen } from '@/store/screen.type';
 
 const ITEMS: { screen: Screen; label: string; icon: typeof House }[] = [
   { screen: 'home', label: 'Главная', icon: House },

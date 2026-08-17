@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { CARD_CLASS } from '@/lib/cardClass';
 import { cn } from '@/lib/utils';
-import type { Word } from '@/db/db';
+import type { Word } from '@/db/word.type';
 import { masteryStatus } from '@/lib/mastery';
 import { MASTERY_LABEL } from '@/lib/masteryLabel';
 import { STATUS_DOT_CLASS } from '@/lib/statusDotClass';
@@ -23,6 +23,7 @@ export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
           title={MASTERY_LABEL[status]}
           aria-hidden="true"
         />
+        <span className="sr-only">{MASTERY_LABEL[status]}</span>
         <div>
           <p className="font-mono font-medium">{word.term}</p>
           <p className="text-sm text-muted-foreground">{word.translation}</p>

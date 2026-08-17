@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti';
 import { PartyPopper } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import type { StudySessionState } from '@/store/useUIStore';
+import type { StudySessionState } from '@/store/studySessionState.type';
 
 interface SessionSummaryProps {
   session: StudySessionState;

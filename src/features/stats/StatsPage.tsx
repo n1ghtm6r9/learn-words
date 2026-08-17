@@ -5,8 +5,13 @@ import { computeAccuracy, computeStreak, countMastered, last30DaysActivity } fro
 import { StatTile } from './StatTile';
 
 export function StatsPage() {
-  const words = useLiveQuery(() => db.words.toArray(), []) ?? [];
-  const reviews = useLiveQuery(() => db.reviews.toArray(), []) ?? [];
+  const words = useLiveQuery(() => db.words.toArray(), []);
+  const reviews = useLiveQuery(() => db.reviews.toArray(), []);
+
+  if (!words || !reviews) {
+    return <p className="text-sm text-muted-foreground">Загрузка...</p>;
+  }
+
   const now = Date.now();
 
   const mastered = countMastered(words);
