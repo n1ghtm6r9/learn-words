@@ -34,10 +34,11 @@
 
 ```bash
 npm create vite@latest tmp-vite -- --template react-ts
-shopt -s dotglob nullglob
-mv tmp-vite/* .
-rmdir tmp-vite
+cp -R tmp-vite/. .
+rm -rf tmp-vite
 ```
+
+Не используй `shopt`/`mv tmp-vite/*` — это bash-специфичный способ захватить скрытые файлы (`.gitignore` и т.п.), а окружение выполняет команды через zsh, где `shopt` не существует. `cp -R tmp-vite/. .` переносит содержимое, включая скрытые файлы, независимо от шелла.
 
 - [ ] **Step 2: Установить зависимости и убедиться, что базовый проект собирается**
 
