@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import type { Word } from '@/db/db';
+import { MASTERY_LABEL, masteryStatus } from '@/lib/mastery';
 
 interface WordItemProps {
   word: Word;
@@ -7,12 +8,27 @@ interface WordItemProps {
   onDelete: () => void;
 }
 
+export const STATUS_DOT_CLASS = {
+  new: 'bg-status-new',
+  learning: 'bg-status-learning',
+  mastered: 'bg-status-mastered',
+} as const;
+
 export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
+  const status = masteryStatus(word.interval);
+
   return (
-    <li className="flex items-center justify-between rounded-md border p-3">
-      <div>
-        <p className="font-medium">{word.term}</p>
-        <p className="text-sm text-muted-foreground">{word.translation}</p>
+    <li className="flex items-center justify-between rounded-md border border-border bg-card p-3 shadow-sm">
+      <div className="flex items-center gap-3">
+        <span
+          className={`h-2 w-2 shrink-0 rounded-full ${STATUS_DOT_CLASS[status]}`}
+          title={MASTERY_LABEL[status]}
+          aria-hidden="true"
+        />
+        <div>
+          <p className="font-mono font-medium">{word.term}</p>
+          <p className="text-sm text-muted-foreground">{word.translation}</p>
+        </div>
       </div>
       <div className="flex gap-2">
         <Button type="button" variant="outline" size="sm" onClick={onEdit}>

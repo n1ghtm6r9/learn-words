@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { db, type Word } from '@/db/db';
+import { MASTERY_LABEL } from '@/lib/mastery';
 import { WordForm } from './WordForm';
-import { WordItem } from './WordItem';
+import { WordItem, STATUS_DOT_CLASS } from './WordItem';
 
 export function WordList() {
   const words = useLiveQuery(() => db.words.orderBy('term').toArray(), []) ?? [];
@@ -26,11 +28,26 @@ export function WordList() {
 
   return (
     <div className="flex flex-col gap-3">
-      <Input
-        placeholder="Поиск..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+        <Input
+          placeholder="Поиск..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-8"
+        />
+      </div>
+
+      {words.length > 0 && (
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          {(Object.keys(MASTERY_LABEL) as (keyof typeof MASTERY_LABEL)[]).map((status) => (
+            <span key={status} className="flex items-center gap-1.5">
+              <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT_CLASS[status]}`} aria-hidden="true" />
+              {MASTERY_LABEL[status]}
+            </span>
+          ))}
+        </div>
+      )}
 
       {filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">Слов пока нет.</p>

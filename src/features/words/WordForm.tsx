@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { createWord, db, type Word } from '@/db/db';
@@ -41,8 +42,8 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-      <label className="flex flex-col gap-1 text-sm">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <label className="flex flex-col gap-1.5 text-sm">
         Слово
         <Input
           aria-label="Слово"
@@ -52,20 +53,25 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
             void checkDuplicate(e.target.value);
           }}
           required
+          className="font-mono"
         />
       </label>
 
       {duplicate && (
-        <p className="text-sm text-amber-600">Такое слово уже есть в словаре — сохранить второй раз?</p>
+        <p className="flex items-start gap-2 rounded-md bg-status-learning/10 p-2.5 text-sm text-status-learning">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          Такое слово уже есть в словаре — сохранить второй раз?
+        </p>
       )}
 
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="flex flex-col gap-1.5 text-sm">
         Перевод
         <Input
           aria-label="Перевод"
           value={translation}
           onChange={(e) => setTranslation(e.target.value)}
           required
+          className="font-mono"
         />
       </label>
 

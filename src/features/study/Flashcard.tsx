@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
+import { Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { db, type Word } from '@/db/db';
@@ -21,6 +22,12 @@ const FEEDBACK_TEXT: Record<MatchVerdict, (correct: string) => string> = {
   correct: () => 'Верно!',
   almost: (correct) => `Почти! Правильный ответ: ${correct}`,
   wrong: (correct) => `Неверно. Правильный ответ: ${correct}`,
+};
+
+const FEEDBACK_COLOR: Record<MatchVerdict, string> = {
+  correct: 'text-status-mastered',
+  almost: 'text-status-learning',
+  wrong: 'text-destructive',
 };
 
 export function Flashcard({ word }: FlashcardProps) {
@@ -60,13 +67,18 @@ export function Flashcard({ word }: FlashcardProps) {
       key={word.id}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-4 rounded-lg border p-6"
+      className="flex flex-col gap-5 rounded-lg border border-border bg-card p-6 shadow-sm"
     >
-      <div className="flex items-center justify-between">
-        <span className="text-2xl font-semibold">{word.term}</span>
+      <div className="flex items-center justify-between gap-3 border-b border-dashed border-border pb-4">
+        <span className="font-mono text-2xl font-semibold tracking-tight">{word.term}</span>
         {isSpeechSupported() && (
-          <button type="button" aria-label="Озвучить" onClick={() => speak(word.term)}>
-            🔊
+          <button
+            type="button"
+            aria-label="Озвучить"
+            onClick={() => speak(word.term)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
+          >
+            <Volume2 className="h-[18px] w-[18px]" />
           </button>
         )}
       </div>
@@ -78,21 +90,13 @@ export function Flashcard({ word }: FlashcardProps) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             autoFocus
+            className="font-mono"
           />
           <Button type="submit">Проверить</Button>
         </form>
       ) : (
         <div className="flex flex-col gap-3">
-          <p
-            data-testid="feedback"
-            className={
-              feedback.verdict === 'correct'
-                ? 'text-green-600'
-                : feedback.verdict === 'almost'
-                  ? 'text-amber-600'
-                  : 'text-red-600'
-            }
-          >
+          <p data-testid="feedback" className={`text-sm font-medium ${FEEDBACK_COLOR[feedback.verdict]}`}>
             {FEEDBACK_TEXT[feedback.verdict](feedback.correctAnswer)}
           </p>
           <Button type="button" onClick={handleNext}>
