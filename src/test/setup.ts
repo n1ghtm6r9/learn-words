@@ -8,3 +8,13 @@ if (typeof window !== 'undefined' && !window.ResizeObserver) {
     disconnect() {}
   } as unknown as typeof ResizeObserver;
 }
+
+if (typeof window !== 'undefined' && !window.SpeechSynthesisUtterance) {
+  window.SpeechSynthesisUtterance = class {
+    text = '';
+    lang = '';
+    constructor(text: string) {
+      this.text = text;
+    }
+  } as unknown as typeof SpeechSynthesisUtterance;
+}
