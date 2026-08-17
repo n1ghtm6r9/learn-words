@@ -2,6 +2,7 @@ import { NavBar } from '@/components/layout/NavBar';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { Dashboard } from '@/features/home/Dashboard';
 import { StudySession } from '@/features/study/StudySession';
+import { StatsPage } from '@/features/stats/StatsPage';
 import { WordForm } from '@/features/words/WordForm';
 import { WordList } from '@/features/words/WordList';
 import { useUIStore } from '@/store/useUIStore';
@@ -22,7 +23,7 @@ function App() {
         )}
         {screen === 'words' && <WordList />}
         {screen === 'study' && <StudySession />}
-        {screen === 'stats' && <p>Статистика (Task 14)</p>}
+        {screen === 'stats' && <StatsPage />}
       </main>
       <NavBar />
     </div>
