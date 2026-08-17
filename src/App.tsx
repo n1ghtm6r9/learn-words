@@ -1,6 +1,7 @@
 import { NavBar } from '@/components/layout/NavBar';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { WordForm } from '@/features/words/WordForm';
+import { WordList } from '@/features/words/WordList';
 import { useUIStore } from '@/store/useUIStore';
 
 function App() {
@@ -17,7 +18,7 @@ function App() {
         {screen === 'add' && (
           <WordForm mode="create" onDone={() => useUIStore.getState().setScreen('words')} />
         )}
-        {screen === 'words' && <p>Мои слова (Task 11)</p>}
+        {screen === 'words' && <WordList />}
         {screen === 'study' && <p>Учить (Task 12)</p>}
         {screen === 'stats' && <p>Статистика (Task 14)</p>}
       </main>
