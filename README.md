@@ -1,32 +1,38 @@
-# React + TypeScript + Vite
+# Мой словарь
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A single-page vocabulary trainer. Add words with translations and an optional
+category, then review them using a spaced-repetition schedule (SM-2 style)
+that spaces out reviews based on how well you remember each word. Includes a
+flashcard study session, a word list with search/edit/delete, and a stats
+page with accuracy and activity tracking.
 
-Currently, two official plugins are available:
+All data is stored locally in the browser (IndexedDB) — there is no backend.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Tech stack
 
-## React Compiler
+- [Vite](https://vite.dev/) + [React 19](https://react.dev/) + TypeScript
+- [Tailwind CSS v4](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
+- [Zustand](https://github.com/pmndrs/zustand) for UI state
+- [Dexie](https://dexie.org/) (IndexedDB) for persistent storage
+- [Motion](https://motion.dev/) for animations
+- [canvas-confetti](https://github.com/catdad/canvas-confetti) for session-complete celebration
+- Web Speech API for word pronunciation
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Getting started
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Testing
+
+```bash
+npm run test
+```
+
+## Building
+
+```bash
+npm run build
+```

@@ -27,6 +27,8 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
+    if (!term.trim() || !translation.trim()) return;
+
     if (mode === 'edit' && word?.id != null) {
       await db.words.update(word.id, {
         term: term.trim(),

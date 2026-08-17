@@ -48,6 +48,29 @@ describe('StudySession', () => {
     expect(await screen.findByLabelText('Перевод')).toBeInTheDocument();
   });
 
+  it('очищает сессию при уходе через нижнюю навигацию, чтобы новое due-слово подхватилось при повторном входе', async () => {
+    useUIStore.setState({ screen: 'study' });
+    render(<StudyScreen />);
+    expect(await screen.findByText(/повторять нечего/i)).toBeInTheDocument();
+
+    useUIStore.getState().setScreen('home');
+    expect(await screen.findByText('Главная')).toBeInTheDocument();
+
+    await db.words.add({
+      term: 'hello',
+      translation: 'привет',
+      createdAt: 0,
+      easinessFactor: 2.5,
+      interval: 0,
+      repetitions: 0,
+      dueDate: Date.now() - 1000,
+    });
+
+    useUIStore.setState({ screen: 'study' });
+
+    expect(await screen.findByLabelText('Перевод')).toBeInTheDocument();
+  });
+
   it('проходит одну карточку: ответ -> фидбек -> далее -> итог сессии', async () => {
     await db.words.add({
       term: 'hello',

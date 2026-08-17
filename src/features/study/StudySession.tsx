@@ -20,6 +20,12 @@ export function StudySession() {
     }
   }, [session, words, startSession]);
 
+  useEffect(() => {
+    return () => {
+      endSession();
+    };
+  }, [endSession]);
+
   if (!words || !session) {
     return <p>Загрузка...</p>;
   }

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { NavBar } from '@/components/layout/NavBar';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { Dashboard } from '@/features/home/Dashboard';
@@ -9,6 +10,11 @@ import { useUIStore } from '@/store/useUIStore';
 
 function App() {
   const screen = useUIStore((s) => s.screen);
+  const theme = useUIStore((s) => s.theme);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
 
   return (
     <div className="min-h-screen bg-background pb-16 text-foreground">
