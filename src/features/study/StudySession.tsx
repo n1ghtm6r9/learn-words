@@ -28,7 +28,13 @@ export function StudySession() {
     return (
       <div className="flex flex-col gap-3">
         <p>Сегодня повторять нечего — все слова уже выучены на сегодня.</p>
-        <Button type="button" onClick={() => setScreen('home')}>
+        <Button
+          type="button"
+          onClick={() => {
+            endSession();
+            setScreen('home');
+          }}
+        >
           На главную
         </Button>
       </div>
