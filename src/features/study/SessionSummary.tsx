@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { PartyPopper } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import type { StudySessionState } from '@/store/useUIStore';
 
 interface SessionSummaryProps {
@@ -17,7 +18,7 @@ export function SessionSummary({ session, onFinish }: SessionSummaryProps) {
   }, []);
 
   return (
-    <div className="flex flex-col items-center gap-4 rounded-lg border border-border bg-card p-6 text-center shadow-sm">
+    <Card className="flex flex-col items-center gap-4 p-6 text-center">
       <PartyPopper className="h-7 w-7 text-status-mastered" aria-hidden="true" />
       <h2 className="text-lg font-semibold">Сессия завершена</h2>
 
@@ -39,6 +40,6 @@ export function SessionSummary({ session, onFinish }: SessionSummaryProps) {
       <Button type="button" onClick={onFinish} className="w-full">
         На главную
       </Button>
-    </div>
+    </Card>
   );
 }

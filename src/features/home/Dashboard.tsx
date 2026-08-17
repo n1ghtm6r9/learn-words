@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Flame, Layers, Plus, SquareLibrary } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { db } from '@/db/db';
 import { selectDueWords } from '@/lib/srs';
 import { computeStreak } from '@/lib/stats';
@@ -17,7 +18,7 @@ export function Dashboard() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+      <Card className="p-4">
         <div className="flex items-center gap-3 border-b border-border pb-3">
           <Layers className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
           <p className="font-mono">Слов на сегодня: {dueCount}</p>
@@ -30,7 +31,7 @@ export function Dashboard() {
           <Flame className="h-4 w-4 shrink-0 text-status-learning" aria-hidden="true" />
           <p className="font-mono">Streak: {streak} дн.</p>
         </div>
-      </div>
+      </Card>
 
       <div className="flex gap-2">
         <Button type="button" disabled={dueCount === 0} onClick={() => setScreen('study')}>

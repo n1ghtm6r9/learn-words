@@ -1,4 +1,6 @@
 import { Button } from '@/components/ui/button';
+import { CARD_CLASS } from '@/lib/cardClass';
+import { cn } from '@/lib/utils';
 import type { Word } from '@/db/db';
 import { masteryStatus } from '@/lib/mastery';
 import { MASTERY_LABEL } from '@/lib/masteryLabel';
@@ -14,7 +16,7 @@ export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
   const status = masteryStatus(word.interval);
 
   return (
-    <li className="flex items-center justify-between rounded-md border border-border bg-card p-3 shadow-sm">
+    <li className={cn(CARD_CLASS, 'flex items-center justify-between p-3')}>
       <div className="flex items-center gap-3">
         <span
           className={`h-2 w-2 shrink-0 rounded-full ${STATUS_DOT_CLASS[status]}`}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'motion/react';
 import { Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CARD_CLASS } from '@/lib/cardClass';
 import { Input } from '@/components/ui/input';
 import { db, type Word } from '@/db/db';
 import { DAY_MS, nextSrsState } from '@/lib/srs';
@@ -64,10 +65,9 @@ export function Flashcard({ word }: FlashcardProps) {
 
   return (
     <motion.div
-      key={word.id}
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-5 rounded-lg border border-border bg-card p-6 shadow-sm"
+      className={`${CARD_CLASS} flex flex-col gap-5 p-6`}
     >
       <div className="flex items-center justify-between gap-3 border-b border-dashed border-border pb-4">
         <span className="font-mono text-2xl font-semibold tracking-tight">{word.term}</span>

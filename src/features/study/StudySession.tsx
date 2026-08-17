@@ -78,7 +78,7 @@ export function StudySession() {
           />
         </div>
       </div>
-      <Flashcard word={session.queue[session.index]} />
+      <Flashcard key={session.queue[session.index].id} word={session.queue[session.index]} />
     </div>
   );
 }
