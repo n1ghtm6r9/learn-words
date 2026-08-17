@@ -1,290 +1,168 @@
-# Приложение для изучения слов — Implementation Plan
+# Переработка движка обучения — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** SPA на React для добавления слов с переводом и их заучивания через интервальные повторения (SM-2), полностью офлайн, данные — в IndexedDB браузера.
+**Goal:** Заменить SM-2/Dashboard/Статистику на: двухфазное изучение новых слов (узнавание → активное вспоминание, интерливинг, настраиваемое число повторов), раздел «Повторение» с рейтингом слова 0–100 и алгоритмом забывания (экспоненциальный распад, зависящий от streak), массовое добавление слов через textarea.
 
-**Architecture:** Vite + React 19 + TypeScript, без роутера — 5 экранов переключаются через Zustand-стор (`useUIStore`). Данные словаря живут в Dexie (IndexedDB) и читаются в компоненты через `dexie-react-hooks` (`useLiveQuery`), поэтому UI сам обновляется при любых изменениях в БД. Zustand хранит только эфемерное UI-состояние: текущий экран, активную сессию обучения, тему.
+**Architecture:** Данные слова хранятся в Dexie с новой схемой (`stage`, `learningPhase`/`phaseStreak` для новых слов; `rating`/`reviewStreak`/`lastReviewedAt` для слов на повторении). Состояние учебной сессии (пул для новых слов, очередь для повторения) живёт локально в компоненте сессии (`useState`, инициализация из Dexie при монтировании) — не в глобальном сторе, поэтому уход с экрана просто размонтирует сессию без риска «залипшего» состояния. Zustand-стор хранит только screen/theme/настройки (phaseARepeats/phaseBRepeats).
 
-**Tech Stack:** Vite, React 19, TypeScript, Tailwind CSS v4, shadcn/ui, Zustand, Dexie.js + dexie-react-hooks, Motion, canvas-confetti, Web Speech API, Vitest + React Testing Library + fake-indexeddb.
+**Tech Stack:** Vite, React 19, TypeScript (strict), Tailwind CSS v4, shadcn/ui, Zustand, Dexie.js + dexie-react-hooks, Motion, canvas-confetti, Web Speech API, Vitest + React Testing Library + fake-indexeddb. Без изменений от текущего стека.
 
-**Spec:** `docs/superpowers/specs/2026-08-17-vocab-app-design.md`
+**Spec:** `docs/superpowers/specs/2026-08-18-learning-engine-rewrite-design.md`
 
 ## Global Constraints
 
-- Никакого бэкенда и сети — всё хранится локально в IndexedDB через Dexie.
-- Никакого роутера — переключение экранов только через `useUIStore.screen`.
-- Перевод пользователь вводит вручную — никакого автоперевода через внешний API.
-- Путь до алиаса `@` всегда указывает на `src/`.
+- Каждый экспортируемый тип/функция/константа — в своём файле (`~/.claude/CLAUDE.md`: «One thing per file»). Приватные хелперы, используемые только одним файлом, могут оставаться внутри него.
+- Никакого бэкенда, сети, синхронизации.
 - Все тексты интерфейса — на русском.
-- Каждая единица SRS-логики (`lib/srs.ts`, `lib/fuzzyMatch.ts`, `lib/stats.ts`) — чистые функции без побочных эффектов, обязательно покрыты юнит-тестами по TDD.
+- Путь до алиаса `@` всегда указывает на `src/`.
+- Алгоритмическая логика (`lib/*`) — чистые функции без побочных эффектов, обязательно с юнит-тестами по TDD.
+- Существующие данные при апгрейде схемы Dexie не теряются — только мигрируют (см. Task 1).
+- Не изобретать новые визуальные токены — переиспользовать существующую палитру (`text-status-mastered` = зелёный/выучено, `text-status-learning` = жёлтый/учу, `text-destructive` = красный) для 🟢🟡🔴.
 
 ---
 
-### Task 1: Scaffold проекта (Vite + React 19 + TS + Tailwind v4 + shadcn/ui)
+### Task 1: Модель данных — `Word`, `VocabDB` (schema v2 + миграция), `createWord`
 
 **Files:**
-- Create: весь стандартный Vite React-TS boilerplate (`package.json`, `index.html`, `src/main.tsx`, `src/App.tsx`, `src/index.css`, `vite.config.ts`, `tsconfig.json`, `tsconfig.app.json`, `tsconfig.node.json`, `.gitignore`)
-- Create: `components.json` (генерируется shadcn init)
+- Modify: `src/db/word.type.ts`
+- Modify: `src/db/VocabDB.ts`
+- Modify: `src/db/createWord.ts`
+- Modify: `src/db/db.test.ts`
+- Modify: `src/db/createWord.test.ts`
+- Delete: `src/db/reviewLog.type.ts`
 
 **Interfaces:**
-- Produces: алиас `@/*` → `src/*` (используется во всех последующих импортах), Tailwind-классы доступны везде через `src/index.css`, shadcn-компоненты доступны через `@/components/ui/*`.
+- Produces: `export type WordStage = 'new' | 'review'` and `export type LearningPhase = 'A' | 'B'` (внутри `word.type.ts`, реэкспортируются вместе с `Word`), `export interface Word { id?, term, translation, createdAt, stage, learningPhase, phaseStreak, rating, reviewStreak, lastReviewedAt? }`.
 
-- [ ] **Step 1: Скаффолдинг Vite во временную папку и перенос в корень**
-
-```bash
-npm create vite@latest tmp-vite -- --template react-ts
-cp -R tmp-vite/. .
-rm -rf tmp-vite
-```
-
-Не используй `shopt`/`mv tmp-vite/*` — это bash-специфичный способ захватить скрытые файлы (`.gitignore` и т.п.), а окружение выполняет команды через zsh, где `shopt` не существует. `cp -R tmp-vite/. .` переносит содержимое, включая скрытые файлы, независимо от шелла.
-
-- [ ] **Step 2: Установить зависимости и убедиться, что базовый проект собирается**
-
-```bash
-npm install
-npm run build
-```
-
-Expected: сборка проходит без ошибок, появляется `dist/`.
-
-- [ ] **Step 3: Установить Tailwind v4 и настроить Vite-плагин**
-
-```bash
-npm install tailwindcss @tailwindcss/vite
-npm install -D @types/node
-```
-
-Замени содержимое `src/index.css` на:
-
-```css
-@import "tailwindcss";
-```
-
-Замени `vite.config.ts` на:
+- [ ] **Step 1: Переписать `src/db/word.type.ts`**
 
 ```typescript
-import path from "path"
-import tailwindcss from "@tailwindcss/vite"
-import react from "@vitejs/plugin-react"
-import { defineConfig } from "vite"
+export type WordStage = 'new' | 'review';
+export type LearningPhase = 'A' | 'B';
 
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
-})
+export interface Word {
+  id?: number;
+  term: string;
+  translation: string;
+  createdAt: number;
+
+  stage: WordStage;
+
+  learningPhase: LearningPhase;
+  phaseStreak: number;
+
+  rating: number;
+  reviewStreak: number;
+
+  lastReviewedAt?: number;
+}
 ```
 
-- [ ] **Step 4: Настроить path alias в tsconfig**
+- [ ] **Step 2: Переписать `src/db/VocabDB.ts`**
 
-Замени `tsconfig.json` на:
+```typescript
+import Dexie, { type Table } from 'dexie';
+import type { Word } from './word.type';
 
-```json
-{
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ],
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+interface LegacyWordV1 {
+  interval?: number;
+  easinessFactor?: number;
+  repetitions?: number;
+  dueDate?: number;
+}
+
+export class VocabDB extends Dexie {
+  words!: Table<Word, number>;
+
+  constructor() {
+    super('vocab-db');
+
+    this.version(1).stores({
+      words: '++id, term, dueDate',
+      reviews: '++id, wordId, reviewedAt',
+    });
+
+    this.version(2)
+      .stores({
+        words: '++id, term, stage',
+        reviews: null,
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table<Word & LegacyWordV1, number>('words')
+          .toCollection()
+          .modify((word) => {
+            const legacyInterval = word.interval ?? 0;
+            word.stage = 'review';
+            word.learningPhase = 'B';
+            word.phaseStreak = 0;
+            word.rating = legacyInterval >= 21 ? 80 : legacyInterval >= 6 ? 60 : 40;
+            word.reviewStreak = 0;
+            delete word.easinessFactor;
+            delete word.interval;
+            delete word.repetitions;
+            delete word.dueDate;
+          });
+      });
   }
 }
 ```
 
-В `tsconfig.app.json` внутри `compilerOptions` добавь:
+- [ ] **Step 3: Переписать `src/db/createWord.ts`**
 
-```json
-"baseUrl": ".",
-"paths": {
-  "@/*": ["./src/*"]
+```typescript
+import type { Word } from './word.type';
+
+export function createWord(term: string, translation: string): Word {
+  return {
+    term,
+    translation,
+    createdAt: Date.now(),
+    stage: 'new',
+    learningPhase: 'A',
+    phaseStreak: 0,
+    rating: 0,
+    reviewStreak: 0,
+  };
 }
 ```
 
-- [ ] **Step 5: Инициализировать shadcn/ui**
+- [ ] **Step 4: Удалить `src/db/reviewLog.type.ts`**
 
 ```bash
-npx shadcn@latest init -d
+rm src/db/reviewLog.type.ts
 ```
 
-Expected: команда создаёт `components.json` и `src/lib/utils.ts` без интерактивных вопросов (флаг `-d` — defaults).
-
-- [ ] **Step 6: Добавить нужные shadcn-компоненты**
-
-```bash
-npx shadcn@latest add button input card dialog progress
-```
-
-Expected: в `src/components/ui/` появляются `button.tsx`, `input.tsx`, `card.tsx`, `dialog.tsx`, `progress.tsx`.
-
-- [ ] **Step 7: Проверить, что dev-сервер и сборка работают**
-
-```bash
-npm run build
-```
-
-Expected: сборка проходит без ошибок TypeScript.
-
-- [ ] **Step 8: Commit**
-
-```bash
-git add -A
-git commit -m "chore: scaffold Vite + React 19 + TS + Tailwind v4 + shadcn/ui"
-```
-
----
-
-### Task 2: Настройка Vitest + Testing Library + fake-indexeddb
-
-**Files:**
-- Modify: `vite.config.ts`
-- Create: `src/test/setup.ts`
-- Modify: `package.json` (добавить скрипты `test`, `test:watch`)
-
-**Interfaces:**
-- Produces: `src/test/setup.ts` — глобальный setup для всех тестов (jest-dom матчеры, fake-indexeddb, `ResizeObserver`-стаб). Все последующие тестовые задачи полагаются на то, что этот файл подключён через `vitest.config` → `test.setupFiles`.
-
-- [ ] **Step 1: Установить тестовые зависимости**
-
-```bash
-npm install -D vitest @testing-library/react @testing-library/jest-dom @testing-library/user-event jsdom fake-indexeddb
-```
-
-- [ ] **Step 2: Переключить `vite.config.ts` на `vitest/config` и добавить секцию `test`**
-
-Замени импорт `defineConfig` с `"vite"` на `"vitest/config"` и добавь блок `test`:
-
-```typescript
-import path from "path"
-import tailwindcss from "@tailwindcss/vite"
-import react from "@vitejs/plugin-react"
-import { defineConfig } from "vitest/config"
-
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
-  test: {
-    environment: "jsdom",
-    globals: true,
-    setupFiles: ["./src/test/setup.ts"],
-  },
-})
-```
-
-- [ ] **Step 3: Создать `src/test/setup.ts`**
-
-```typescript
-import '@testing-library/jest-dom/vitest';
-import 'fake-indexeddb/auto';
-
-if (typeof window !== 'undefined' && !window.ResizeObserver) {
-  window.ResizeObserver = class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  } as unknown as typeof ResizeObserver;
-}
-```
-
-- [ ] **Step 4: Добавить тестовые скрипты в `package.json`**
-
-В секцию `"scripts"` добавь:
-
-```json
-"test": "vitest run",
-"test:watch": "vitest"
-```
-
-- [ ] **Step 5: Написать тривиальный тест, чтобы проверить, что раннер работает**
-
-Создай `src/sanity.test.ts`:
+- [ ] **Step 5: Переписать `src/db/createWord.test.ts`**
 
 ```typescript
 import { describe, expect, it } from 'vitest';
+import { createWord } from './createWord';
 
-describe('sanity', () => {
-  it('runs', () => {
-    expect(1 + 1).toBe(2);
+describe('createWord', () => {
+  it('создаёт слово, готовое к Фазе A', () => {
+    const word = createWord('hello', 'привет');
+
+    expect(word.term).toBe('hello');
+    expect(word.translation).toBe('привет');
+    expect(word.stage).toBe('new');
+    expect(word.learningPhase).toBe('A');
+    expect(word.phaseStreak).toBe(0);
   });
 });
 ```
 
-- [ ] **Step 6: Запустить тесты**
-
-```bash
-npm run test
-```
-
-Expected: PASS, 1 тест пройден.
-
-- [ ] **Step 7: Удалить sanity-тест и закоммитить**
-
-```bash
-rm src/sanity.test.ts
-git add -A
-git commit -m "chore: set up Vitest + Testing Library + fake-indexeddb"
-```
-
----
-
-### Task 3: Dexie-схема и типы
-
-**Files:**
-- Create: `src/db/db.ts`
-- Test: `src/db/db.test.ts`
-
-**Interfaces:**
-- Produces:
-  - `interface Word { id?: number; term: string; translation: string; category?: string; createdAt: number; easinessFactor: number; interval: number; repetitions: number; dueDate: number; lastReviewedAt?: number; }`
-  - `interface ReviewLog { id?: number; wordId: number; reviewedAt: number; correct: boolean; }`
-  - `export const db: VocabDB` с таблицами `db.words: Table<Word, number>`, `db.reviews: Table<ReviewLog, number>`
-  - `function createWord(term: string, translation: string, category?: string): Word`
-
-- [ ] **Step 1: Установить Dexie**
-
-```bash
-npm install dexie dexie-react-hooks
-```
-
-- [ ] **Step 2: Написать падающий тест на схему и `createWord`**
-
-Создай `src/db/db.test.ts`:
+- [ ] **Step 6: Переписать `src/db/db.test.ts`**
 
 ```typescript
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createWord, db } from './db';
+import { db } from './db';
+import { createWord } from './createWord';
 
 describe('VocabDB', () => {
   beforeEach(async () => {
     await db.words.clear();
-    await db.reviews.clear();
-  });
-
-  it('creates a word with default SRS state due immediately', () => {
-    const before = Date.now();
-    const word = createWord('hello', 'привет', 'english');
-    const after = Date.now();
-
-    expect(word.term).toBe('hello');
-    expect(word.translation).toBe('привет');
-    expect(word.category).toBe('english');
-    expect(word.easinessFactor).toBe(2.5);
-    expect(word.interval).toBe(0);
-    expect(word.repetitions).toBe(0);
-    expect(word.dueDate).toBeGreaterThanOrEqual(before);
-    expect(word.dueDate).toBeLessThanOrEqual(after);
   });
 
   it('persists and retrieves a word via Dexie', async () => {
@@ -293,784 +171,583 @@ describe('VocabDB', () => {
 
     const stored = await db.words.get(id);
     expect(stored?.term).toBe('cat');
-    expect(stored?.translation).toBe('кот');
+    expect(stored?.stage).toBe('new');
   });
 
-  it('persists a review log linked to a word', async () => {
-    const wordId = await db.words.add(createWord('dog', 'собака'));
-    await db.reviews.add({ wordId, reviewedAt: Date.now(), correct: true });
+  it('filters words by stage using the stage index', async () => {
+    await db.words.add(createWord('cat', 'кот'));
+    await db.words.add({ ...createWord('dog', 'собака'), stage: 'review', rating: 70 });
 
-    const reviews = await db.reviews.where('wordId').equals(wordId).toArray();
-    expect(reviews).toHaveLength(1);
-    expect(reviews[0].correct).toBe(true);
+    const newWords = await db.words.where('stage').equals('new').toArray();
+    const reviewWords = await db.words.where('stage').equals('review').toArray();
+
+    expect(newWords).toHaveLength(1);
+    expect(newWords[0].term).toBe('cat');
+    expect(reviewWords).toHaveLength(1);
+    expect(reviewWords[0].term).toBe('dog');
   });
 });
 ```
 
-- [ ] **Step 2: Запустить тест и убедиться, что он падает**
+- [ ] **Step 7: Запустить тесты и починить всё, что ссылается на старые поля**
 
 ```bash
-npm run test -- src/db/db.test.ts
+npm run test
 ```
 
-Expected: FAIL — `src/db/db.ts` ещё не существует.
+Expected: `db.test.ts`/`createWord.test.ts` проходят. Другие файлы (WordForm.tsx, WordItem.tsx и т.д.) на этом шаге ещё могут падать по типам — это ожидаемо, они правятся в следующих задачах. Просто убедись, что тест-раннер вообще стартует и два новых файла зелёные:
 
-- [ ] **Step 3: Реализовать `src/db/db.ts`**
+```bash
+npm run test -- src/db/db.test.ts src/db/createWord.test.ts
+```
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add -A
+git commit -m "feat: rewrite Word model for stage/phase/rating learning engine"
+```
+
+---
+
+### Task 2: Убрать старый движок (`lib/time.ts` + удаление SM-2/статистики/mastery)
+
+**Files:**
+- Create: `src/lib/time.ts`
+- Delete: `src/lib/srs.ts`, `src/lib/srs.test.ts`
+- Delete: `src/lib/stats.ts`, `src/lib/stats.test.ts`
+- Delete: `src/lib/mastery.ts`, `src/lib/mastery.test.ts`, `src/lib/masteryLabel.ts`, `src/lib/masteryStatus.type.ts`
+- Delete: `src/lib/statusDotClass.ts`
+- Delete: `src/store/studySessionState.type.ts`
+
+**Interfaces:**
+- Produces: `export const DAY_MS: number` (единственное, что реально переиспользуется из старого `srs.ts`).
+
+- [ ] **Step 1: Создать `src/lib/time.ts`**
 
 ```typescript
-import Dexie, { type Table } from 'dexie';
+export const DAY_MS = 24 * 60 * 60 * 1000;
+```
 
-export interface Word {
-  id?: number;
-  term: string;
-  translation: string;
-  category?: string;
-  createdAt: number;
-  easinessFactor: number;
-  interval: number;
-  repetitions: number;
-  dueDate: number;
+- [ ] **Step 2: Удалить старые файлы движка**
+
+```bash
+rm src/lib/srs.ts src/lib/srs.test.ts
+rm src/lib/stats.ts src/lib/stats.test.ts
+rm src/lib/mastery.ts src/lib/mastery.test.ts src/lib/masteryLabel.ts src/lib/masteryStatus.type.ts
+rm src/lib/statusDotClass.ts
+rm src/store/studySessionState.type.ts
+```
+
+- [ ] **Step 3: Найти всех потребителей удалённых модулей (они будут исправлены в последующих задачах — это просто разведка)**
+
+```bash
+grep -rln "lib/srs\|lib/stats\|lib/mastery\|lib/statusDotClass\|studySessionState.type" src --include="*.ts" --include="*.tsx"
+```
+
+Ожидаются ссылки из: `src/features/home/*`, `src/features/stats/*`, `src/features/study/*`, `src/features/words/WordItem.tsx`, `src/features/words/WordList.tsx`, `src/store/useUIStore.ts`. Все они переписываются или удаляются в задачах 6–15 — на этом шаге проект **не обязан собираться**, ничего не чини вручную здесь.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add -A
+git commit -m "chore: remove SM-2, old stats and mastery-status modules"
+```
+
+---
+
+### Task 3: Алгоритм рейтинга — `lib/rating` (TDD, критичная логика)
+
+**Files:**
+- Create: `src/lib/clamp.ts`
+- Create: `src/lib/ratingState.type.ts`
+- Create: `src/lib/halfLifeDays.ts`
+- Create: `src/lib/effectiveRating.ts`
+- Create: `src/lib/applyReviewOutcome.ts`
+- Test: `src/lib/halfLifeDays.test.ts`
+- Test: `src/lib/effectiveRating.test.ts`
+- Test: `src/lib/applyReviewOutcome.test.ts`
+
+**Interfaces:**
+- Consumes: `DAY_MS` из `src/lib/time.ts`; `MatchVerdict` из `src/lib/fuzzyMatch.ts`
+- Produces:
+  - `export function clamp(value: number, min: number, max: number): number`
+  - `export interface RatingState { rating: number; reviewStreak: number; lastReviewedAt?: number; }`
+  - `export function halfLifeDays(reviewStreak: number): number`
+  - `export function effectiveRating(state: RatingState, now: number): number`
+  - `export function applyReviewOutcome(state: RatingState, verdict: MatchVerdict, now: number): RatingState`
+
+- [ ] **Step 1: Создать `src/lib/clamp.ts`**
+
+```typescript
+export function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+```
+
+- [ ] **Step 2: Создать `src/lib/ratingState.type.ts`**
+
+```typescript
+export interface RatingState {
+  rating: number;
+  reviewStreak: number;
   lastReviewedAt?: number;
 }
-
-export interface ReviewLog {
-  id?: number;
-  wordId: number;
-  reviewedAt: number;
-  correct: boolean;
-}
-
-export class VocabDB extends Dexie {
-  words!: Table<Word, number>;
-  reviews!: Table<ReviewLog, number>;
-
-  constructor() {
-    super('vocab-db');
-    this.version(1).stores({
-      words: '++id, term, category, dueDate',
-      reviews: '++id, wordId, reviewedAt',
-    });
-  }
-}
-
-export const db = new VocabDB();
-
-export function createWord(term: string, translation: string, category?: string): Word {
-  const now = Date.now();
-  return {
-    term,
-    translation,
-    category,
-    createdAt: now,
-    easinessFactor: 2.5,
-    interval: 0,
-    repetitions: 0,
-    dueDate: now,
-  };
-}
 ```
 
-- [ ] **Step 4: Запустить тест и убедиться, что он проходит**
+- [ ] **Step 3: Написать падающий тест для `halfLifeDays`**
 
-```bash
-npm run test -- src/db/db.test.ts
-```
-
-Expected: PASS, 3 теста пройдены.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add -A
-git commit -m "feat: add Dexie schema for words and review logs"
-```
-
----
-
-### Task 4: SM-2 алгоритм и выбор слов на сегодня (`lib/srs.ts`)
-
-**Files:**
-- Create: `src/lib/srs.ts`
-- Test: `src/lib/srs.test.ts`
-
-**Interfaces:**
-- Consumes: `Word` из `src/db/db.ts`
-- Produces:
-  - `export const DAY_MS: number`
-  - `export interface SrsState { easinessFactor: number; interval: number; repetitions: number; }`
-  - `export function nextSrsState(state: SrsState, quality: number): SrsState`
-  - `export function selectDueWords(words: Word[], now: number, limit?: number): Word[]`
-
-- [ ] **Step 1: Написать падающие тесты**
-
-Создай `src/lib/srs.test.ts`:
+Создай `src/lib/halfLifeDays.test.ts`:
 
 ```typescript
 import { describe, expect, it } from 'vitest';
-import { nextSrsState, selectDueWords, type SrsState } from './srs';
-import type { Word } from '../db/db';
+import { halfLifeDays } from './halfLifeDays';
 
-describe('nextSrsState', () => {
-  const initial: SrsState = { easinessFactor: 2.5, interval: 0, repetitions: 0 };
-
-  it('первый верный ответ (quality=5) даёт интервал 1 день', () => {
-    const next = nextSrsState(initial, 5);
-    expect(next.interval).toBe(1);
-    expect(next.repetitions).toBe(1);
-    expect(next.easinessFactor).toBeCloseTo(2.6, 5);
-  });
-
-  it('второй подряд верный ответ даёт интервал 6 дней', () => {
-    const afterFirst = nextSrsState(initial, 5);
-    const afterSecond = nextSrsState(afterFirst, 5);
-    expect(afterSecond.interval).toBe(6);
-    expect(afterSecond.repetitions).toBe(2);
-  });
-
-  it('третий подряд верный ответ умножает интервал на easinessFactor', () => {
-    const s1 = nextSrsState(initial, 5);
-    const s2 = nextSrsState(s1, 5);
-    const s3 = nextSrsState(s2, 5);
-    expect(s3.interval).toBe(Math.round(6 * s2.easinessFactor));
-    expect(s3.repetitions).toBe(3);
-  });
-
-  it('quality=4 ("почти") не меняет easinessFactor', () => {
-    const next = nextSrsState(initial, 4);
-    expect(next.easinessFactor).toBeCloseTo(2.5, 5);
-  });
-
-  it('неверный ответ (quality<3) сбрасывает repetitions и interval, снижает EF', () => {
-    const learned = nextSrsState(nextSrsState(initial, 5), 5);
-    const afterWrong = nextSrsState(learned, 2);
-
-    expect(afterWrong.repetitions).toBe(0);
-    expect(afterWrong.interval).toBe(1);
-    expect(afterWrong.easinessFactor).toBeLessThan(learned.easinessFactor);
-  });
-
-  it('easinessFactor никогда не опускается ниже 1.3', () => {
-    let state = initial;
-    for (let i = 0; i < 20; i++) {
-      state = nextSrsState(state, 0);
-    }
-    expect(state.easinessFactor).toBeGreaterThanOrEqual(1.3);
-  });
-});
-
-describe('selectDueWords', () => {
-  function makeWord(id: number, dueDate: number): Word {
-    return {
-      id,
-      term: `word-${id}`,
-      translation: `перевод-${id}`,
-      createdAt: 0,
-      easinessFactor: 2.5,
-      interval: 0,
-      repetitions: 0,
-      dueDate,
-    };
-  }
-
-  it('выбирает только слова с dueDate <= now', () => {
-    const now = 1000;
-    const words = [makeWord(1, 500), makeWord(2, 1500), makeWord(3, 1000)];
-    const due = selectDueWords(words, now);
-    expect(due.map((w) => w.id)).toEqual([1, 3]);
-  });
-
-  it('сортирует просроченные слова по dueDate по возрастанию', () => {
-    const now = 1000;
-    const words = [makeWord(1, 900), makeWord(2, 100), makeWord(3, 500)];
-    const due = selectDueWords(words, now);
-    expect(due.map((w) => w.id)).toEqual([2, 3, 1]);
-  });
-
-  it('ограничивает количество слов параметром limit', () => {
-    const now = 1000;
-    const words = [makeWord(1, 100), makeWord(2, 200), makeWord(3, 300)];
-    const due = selectDueWords(words, now, 2);
-    expect(due).toHaveLength(2);
+describe('halfLifeDays', () => {
+  it('растёт от reviewStreak: 2 дня при streak=0, 17 дней при streak=5', () => {
+    expect(halfLifeDays(0)).toBe(2);
+    expect(halfLifeDays(5)).toBe(17);
   });
 });
 ```
 
-- [ ] **Step 2: Запустить и убедиться, что тесты падают**
+Запусти и убедись, что падает (`npm run test -- src/lib/halfLifeDays.test.ts`), затем реализуй:
 
-```bash
-npm run test -- src/lib/srs.test.ts
-```
-
-Expected: FAIL — `src/lib/srs.ts` не существует.
-
-- [ ] **Step 3: Реализовать `src/lib/srs.ts`**
+- [ ] **Step 4: Создать `src/lib/halfLifeDays.ts`**
 
 ```typescript
-import type { Word } from '../db/db';
-
-export const DAY_MS = 24 * 60 * 60 * 1000;
-
-export interface SrsState {
-  easinessFactor: number;
-  interval: number;
-  repetitions: number;
-}
-
-export function nextSrsState(state: SrsState, quality: number): SrsState {
-  let { easinessFactor, interval, repetitions } = state;
-
-  if (quality < 3) {
-    repetitions = 0;
-    interval = 1;
-  } else {
-    if (repetitions === 0) {
-      interval = 1;
-    } else if (repetitions === 1) {
-      interval = 6;
-    } else {
-      interval = Math.round(interval * easinessFactor);
-    }
-    repetitions += 1;
-  }
-
-  easinessFactor =
-    easinessFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-  if (easinessFactor < 1.3) {
-    easinessFactor = 1.3;
-  }
-
-  return { easinessFactor, interval, repetitions };
-}
-
-export function selectDueWords(words: Word[], now: number, limit = 20): Word[] {
-  return words
-    .filter((word) => word.dueDate <= now)
-    .sort((a, b) => a.dueDate - b.dueDate)
-    .slice(0, limit);
+export function halfLifeDays(reviewStreak: number): number {
+  return 2 + reviewStreak * 3;
 }
 ```
 
-- [ ] **Step 4: Запустить тесты и убедиться, что проходят**
+Запусти тест снова — должен пройти.
 
-```bash
-npm run test -- src/lib/srs.test.ts
-```
+- [ ] **Step 5: Написать падающие тесты для `effectiveRating`**
 
-Expected: PASS, все тесты зелёные.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add -A
-git commit -m "feat: implement SM-2 scheduling and due-word selection"
-```
-
----
-
-### Task 5: Нечёткое сравнение ответа (`lib/fuzzyMatch.ts`)
-
-**Files:**
-- Create: `src/lib/fuzzyMatch.ts`
-- Test: `src/lib/fuzzyMatch.test.ts`
-
-**Interfaces:**
-- Produces:
-  - `export type MatchVerdict = 'correct' | 'almost' | 'wrong'`
-  - `export function matchAnswer(input: string, expected: string): MatchVerdict`
-
-- [ ] **Step 1: Написать падающие тесты**
-
-Создай `src/lib/fuzzyMatch.test.ts`:
+Создай `src/lib/effectiveRating.test.ts`:
 
 ```typescript
 import { describe, expect, it } from 'vitest';
-import { matchAnswer } from './fuzzyMatch';
+import { effectiveRating } from './effectiveRating';
+import { DAY_MS } from './time';
 
-describe('matchAnswer', () => {
-  it('точное совпадение — correct', () => {
-    expect(matchAnswer('привет', 'привет')).toBe('correct');
+describe('effectiveRating', () => {
+  it('возвращает исходный rating без распада, если lastReviewedAt не задан', () => {
+    expect(effectiveRating({ rating: 70, reviewStreak: 0 }, 1000)).toBe(70);
   });
 
-  it('регистр и пробелы по краям не влияют на результат', () => {
-    expect(matchAnswer('  Привет  ', 'привет')).toBe('correct');
+  it('возвращает исходный rating без распада сразу после повтора (elapsed=0)', () => {
+    const now = 1000;
+    expect(effectiveRating({ rating: 70, reviewStreak: 0, lastReviewedAt: now }, now)).toBe(70);
   });
 
-  it('одна опечатка в коротком слове — almost', () => {
-    expect(matchAnswer('кот', 'код')).toBe('almost');
+  it('распадается вдвое ровно через один период полураспада', () => {
+    const now = 10 * DAY_MS;
+    const lastReviewedAt = now - 2 * DAY_MS; // halfLifeDays(0) === 2
+    expect(effectiveRating({ rating: 80, reviewStreak: 0, lastReviewedAt }, now)).toBe(40);
   });
 
-  it('одна опечатка в длинном слове — almost', () => {
-    expect(matchAnswer('путешествие', 'путешествия')).toBe('almost');
+  it('распадается медленнее при большем reviewStreak', () => {
+    const now = 10 * DAY_MS;
+    const lastReviewedAt = now - 2 * DAY_MS;
+    const slow = effectiveRating({ rating: 80, reviewStreak: 5, lastReviewedAt }, now);
+    const fast = effectiveRating({ rating: 80, reviewStreak: 0, lastReviewedAt }, now);
+    expect(slow).toBeGreaterThan(fast);
   });
 
-  it('совсем другое слово — wrong', () => {
-    expect(matchAnswer('собака', 'кот')).toBe('wrong');
-  });
-
-  it('пустой ввод — wrong', () => {
-    expect(matchAnswer('', 'привет')).toBe('wrong');
+  it('не опускается ниже 0 при очень старом повторе', () => {
+    const now = 1000 * DAY_MS;
+    expect(effectiveRating({ rating: 50, reviewStreak: 0, lastReviewedAt: 0 }, now)).toBe(0);
   });
 });
 ```
 
-- [ ] **Step 2: Запустить и убедиться, что тесты падают**
+Запусти и убедись, что падает.
 
-```bash
-npm run test -- src/lib/fuzzyMatch.test.ts
-```
-
-Expected: FAIL — файла ещё нет.
-
-- [ ] **Step 3: Реализовать `src/lib/fuzzyMatch.ts`**
+- [ ] **Step 6: Создать `src/lib/effectiveRating.ts`**
 
 ```typescript
-export type MatchVerdict = 'correct' | 'almost' | 'wrong';
+import { clamp } from './clamp';
+import { halfLifeDays } from './halfLifeDays';
+import { DAY_MS } from './time';
+import type { RatingState } from './ratingState.type';
 
-function levenshtein(a: string, b: string): number {
-  const m = a.length;
-  const n = b.length;
-  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
-
-  for (let i = 0; i <= m; i++) dp[i][0] = i;
-  for (let j = 0; j <= n; j++) dp[0][j] = j;
-
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,
-        dp[i][j - 1] + 1,
-        dp[i - 1][j - 1] + cost,
-      );
-    }
+export function effectiveRating(state: RatingState, now: number): number {
+  if (state.lastReviewedAt == null) {
+    return clamp(Math.round(state.rating), 0, 100);
   }
 
-  return dp[m][n];
-}
-
-function normalize(text: string): string {
-  return text.trim().toLowerCase();
-}
-
-export function matchAnswer(input: string, expected: string): MatchVerdict {
-  const a = normalize(input);
-  const b = normalize(expected);
-
-  if (a === b) return 'correct';
-  if (a.length === 0) return 'wrong';
-
-  const distance = levenshtein(a, b);
-  const allowedDistance = b.length <= 4 ? 1 : b.length <= 8 ? 2 : 3;
-
-  return distance <= allowedDistance ? 'almost' : 'wrong';
+  const daysSince = (now - state.lastReviewedAt) / DAY_MS;
+  const decayed = state.rating * 0.5 ** (daysSince / halfLifeDays(state.reviewStreak));
+  return clamp(Math.round(decayed), 0, 100);
 }
 ```
 
-- [ ] **Step 4: Запустить тесты и убедиться, что проходят**
+Запусти тесты снова — должны пройти.
 
-```bash
-npm run test -- src/lib/fuzzyMatch.test.ts
-```
+- [ ] **Step 7: Написать падающие тесты для `applyReviewOutcome`**
 
-Expected: PASS.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add -A
-git commit -m "feat: implement fuzzy answer matching"
-```
-
----
-
-### Task 6: Обёртка над Web Speech API (`lib/tts.ts`)
-
-**Files:**
-- Create: `src/lib/tts.ts`
-- Test: `src/lib/tts.test.ts`
-
-**Interfaces:**
-- Produces:
-  - `export function isSpeechSupported(): boolean`
-  - `export function speak(text: string, lang?: string): void`
-
-- [ ] **Step 1: Написать падающий тест**
-
-Создай `src/lib/tts.test.ts`:
-
-```typescript
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { isSpeechSupported, speak } from './tts';
-
-describe('tts', () => {
-  afterEach(() => {
-    // @ts-expect-error — убираем тестовый мок между тестами
-    delete window.speechSynthesis;
-    vi.restoreAllMocks();
-  });
-
-  it('isSpeechSupported возвращает false, если API недоступен', () => {
-    expect(isSpeechSupported()).toBe(false);
-  });
-
-  it('speak вызывает cancel и speak с текстом', () => {
-    const cancel = vi.fn();
-    const speakFn = vi.fn();
-    Object.defineProperty(window, 'speechSynthesis', {
-      configurable: true,
-      value: { cancel, speak: speakFn },
-    });
-
-    speak('hello', 'en-US');
-
-    expect(cancel).toHaveBeenCalledOnce();
-    expect(speakFn).toHaveBeenCalledOnce();
-    const utterance = speakFn.mock.calls[0][0] as SpeechSynthesisUtterance;
-    expect(utterance.text).toBe('hello');
-    expect(utterance.lang).toBe('en-US');
-  });
-
-  it('speak ничего не делает, если API недоступен', () => {
-    expect(() => speak('hello')).not.toThrow();
-  });
-});
-```
-
-- [ ] **Step 2: Запустить и убедиться, что тест падает**
-
-```bash
-npm run test -- src/lib/tts.test.ts
-```
-
-Expected: FAIL — файла ещё нет.
-
-- [ ] **Step 3: Реализовать `src/lib/tts.ts`**
-
-```typescript
-export function isSpeechSupported(): boolean {
-  return typeof window !== 'undefined' && 'speechSynthesis' in window;
-}
-
-export function speak(text: string, lang = 'en-US'): void {
-  if (!isSpeechSupported()) return;
-
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = lang;
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(utterance);
-}
-```
-
-- [ ] **Step 4: Запустить тесты и убедиться, что проходят**
-
-```bash
-npm run test -- src/lib/tts.test.ts
-```
-
-Expected: PASS.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add -A
-git commit -m "feat: add Web Speech API wrapper for pronunciation"
-```
-
----
-
-### Task 7: Статистика — точность, streak, mastered (`lib/stats.ts`)
-
-**Files:**
-- Create: `src/lib/stats.ts`
-- Test: `src/lib/stats.test.ts`
-
-**Interfaces:**
-- Consumes: `ReviewLog`, `Word` из `src/db/db.ts`; `DAY_MS` из `src/lib/srs.ts`
-- Produces:
-  - `export function computeAccuracy(reviews: ReviewLog[], sinceDays: number, now: number): number` (0–100)
-  - `export function computeStreak(reviews: ReviewLog[], now: number): number` (дней подряд)
-  - `export function countMastered(words: Word[], thresholdDays?: number): number`
-  - `export function last30DaysActivity(reviews: ReviewLog[], now: number): boolean[]` (30 элементов, от старого дня к сегодняшнему)
-
-- [ ] **Step 1: Написать падающие тесты**
-
-Создай `src/lib/stats.test.ts`:
+Создай `src/lib/applyReviewOutcome.test.ts`:
 
 ```typescript
 import { describe, expect, it } from 'vitest';
-import { computeAccuracy, computeStreak, countMastered, last30DaysActivity } from './stats';
-import { DAY_MS } from './srs';
-import type { ReviewLog, Word } from '../db/db';
+import { applyReviewOutcome } from './applyReviewOutcome';
+import { DAY_MS } from './time';
 
-const NOW = Date.parse('2026-08-17T12:00:00.000Z');
+describe('applyReviewOutcome', () => {
+  const now = 5 * DAY_MS;
 
-function review(reviewedAt: number, correct: boolean): ReviewLog {
-  return { wordId: 1, reviewedAt, correct };
-}
-
-describe('computeAccuracy', () => {
-  it('считает процент верных ответов за последние N дней', () => {
-    const reviews = [
-      review(NOW, true),
-      review(NOW, true),
-      review(NOW, false),
-      review(NOW, true),
-    ];
-    expect(computeAccuracy(reviews, 7, NOW)).toBe(75);
+  it('correct: +15 к рейтингу, streak увеличивается', () => {
+    const next = applyReviewOutcome({ rating: 50, reviewStreak: 2 }, 'correct', now);
+    expect(next.rating).toBe(65);
+    expect(next.reviewStreak).toBe(3);
+    expect(next.lastReviewedAt).toBe(now);
   });
 
-  it('игнорирует ответы за пределами окна', () => {
-    const reviews = [
-      review(NOW, false),
-      review(NOW - 10 * DAY_MS, true),
-    ];
-    expect(computeAccuracy(reviews, 7, NOW)).toBe(0);
+  it('correct: не превышает 100', () => {
+    const next = applyReviewOutcome({ rating: 95, reviewStreak: 0 }, 'correct', now);
+    expect(next.rating).toBe(100);
   });
 
-  it('возвращает 0, если ответов не было', () => {
-    expect(computeAccuracy([], 7, NOW)).toBe(0);
-  });
-});
-
-describe('computeStreak', () => {
-  it('считает подряд идущие дни с ответами, включая сегодня', () => {
-    const reviews = [
-      review(NOW, true),
-      review(NOW - 1 * DAY_MS, true),
-      review(NOW - 2 * DAY_MS, false),
-    ];
-    expect(computeStreak(reviews, NOW)).toBe(3);
+  it('almost: +5 к рейтингу, streak сбрасывается', () => {
+    const next = applyReviewOutcome({ rating: 50, reviewStreak: 3 }, 'almost', now);
+    expect(next.rating).toBe(55);
+    expect(next.reviewStreak).toBe(0);
   });
 
-  it('обрывает streak на пропущенном дне', () => {
-    const reviews = [
-      review(NOW, true),
-      review(NOW - 2 * DAY_MS, true),
-    ];
-    expect(computeStreak(reviews, NOW)).toBe(1);
+  it('wrong: -25 от рейтинга, streak сбрасывается', () => {
+    const next = applyReviewOutcome({ rating: 50, reviewStreak: 3 }, 'wrong', now);
+    expect(next.rating).toBe(25);
+    expect(next.reviewStreak).toBe(0);
   });
 
-  it('возвращает 0, если сегодня ответов не было', () => {
-    const reviews = [review(NOW - 1 * DAY_MS, true)];
-    expect(computeStreak(reviews, NOW)).toBe(0);
+  it('wrong: не опускается ниже 0', () => {
+    const next = applyReviewOutcome({ rating: 10, reviewStreak: 0 }, 'wrong', now);
+    expect(next.rating).toBe(0);
   });
-});
 
-describe('countMastered', () => {
-  function word(interval: number): Word {
-    return {
-      term: 'x',
-      translation: 'y',
-      createdAt: 0,
-      easinessFactor: 2.5,
-      interval,
-      repetitions: 0,
-      dueDate: 0,
-    };
-  }
-
-  it('считает слова с interval >= порога (по умолчанию 21 день)', () => {
-    const words = [word(1), word(21), word(30)];
-    expect(countMastered(words)).toBe(2);
-  });
-});
-
-describe('last30DaysActivity', () => {
-  it('возвращает массив из 30 булевых значений, последний элемент — сегодня', () => {
-    const reviews = [review(NOW, true)];
-    const activity = last30DaysActivity(reviews, NOW);
-    expect(activity).toHaveLength(30);
-    expect(activity[29]).toBe(true);
-    expect(activity[0]).toBe(false);
+  it('считает от эффективного (распавшегося) рейтинга, а не от устаревшего сохранённого', () => {
+    const lastReviewedAt = now - 10 * DAY_MS;
+    const next = applyReviewOutcome({ rating: 80, reviewStreak: 0, lastReviewedAt }, 'correct', now);
+    expect(next.rating).toBeLessThan(80);
   });
 });
 ```
 
-- [ ] **Step 2: Запустить и убедиться, что тесты падают**
+Запусти и убедись, что падает.
 
-```bash
-npm run test -- src/lib/stats.test.ts
-```
-
-Expected: FAIL — файла ещё нет.
-
-- [ ] **Step 3: Реализовать `src/lib/stats.ts`**
+- [ ] **Step 8: Создать `src/lib/applyReviewOutcome.ts`**
 
 ```typescript
-import type { ReviewLog, Word } from '../db/db';
-import { DAY_MS } from './srs';
+import { clamp } from './clamp';
+import { effectiveRating } from './effectiveRating';
+import type { RatingState } from './ratingState.type';
+import type { MatchVerdict } from './fuzzyMatch';
 
-export function computeAccuracy(reviews: ReviewLog[], sinceDays: number, now: number): number {
-  const since = now - sinceDays * DAY_MS;
-  const recent = reviews.filter((r) => r.reviewedAt >= since && r.reviewedAt <= now);
-  if (recent.length === 0) return 0;
+export function applyReviewOutcome(state: RatingState, verdict: MatchVerdict, now: number): RatingState {
+  const current = effectiveRating(state, now);
 
-  const correctCount = recent.filter((r) => r.correct).length;
-  return Math.round((correctCount / recent.length) * 100);
-}
-
-function dayKey(timestamp: number): string {
-  return new Date(timestamp).toISOString().slice(0, 10);
-}
-
-export function computeStreak(reviews: ReviewLog[], now: number): number {
-  const daysWithReview = new Set(reviews.map((r) => dayKey(r.reviewedAt)));
-  let streak = 0;
-  let cursor = now;
-
-  while (daysWithReview.has(dayKey(cursor))) {
-    streak += 1;
-    cursor -= DAY_MS;
+  if (verdict === 'correct') {
+    return { rating: clamp(current + 15, 0, 100), reviewStreak: state.reviewStreak + 1, lastReviewedAt: now };
   }
-
-  return streak;
-}
-
-export function countMastered(words: Word[], thresholdDays = 21): number {
-  return words.filter((w) => w.interval >= thresholdDays).length;
-}
-
-export function last30DaysActivity(reviews: ReviewLog[], now: number): boolean[] {
-  const daysWithReview = new Set(reviews.map((r) => dayKey(r.reviewedAt)));
-  const days: boolean[] = [];
-
-  for (let i = 29; i >= 0; i--) {
-    days.push(daysWithReview.has(dayKey(now - i * DAY_MS)));
+  if (verdict === 'almost') {
+    return { rating: clamp(current + 5, 0, 100), reviewStreak: 0, lastReviewedAt: now };
   }
-
-  return days;
+  return { rating: clamp(current - 25, 0, 100), reviewStreak: 0, lastReviewedAt: now };
 }
 ```
 
-- [ ] **Step 4: Запустить тесты и убедиться, что проходят**
+- [ ] **Step 9: Запустить все тесты задачи и убедиться, что зелёные**
 
 ```bash
-npm run test -- src/lib/stats.test.ts
+npm run test -- src/lib/halfLifeDays.test.ts src/lib/effectiveRating.test.ts src/lib/applyReviewOutcome.test.ts
 ```
 
-Expected: PASS.
-
-- [ ] **Step 5: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
 git add -A
-git commit -m "feat: implement accuracy, streak and mastered-word stats"
+git commit -m "feat: implement rating/forgetting-curve algorithm"
 ```
 
 ---
 
-### Task 8: Zustand UI-стор (`store/useUIStore.ts`)
+### Task 4: Цвет рейтинга — `lib/ratingColor` (🔴🟡🟢)
 
 **Files:**
-- Create: `src/store/useUIStore.ts`
-- Test: `src/store/useUIStore.test.ts`
+- Create: `src/lib/ratingColor.type.ts`
+- Create: `src/lib/ratingColor.ts`
+- Create: `src/lib/ratingDotClass.ts`
+- Create: `src/lib/ratingTextClass.ts`
+- Test: `src/lib/ratingColor.test.ts`
 
 **Interfaces:**
-- Consumes: `Word` из `src/db/db.ts`; `MatchVerdict` из `src/lib/fuzzyMatch.ts`
 - Produces:
-  - `export type Screen = 'home' | 'add' | 'study' | 'words' | 'stats'`
-  - `export interface StudySessionState { queue: Word[]; index: number; correct: number; almost: number; wrong: number; }`
-  - `export const useUIStore: UseBoundStore<...>` с полями/методами: `screen`, `setScreen(screen)`, `theme`, `toggleTheme()`, `session: StudySessionState | null`, `startSession(queue: Word[])`, `recordAnswer(verdict: MatchVerdict)`, `endSession()`
+  - `export type RatingColor = 'red' | 'yellow' | 'green'`
+  - `export function ratingColor(effectiveRating: number): RatingColor`
+  - `export const RATING_DOT_CLASS: Record<RatingColor, string>` (для точек-индикаторов, `bg-*`)
+  - `export const RATING_TEXT_CLASS: Record<RatingColor, string>` (для числового значения рейтинга, `text-*`)
 
-- [ ] **Step 1: Установить Zustand**
+- [ ] **Step 1: Создать `src/lib/ratingColor.type.ts`**
+
+```typescript
+export type RatingColor = 'red' | 'yellow' | 'green';
+```
+
+- [ ] **Step 2: Написать падающий тест**
+
+Создай `src/lib/ratingColor.test.ts`:
+
+```typescript
+import { describe, expect, it } from 'vitest';
+import { ratingColor } from './ratingColor';
+
+describe('ratingColor', () => {
+  it('green при >= 67', () => {
+    expect(ratingColor(67)).toBe('green');
+    expect(ratingColor(100)).toBe('green');
+  });
+
+  it('yellow при 34..66', () => {
+    expect(ratingColor(34)).toBe('yellow');
+    expect(ratingColor(66)).toBe('yellow');
+  });
+
+  it('red при < 34', () => {
+    expect(ratingColor(33)).toBe('red');
+    expect(ratingColor(0)).toBe('red');
+  });
+});
+```
+
+Запусти, убедись, что падает.
+
+- [ ] **Step 3: Создать `src/lib/ratingColor.ts`**
+
+```typescript
+import type { RatingColor } from './ratingColor.type';
+
+export function ratingColor(effectiveRating: number): RatingColor {
+  if (effectiveRating >= 67) return 'green';
+  if (effectiveRating >= 34) return 'yellow';
+  return 'red';
+}
+```
+
+- [ ] **Step 4: Создать `src/lib/ratingDotClass.ts`**
+
+```typescript
+import type { RatingColor } from './ratingColor.type';
+
+export const RATING_DOT_CLASS: Record<RatingColor, string> = {
+  green: 'bg-status-mastered',
+  yellow: 'bg-status-learning',
+  red: 'bg-destructive',
+};
+```
+
+- [ ] **Step 5: Создать `src/lib/ratingTextClass.ts`**
+
+```typescript
+import type { RatingColor } from './ratingColor.type';
+
+export const RATING_TEXT_CLASS: Record<RatingColor, string> = {
+  green: 'text-status-mastered',
+  yellow: 'text-status-learning',
+  red: 'text-destructive',
+};
+```
+
+- [ ] **Step 6: Запустить тесты**
 
 ```bash
-npm install zustand
+npm run test -- src/lib/ratingColor.test.ts
+```
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add -A
+git commit -m "feat: add rating color thresholds and class maps"
+```
+
+---
+
+### Task 5: Разбор массового ввода — `lib/parseWordLines` (TDD)
+
+**Files:**
+- Create: `src/lib/parsedWordLine.type.ts`
+- Create: `src/lib/parseWordLines.ts`
+- Test: `src/lib/parseWordLines.test.ts`
+
+**Interfaces:**
+- Produces:
+  - `export interface ParsedWordLine { term: string; translation: string; }`
+  - `export function parseWordLines(text: string): { valid: ParsedWordLine[]; invalidLines: string[] }`
+
+- [ ] **Step 1: Создать `src/lib/parsedWordLine.type.ts`**
+
+```typescript
+export interface ParsedWordLine {
+  term: string;
+  translation: string;
+}
 ```
 
 - [ ] **Step 2: Написать падающие тесты**
 
-Создай `src/store/useUIStore.test.ts`:
+Создай `src/lib/parseWordLines.test.ts`:
 
 ```typescript
-import { beforeEach, describe, expect, it } from 'vitest';
-import { useUIStore } from './useUIStore';
-import type { Word } from '../db/db';
+import { describe, expect, it } from 'vitest';
+import { parseWordLines } from './parseWordLines';
 
-function word(id: number): Word {
-  return {
-    id,
-    term: `t${id}`,
-    translation: `p${id}`,
-    createdAt: 0,
-    easinessFactor: 2.5,
-    interval: 0,
-    repetitions: 0,
-    dueDate: 0,
-  };
-}
-
-describe('useUIStore', () => {
-  beforeEach(() => {
-    useUIStore.setState({ screen: 'home', session: null });
-    window.localStorage.clear();
+describe('parseWordLines', () => {
+  it('разбирает строки по дефису', () => {
+    const result = parseWordLines('hello - привет\ncat - кот');
+    expect(result.valid).toEqual([
+      { term: 'hello', translation: 'привет' },
+      { term: 'cat', translation: 'кот' },
+    ]);
+    expect(result.invalidLines).toHaveLength(0);
   });
 
-  it('setScreen меняет текущий экран', () => {
-    useUIStore.getState().setScreen('study');
-    expect(useUIStore.getState().screen).toBe('study');
+  it('поддерживает разные разделители: длинное/короткое тире, =, :, таб', () => {
+    const result = parseWordLines('a - b\nc – d\ne — f\ng=h\ni:j\nk\tl');
+    expect(result.valid).toEqual([
+      { term: 'a', translation: 'b' },
+      { term: 'c', translation: 'd' },
+      { term: 'e', translation: 'f' },
+      { term: 'g', translation: 'h' },
+      { term: 'i', translation: 'j' },
+      { term: 'k', translation: 'l' },
+    ]);
   });
 
-  it('toggleTheme переключает тему и сохраняет в localStorage', () => {
-    const before = useUIStore.getState().theme;
-    useUIStore.getState().toggleTheme();
-    const after = useUIStore.getState().theme;
-
-    expect(after).not.toBe(before);
-    expect(window.localStorage.getItem('theme')).toBe(after);
+  it('обрезает пробелы по краям слова и перевода', () => {
+    const result = parseWordLines('  hello   -   привет  ');
+    expect(result.valid).toEqual([{ term: 'hello', translation: 'привет' }]);
   });
 
-  it('startSession инициализирует сессию с нулевыми счётчиками', () => {
-    useUIStore.getState().startSession([word(1), word(2)]);
-    const session = useUIStore.getState().session;
-
-    expect(session?.queue).toHaveLength(2);
-    expect(session?.index).toBe(0);
-    expect(session?.correct).toBe(0);
+  it('использует первое вхождение разделителя, остальное уходит в перевод', () => {
+    const result = parseWordLines('well-known - хорошо известный');
+    expect(result.valid).toEqual([{ term: 'well', translation: 'known - хорошо известный' }]);
   });
 
-  it('recordAnswer увеличивает счётчик и индекс', () => {
-    useUIStore.getState().startSession([word(1), word(2)]);
-    useUIStore.getState().recordAnswer('correct');
-
-    const session = useUIStore.getState().session;
-    expect(session?.correct).toBe(1);
-    expect(session?.index).toBe(1);
+  it('игнорирует пустые строки', () => {
+    const result = parseWordLines('hello - привет\n\n\ncat - кот');
+    expect(result.valid).toHaveLength(2);
   });
 
-  it('endSession очищает сессию', () => {
-    useUIStore.getState().startSession([word(1)]);
-    useUIStore.getState().endSession();
-    expect(useUIStore.getState().session).toBeNull();
+  it('помечает строки без разделителя как невалидные', () => {
+    const result = parseWordLines('hello privet');
+    expect(result.valid).toHaveLength(0);
+    expect(result.invalidLines).toEqual(['hello privet']);
+  });
+
+  it('помечает строки с пустой частью (до или после разделителя) как невалидные', () => {
+    const result = parseWordLines('hello -\n- привет');
+    expect(result.valid).toHaveLength(0);
+    expect(result.invalidLines).toEqual(['hello -', '- привет']);
   });
 });
 ```
 
-- [ ] **Step 3: Запустить и убедиться, что тесты падают**
+Запусти и убедись, что падает.
 
-```bash
-npm run test -- src/store/useUIStore.test.ts
+- [ ] **Step 3: Создать `src/lib/parseWordLines.ts`**
+
+```typescript
+import type { ParsedWordLine } from './parsedWordLine.type';
+
+const DELIMITERS = ['-', '–', '—', '=', ':', '\t'];
+
+function splitLine(line: string): ParsedWordLine | null {
+  let delimiterIndex = -1;
+  let delimiterLength = 1;
+
+  for (const delimiter of DELIMITERS) {
+    const index = line.indexOf(delimiter);
+    if (index !== -1 && (delimiterIndex === -1 || index < delimiterIndex)) {
+      delimiterIndex = index;
+      delimiterLength = delimiter.length;
+    }
+  }
+
+  if (delimiterIndex === -1) return null;
+
+  const term = line.slice(0, delimiterIndex).trim();
+  const translation = line.slice(delimiterIndex + delimiterLength).trim();
+
+  if (!term || !translation) return null;
+
+  return { term, translation };
+}
+
+export function parseWordLines(text: string): { valid: ParsedWordLine[]; invalidLines: string[] } {
+  const valid: ParsedWordLine[] = [];
+  const invalidLines: string[] = [];
+
+  for (const rawLine of text.split('\n')) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const parsed = splitLine(line);
+    if (parsed) {
+      valid.push(parsed);
+    } else {
+      invalidLines.push(line);
+    }
+  }
+
+  return { valid, invalidLines };
+}
 ```
 
-Expected: FAIL — файла ещё нет.
+- [ ] **Step 4: Запустить тесты**
 
-- [ ] **Step 4: Реализовать `src/store/useUIStore.ts`**
+```bash
+npm run test -- src/lib/parseWordLines.test.ts
+```
+
+Expected: все проходят, включая тест на "well-known" (первый дефис внутри слова — ожидаемо режет неидеально, это документированное поведение, не баг).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add -A
+git commit -m "feat: implement bulk word-line parser"
+```
+
+---
+
+### Task 6: Стор — `useUIStore` (screen, theme, настройки N/M)
+
+**Files:**
+- Modify: `src/store/screen.type.ts`
+- Modify: `src/store/useUIStore.ts`
+- Modify: `src/store/useUIStore.test.ts`
+
+**Interfaces:**
+- Produces:
+  - `export type Screen = 'newWords' | 'review' | 'add' | 'words' | 'settings'`
+  - `useUIStore` со полями/методами: `screen`, `setScreen(screen)`, `theme`, `toggleTheme()`, `phaseARepeats`, `phaseBRepeats`, `setPhaseARepeats(n)`, `setPhaseBRepeats(n)`
+
+- [ ] **Step 1: Переписать `src/store/screen.type.ts`**
+
+```typescript
+export type Screen = 'newWords' | 'review' | 'add' | 'words' | 'settings';
+```
+
+- [ ] **Step 2: Переписать `src/store/useUIStore.ts`**
 
 ```typescript
 import { create } from 'zustand';
-import type { Word } from '../db/db';
-import type { MatchVerdict } from '../lib/fuzzyMatch';
+import type { Screen } from './screen.type';
+import type { Theme } from './theme.type';
 
-export type Screen = 'home' | 'add' | 'study' | 'words' | 'stats';
-export type Theme = 'light' | 'dark';
-
-export interface StudySessionState {
-  queue: Word[];
-  index: number;
-  correct: number;
-  almost: number;
-  wrong: number;
-}
+const DEFAULT_PHASE_REPEATS = 3;
 
 interface UIStore {
   screen: Screen;
@@ -1079,10 +756,11 @@ interface UIStore {
   theme: Theme;
   toggleTheme: () => void;
 
-  session: StudySessionState | null;
-  startSession: (queue: Word[]) => void;
-  recordAnswer: (verdict: MatchVerdict) => void;
-  endSession: () => void;
+  phaseARepeats: number;
+  setPhaseARepeats: (value: number) => void;
+
+  phaseBRepeats: number;
+  setPhaseBRepeats: (value: number) => void;
 }
 
 function readInitialTheme(): Theme {
@@ -1090,8 +768,15 @@ function readInitialTheme(): Theme {
   return window.localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
 }
 
+function readInitialNumber(key: string, fallback: number): number {
+  if (typeof window === 'undefined') return fallback;
+  const stored = window.localStorage.getItem(key);
+  const parsed = stored ? Number(stored) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 export const useUIStore = create<UIStore>((set) => ({
-  screen: 'home',
+  screen: 'newWords',
   setScreen: (screen) => set({ screen }),
 
   theme: readInitialTheme(),
@@ -1104,500 +789,905 @@ export const useUIStore = create<UIStore>((set) => ({
       return { theme: next };
     }),
 
-  session: null,
-  startSession: (queue) =>
-    set({ session: { queue, index: 0, correct: 0, almost: 0, wrong: 0 } }),
-  recordAnswer: (verdict) =>
-    set((state) => {
-      if (!state.session) return state;
-      const session = { ...state.session, [verdict]: state.session[verdict] + 1, index: state.session.index + 1 };
-      return { session };
-    }),
-  endSession: () => set({ session: null }),
+  phaseARepeats: readInitialNumber('phaseARepeats', DEFAULT_PHASE_REPEATS),
+  setPhaseARepeats: (value) => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('phaseARepeats', String(value));
+    }
+    set({ phaseARepeats: value });
+  },
+
+  phaseBRepeats: readInitialNumber('phaseBRepeats', DEFAULT_PHASE_REPEATS),
+  setPhaseBRepeats: (value) => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('phaseBRepeats', String(value));
+    }
+    set({ phaseBRepeats: value });
+  },
 }));
 ```
 
-- [ ] **Step 5: Запустить тесты и убедиться, что проходят**
+- [ ] **Step 3: Переписать `src/store/useUIStore.test.ts`**
+
+```typescript
+import { beforeEach, describe, expect, it } from 'vitest';
+import { useUIStore } from './useUIStore';
+
+describe('useUIStore', () => {
+  beforeEach(() => {
+    useUIStore.setState({ screen: 'newWords', theme: 'light', phaseARepeats: 3, phaseBRepeats: 3 });
+    window.localStorage.clear();
+  });
+
+  it('setScreen меняет текущий экран', () => {
+    useUIStore.getState().setScreen('review');
+    expect(useUIStore.getState().screen).toBe('review');
+  });
+
+  it('toggleTheme переключает тему и сохраняет в localStorage', () => {
+    const before = useUIStore.getState().theme;
+    useUIStore.getState().toggleTheme();
+    const after = useUIStore.getState().theme;
+
+    expect(after).not.toBe(before);
+    expect(window.localStorage.getItem('theme')).toBe(after);
+  });
+
+  it('setPhaseARepeats обновляет значение и сохраняет в localStorage', () => {
+    useUIStore.getState().setPhaseARepeats(5);
+    expect(useUIStore.getState().phaseARepeats).toBe(5);
+    expect(window.localStorage.getItem('phaseARepeats')).toBe('5');
+  });
+
+  it('setPhaseBRepeats обновляет значение и сохраняет в localStorage', () => {
+    useUIStore.getState().setPhaseBRepeats(7);
+    expect(useUIStore.getState().phaseBRepeats).toBe(7);
+    expect(window.localStorage.getItem('phaseBRepeats')).toBe('7');
+  });
+});
+```
+
+- [ ] **Step 4: Запустить тесты**
 
 ```bash
 npm run test -- src/store/useUIStore.test.ts
 ```
 
-Expected: PASS.
-
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add -A
-git commit -m "feat: add Zustand UI store for screens, theme and study session"
+git commit -m "feat: rework UI store for new screens and phase-repeat settings"
 ```
 
 ---
 
-### Task 9: Каркас приложения — навигация, тема, `App.tsx`
+### Task 7: `RecallCard` — общая карточка (Фаза B и Повторение)
 
 **Files:**
-- Create: `src/components/layout/NavBar.tsx`
-- Create: `src/components/layout/ThemeToggle.tsx`
-- Modify: `src/App.tsx`
-- Modify: `src/index.css` (тёмная тема через класс `.dark`)
+- Create: `src/features/study/RecallCard.tsx`
+- Test: `src/features/study/RecallCard.test.tsx`
 
 **Interfaces:**
-- Consumes: `useUIStore` из `src/store/useUIStore.ts`
-- Produces: `<NavBar />`, `<ThemeToggle />` — переиспользуются как есть, без пропсов (читают всё из стора).
+- Consumes: `matchAnswer`, `type MatchVerdict` из `@/lib/fuzzyMatch`; `speak`, `isSpeechSupported` из `@/lib/tts`
+- Produces: `export interface RecallCardProps { translation: string; expectedTerm: string; onAnswer: (verdict: MatchVerdict) => void; }`, `export function RecallCard(props: RecallCardProps)`
 
-Экраны `Dashboard`, `WordForm`, `WordList`, `StudySession`, `StatsPage` из следующих задач ещё не существуют — на этом шаге в `App.tsx` подключаем только заглушки, а реальные импорты добавляются по мере готовности задач 10–14 (просто раскомментировать/добавить импорт).
-
-- [ ] **Step 1: Установить Motion и canvas-confetti (нужны следующим задачам, ставим сейчас пакетом)**
-
-```bash
-npm install motion canvas-confetti
-npm install -D @types/canvas-confetti
-```
-
-- [ ] **Step 2: Создать `src/components/layout/NavBar.tsx`**
-
-```tsx
-import { useUIStore, type Screen } from '@/store/useUIStore';
-
-const ITEMS: { screen: Screen; label: string }[] = [
-  { screen: 'home', label: 'Главная' },
-  { screen: 'study', label: 'Учить' },
-  { screen: 'add', label: 'Добавить' },
-  { screen: 'words', label: 'Слова' },
-  { screen: 'stats', label: 'Статистика' },
-];
-
-export function NavBar() {
-  const screen = useUIStore((s) => s.screen);
-  const setScreen = useUIStore((s) => s.setScreen);
-
-  return (
-    <nav className="fixed inset-x-0 bottom-0 flex justify-around border-t bg-background p-2 text-sm">
-      {ITEMS.map((item) => (
-        <button
-          key={item.screen}
-          type="button"
-          onClick={() => setScreen(item.screen)}
-          className={
-            screen === item.screen
-              ? 'font-semibold text-primary'
-              : 'text-muted-foreground'
-          }
-        >
-          {item.label}
-        </button>
-      ))}
-    </nav>
-  );
-}
-```
-
-- [ ] **Step 3: Создать `src/components/layout/ThemeToggle.tsx`**
-
-```tsx
-import { useEffect } from 'react';
-import { useUIStore } from '@/store/useUIStore';
-
-export function ThemeToggle() {
-  const theme = useUIStore((s) => s.theme);
-  const toggleTheme = useUIStore((s) => s.toggleTheme);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-  }, [theme]);
-
-  return (
-    <button type="button" onClick={toggleTheme} aria-label="Переключить тему">
-      {theme === 'light' ? '🌙' : '☀️'}
-    </button>
-  );
-}
-```
-
-- [ ] **Step 4: Убедиться, что в `src/index.css` есть вариант тёмной темы**
-
-Открой `src/index.css`. Команда `shadcn init` из Task 1 обычно уже добавляет строку `@custom-variant dark (&:where(.dark, .dark *));` вместе с CSS-переменными темы. Если она уже есть — ничего не делай. Если её нет — добавь в конец файла:
-
-```css
-@custom-variant dark (&:where(.dark, .dark *));
-```
-
-Не добавляй эту строку второй раз, если она уже присутствует — Tailwind не должен получить два конфликтующих объявления `@custom-variant dark`.
-
-- [ ] **Step 5: Переписать `src/App.tsx`**
-
-```tsx
-import { NavBar } from '@/components/layout/NavBar';
-import { ThemeToggle } from '@/components/layout/ThemeToggle';
-import { useUIStore } from '@/store/useUIStore';
-
-function App() {
-  const screen = useUIStore((s) => s.screen);
-
-  return (
-    <div className="min-h-screen bg-background pb-16 text-foreground">
-      <header className="flex items-center justify-between p-4">
-        <h1 className="text-lg font-semibold">Мой словарь</h1>
-        <ThemeToggle />
-      </header>
-      <main className="mx-auto max-w-md p-4">
-        {screen === 'home' && <p>Главная (Task 13)</p>}
-        {screen === 'add' && <p>Добавить слово (Task 10)</p>}
-        {screen === 'words' && <p>Мои слова (Task 11)</p>}
-        {screen === 'study' && <p>Учить (Task 12)</p>}
-        {screen === 'stats' && <p>Статистика (Task 14)</p>}
-      </main>
-      <NavBar />
-    </div>
-  );
-}
-
-export default App;
-```
-
-- [ ] **Step 6: Проверить сборку**
-
-```bash
-npm run build
-```
-
-Expected: сборка проходит без ошибок.
-
-- [ ] **Step 7: Commit**
-
-```bash
-git add -A
-git commit -m "feat: add app shell with navigation and theme toggle"
-```
-
----
-
-### Task 10: Экран «Добавить слово» (`features/words/WordForm.tsx`)
-
-**Files:**
-- Create: `src/features/words/WordForm.tsx`
-- Test: `src/features/words/WordForm.test.tsx`
-- Modify: `src/App.tsx` (подключить `WordForm` на экране `add`)
-
-**Interfaces:**
-- Consumes: `db`, `createWord` из `src/db/db.ts`; `Word` из `src/db/db.ts`
-- Produces: `interface WordFormProps { mode: 'create' | 'edit'; word?: Word; onDone: () => void; }`, `export function WordForm(props: WordFormProps)` — используется в Task 11 (диалог редактирования) и в `App.tsx`.
+Карточка показывает **только перевод**, пользователь вводит слово. После проверки — фидбек (цвет по `MatchVerdict`, переиспользуя семантику `text-status-mastered`/`text-status-learning`/`text-destructive`, как в старом `Flashcard.tsx`) и кнопка «Далее», по нажатию которой вызывается `onAnswer(verdict)` — вся логика начисления рейтинга/фазы остаётся на стороне родителя (`NewWordsSession`/`ReviewSession`), `RecallCard` ничего не пишет в Dexie сам.
 
 - [ ] **Step 1: Написать падающий тест**
 
-Создай `src/features/words/WordForm.test.tsx`:
+Создай `src/features/study/RecallCard.test.tsx`:
+
+```tsx
+import { describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { RecallCard } from './RecallCard';
+
+describe('RecallCard', () => {
+  it('показывает перевод, принимает ввод слова и сообщает вердикт по кнопке Далее', async () => {
+    const onAnswer = vi.fn();
+    const user = userEvent.setup();
+    render(<RecallCard translation="привет" expectedTerm="hello" onAnswer={onAnswer} />);
+
+    expect(screen.getByText('привет')).toBeInTheDocument();
+    expect(screen.queryByText('hello')).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Слово'), 'hello');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+
+    expect(await screen.findByTestId('feedback')).toHaveTextContent('Верно!');
+
+    await user.click(screen.getByRole('button', { name: 'Далее' }));
+    expect(onAnswer).toHaveBeenCalledWith('correct');
+  });
+
+  it('при неверном ответе показывает правильное слово и сообщает вердикт wrong', async () => {
+    const onAnswer = vi.fn();
+    const user = userEvent.setup();
+    render(<RecallCard translation="кот" expectedTerm="cat" onAnswer={onAnswer} />);
+
+    await user.type(screen.getByLabelText('Слово'), 'dog');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+
+    expect(await screen.findByTestId('feedback')).toHaveTextContent('cat');
+
+    await user.click(screen.getByRole('button', { name: 'Далее' }));
+    expect(onAnswer).toHaveBeenCalledWith('wrong');
+  });
+});
+```
+
+Запусти и убедись, что падает (файла компонента ещё нет).
+
+- [ ] **Step 2: Реализовать `src/features/study/RecallCard.tsx`**
+
+```tsx
+import { useState } from 'react';
+import { motion } from 'motion/react';
+import { Volume2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { CARD_CLASS } from '@/lib/cardClass';
+import { matchAnswer, type MatchVerdict } from '@/lib/fuzzyMatch';
+import { speak, isSpeechSupported } from '@/lib/tts';
+
+export interface RecallCardProps {
+  translation: string;
+  expectedTerm: string;
+  onAnswer: (verdict: MatchVerdict) => void;
+}
+
+interface Feedback {
+  verdict: MatchVerdict;
+  correctAnswer: string;
+}
+
+const FEEDBACK_TEXT: Record<MatchVerdict, (correct: string) => string> = {
+  correct: () => 'Верно!',
+  almost: (correct) => `Почти! Правильное слово: ${correct}`,
+  wrong: (correct) => `Неверно. Правильное слово: ${correct}`,
+};
+
+const FEEDBACK_COLOR: Record<MatchVerdict, string> = {
+  correct: 'text-status-mastered',
+  almost: 'text-status-learning',
+  wrong: 'text-destructive',
+};
+
+export function RecallCard({ translation, expectedTerm, onAnswer }: RecallCardProps) {
+  const [input, setInput] = useState('');
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+
+  function handleCheck(event: React.FormEvent) {
+    event.preventDefault();
+    const verdict = matchAnswer(input, expectedTerm);
+    setFeedback({ verdict, correctAnswer: expectedTerm });
+  }
+
+  function handleNext() {
+    if (!feedback) return;
+    onAnswer(feedback.verdict);
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`${CARD_CLASS} flex flex-col gap-5 p-6`}
+    >
+      <div className="flex items-center justify-between gap-3 border-b border-dashed border-border pb-4">
+        <span className="font-mono text-2xl font-semibold tracking-tight">{translation}</span>
+        {isSpeechSupported() && (
+          <button
+            type="button"
+            aria-label="Озвучить"
+            onClick={() => speak(expectedTerm)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
+          >
+            <Volume2 className="h-[18px] w-[18px]" />
+          </button>
+        )}
+      </div>
+
+      {!feedback ? (
+        <form onSubmit={handleCheck} className="flex flex-col gap-3">
+          <Input aria-label="Слово" value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="font-mono" />
+          <Button type="submit">Проверить</Button>
+        </form>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <p data-testid="feedback" className={`text-sm font-medium ${FEEDBACK_COLOR[feedback.verdict]}`}>
+            {FEEDBACK_TEXT[feedback.verdict](feedback.correctAnswer)}
+          </p>
+          <Button type="button" onClick={handleNext}>
+            Далее
+          </Button>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+```
+
+- [ ] **Step 3: Запустить тесты**
+
+```bash
+npm run test -- src/features/study/RecallCard.test.tsx
+```
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add -A
+git commit -m "feat: add shared RecallCard (Phase B / Review interaction)"
+```
+
+---
+
+### Task 8: `RecognitionCard` — карточка Фазы A
+
+**Files:**
+- Create: `src/features/study/RecognitionCard.tsx`
+- Test: `src/features/study/RecognitionCard.test.tsx`
+
+**Interfaces:**
+- Consumes: `matchAnswer`, `type MatchVerdict` из `@/lib/fuzzyMatch`; `speak`, `isSpeechSupported` из `@/lib/tts`
+- Produces: `export interface RecognitionCardProps { term: string; translation: string; onAnswer: (verdict: MatchVerdict) => void; }`, `export function RecognitionCard(props: RecognitionCardProps)`
+
+Показывает слово **и** перевод одновременно (оба видны сразу), пользователь вводит слово — на узнавание/копирование написания, а не вспоминание.
+
+- [ ] **Step 1: Написать падающий тест**
+
+Создай `src/features/study/RecognitionCard.test.tsx`:
+
+```tsx
+import { describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { RecognitionCard } from './RecognitionCard';
+
+describe('RecognitionCard', () => {
+  it('показывает и слово, и перевод одновременно, принимает ввод слова', async () => {
+    const onAnswer = vi.fn();
+    const user = userEvent.setup();
+    render(<RecognitionCard term="hello" translation="привет" onAnswer={onAnswer} />);
+
+    expect(screen.getByText('hello')).toBeInTheDocument();
+    expect(screen.getByText('привет')).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Слово'), 'hello');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+
+    expect(await screen.findByTestId('feedback')).toHaveTextContent('Верно!');
+
+    await user.click(screen.getByRole('button', { name: 'Далее' }));
+    expect(onAnswer).toHaveBeenCalledWith('correct');
+  });
+});
+```
+
+Запусти и убедись, что падает.
+
+- [ ] **Step 2: Реализовать `src/features/study/RecognitionCard.tsx`**
+
+```tsx
+import { useState } from 'react';
+import { motion } from 'motion/react';
+import { Volume2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { CARD_CLASS } from '@/lib/cardClass';
+import { matchAnswer, type MatchVerdict } from '@/lib/fuzzyMatch';
+import { speak, isSpeechSupported } from '@/lib/tts';
+
+export interface RecognitionCardProps {
+  term: string;
+  translation: string;
+  onAnswer: (verdict: MatchVerdict) => void;
+}
+
+interface Feedback {
+  verdict: MatchVerdict;
+}
+
+const FEEDBACK_TEXT: Record<MatchVerdict, string> = {
+  correct: 'Верно!',
+  almost: 'Почти! Проверь написание ещё раз.',
+  wrong: 'Неверно. Посмотри на слово выше и попробуй снова.',
+};
+
+const FEEDBACK_COLOR: Record<MatchVerdict, string> = {
+  correct: 'text-status-mastered',
+  almost: 'text-status-learning',
+  wrong: 'text-destructive',
+};
+
+export function RecognitionCard({ term, translation, onAnswer }: RecognitionCardProps) {
+  const [input, setInput] = useState('');
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+
+  function handleCheck(event: React.FormEvent) {
+    event.preventDefault();
+    const verdict = matchAnswer(input, term);
+    setFeedback({ verdict });
+  }
+
+  function handleNext() {
+    if (!feedback) return;
+    onAnswer(feedback.verdict);
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`${CARD_CLASS} flex flex-col gap-5 p-6`}
+    >
+      <div className="flex items-center justify-between gap-3 border-b border-dashed border-border pb-4">
+        <div className="flex flex-col gap-1">
+          <span className="font-mono text-2xl font-semibold tracking-tight">{term}</span>
+          <span className="text-sm text-muted-foreground">{translation}</span>
+        </div>
+        {isSpeechSupported() && (
+          <button
+            type="button"
+            aria-label="Озвучить"
+            onClick={() => speak(term)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
+          >
+            <Volume2 className="h-[18px] w-[18px]" />
+          </button>
+        )}
+      </div>
+
+      {!feedback ? (
+        <form onSubmit={handleCheck} className="flex flex-col gap-3">
+          <Input aria-label="Слово" value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="font-mono" />
+          <Button type="submit">Проверить</Button>
+        </form>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <p data-testid="feedback" className={`text-sm font-medium ${FEEDBACK_COLOR[feedback.verdict]}`}>
+            {FEEDBACK_TEXT[feedback.verdict]}
+          </p>
+          <Button type="button" onClick={handleNext}>
+            Далее
+          </Button>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+```
+
+- [ ] **Step 3: Запустить тесты**
+
+```bash
+npm run test -- src/features/study/RecognitionCard.test.tsx
+```
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add -A
+git commit -m "feat: add RecognitionCard (Phase A interaction)"
+```
+
+---
+
+### Task 9: `NewWordsSession` — интерливинг-сессия новых слов
+
+**Files:**
+- Create: `src/features/newWords/NewWordsSummary.tsx`
+- Create: `src/features/newWords/NewWordsSession.tsx`
+- Test: `src/features/newWords/NewWordsSession.test.tsx`
+
+**Interfaces:**
+- Consumes: `db` из `@/db/db`; `type Word` из `@/db/word.type`; `RecognitionCard` из `@/features/study/RecognitionCard`; `RecallCard` из `@/features/study/RecallCard`; `useUIStore` (`phaseARepeats`, `phaseBRepeats`, `setScreen`) из `@/store/useUIStore`
+- Produces: `export function NewWordsSummary({ learnedCount, onFinish }: { learnedCount: number; onFinish: () => void })`, `export function NewWordsSession()`
+
+- [ ] **Step 1: Реализовать `src/features/newWords/NewWordsSummary.tsx`**
+
+```tsx
+import { useEffect } from 'react';
+import confetti from 'canvas-confetti';
+import { PartyPopper } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+
+const CONFETTI_COLORS = ['#3f7d70', '#c9a24a', '#f5f1e4', '#2f6b5e'];
+
+interface NewWordsSummaryProps {
+  learnedCount: number;
+  onFinish: () => void;
+}
+
+export function NewWordsSummary({ learnedCount, onFinish }: NewWordsSummaryProps) {
+  useEffect(() => {
+    void confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 }, colors: CONFETTI_COLORS });
+  }, []);
+
+  return (
+    <Card className="flex flex-col items-center gap-4 p-6 text-center">
+      <PartyPopper className="h-7 w-7 text-status-mastered" aria-hidden="true" />
+      <h2 className="text-lg font-semibold">Новые слова выучены</h2>
+      <p className="font-mono text-sm text-muted-foreground">Выучено слов: {learnedCount}</p>
+      <Button type="button" onClick={onFinish} className="w-full">
+        Готово
+      </Button>
+    </Card>
+  );
+}
+```
+
+- [ ] **Step 2: Реализовать `src/features/newWords/NewWordsSession.tsx`**
+
+```tsx
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { db } from '@/db/db';
+import type { Word } from '@/db/word.type';
+import type { MatchVerdict } from '@/lib/fuzzyMatch';
+import { useUIStore } from '@/store/useUIStore';
+import { RecognitionCard } from '@/features/study/RecognitionCard';
+import { RecallCard } from '@/features/study/RecallCard';
+import { NewWordsSummary } from './NewWordsSummary';
+
+function shuffle<T>(items: T[]): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+export function NewWordsSession() {
+  const [pool, setPool] = useState<Word[] | null>(null);
+  const [cursor, setCursor] = useState(0);
+  const [learnedCount, setLearnedCount] = useState(0);
+  const phaseARepeats = useUIStore((s) => s.phaseARepeats);
+  const phaseBRepeats = useUIStore((s) => s.phaseBRepeats);
+  const setScreen = useUIStore((s) => s.setScreen);
+
+  useEffect(() => {
+    let cancelled = false;
+    void db.words
+      .where('stage')
+      .equals('new')
+      .toArray()
+      .then((words) => {
+        if (!cancelled) setPool(shuffle(words));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function handleAnswer(word: Word, verdict: MatchVerdict) {
+    const wordId = word.id;
+    if (!pool || wordId == null) return;
+
+    const advances = verdict === 'correct' || verdict === 'almost';
+    const nextStreak = advances ? word.phaseStreak + 1 : 0;
+
+    let updates: Partial<Word>;
+    let graduated = false;
+
+    if (!advances) {
+      updates = { phaseStreak: 0 };
+    } else if (word.learningPhase === 'A' && nextStreak >= phaseARepeats) {
+      updates = { learningPhase: 'B', phaseStreak: 0 };
+    } else if (word.learningPhase === 'B' && nextStreak >= phaseBRepeats) {
+      updates = { stage: 'review', rating: 70, reviewStreak: 0, learningPhase: 'A', phaseStreak: 0 };
+      graduated = true;
+    } else {
+      updates = { phaseStreak: nextStreak };
+    }
+
+    await db.words.update(wordId, updates);
+
+    if (graduated) {
+      const remaining = pool.filter((w) => w.id !== wordId);
+      setPool(remaining);
+      setCursor((c) => (remaining.length > 0 ? c % remaining.length : 0));
+      setLearnedCount((n) => n + 1);
+    } else {
+      setPool(pool.map((w) => (w.id === wordId ? { ...w, ...updates } : w)));
+      setCursor((c) => (c + 1) % pool.length);
+    }
+  }
+
+  if (pool === null) {
+    return <p className="text-sm text-muted-foreground">Загрузка...</p>;
+  }
+
+  if (pool.length === 0) {
+    if (learnedCount > 0) {
+      return <NewWordsSummary learnedCount={learnedCount} onFinish={() => setScreen('review')} />;
+    }
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border p-8 text-center">
+        <p className="text-sm text-muted-foreground">Нет новых слов — добавьте немного!</p>
+        <Button type="button" onClick={() => setScreen('add')}>
+          Добавить
+        </Button>
+      </div>
+    );
+  }
+
+  const current = pool[cursor % pool.length];
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-right font-mono text-xs text-muted-foreground">Осталось слов: {pool.length}</p>
+      {current.learningPhase === 'A' ? (
+        <RecognitionCard
+          key={`${current.id}-A-${current.phaseStreak}`}
+          term={current.term}
+          translation={current.translation}
+          onAnswer={(verdict) => void handleAnswer(current, verdict)}
+        />
+      ) : (
+        <RecallCard
+          key={`${current.id}-B-${current.phaseStreak}`}
+          translation={current.translation}
+          expectedTerm={current.term}
+          onAnswer={(verdict) => void handleAnswer(current, verdict)}
+        />
+      )}
+    </div>
+  );
+}
+```
+
+- [ ] **Step 3: Написать тест на полный цикл (Фаза A → Фаза B → переход в Повторение)**
+
+Создай `src/features/newWords/NewWordsSession.test.tsx`:
 
 ```tsx
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { WordForm } from './WordForm';
+import { NewWordsSession } from './NewWordsSession';
 import { db } from '@/db/db';
+import { createWord } from '@/db/createWord';
+import { useUIStore } from '@/store/useUIStore';
 
-describe('WordForm', () => {
+describe('NewWordsSession', () => {
   beforeEach(async () => {
     await db.words.clear();
+    useUIStore.setState({ phaseARepeats: 1, phaseBRepeats: 1, screen: 'newWords' });
   });
 
-  it('создаёт слово и вызывает onDone', async () => {
-    const onDone = vi.fn();
+  it('показывает пустое состояние, если новых слов нет', async () => {
+    render(<NewWordsSession />);
+    expect(await screen.findByText('Нет новых слов — добавьте немного!')).toBeInTheDocument();
+  });
+
+  it('проводит слово через Фазу A и Фазу B (по 1 повтору) и переводит его в Повторение', async () => {
+    await db.words.add(createWord('hello', 'привет'));
     const user = userEvent.setup();
-    render(<WordForm mode="create" onDone={onDone} />);
+    render(<NewWordsSession />);
 
+    // Фаза A: видно и слово, и перевод
+    expect(await screen.findByText('hello')).toBeInTheDocument();
+    expect(screen.getByText('привет')).toBeInTheDocument();
     await user.type(screen.getByLabelText('Слово'), 'hello');
-    await user.type(screen.getByLabelText('Перевод'), 'привет');
-    await user.click(screen.getByRole('button', { name: 'Сохранить' }));
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+    await user.click(await screen.findByRole('button', { name: 'Далее' }));
 
-    await waitFor(async () => {
-      const words = await db.words.toArray();
-      expect(words).toHaveLength(1);
-      expect(words[0].term).toBe('hello');
-    });
-    expect(onDone).toHaveBeenCalledOnce();
+    // Фаза B: виден только перевод
+    expect(await screen.findByText('привет')).toBeInTheDocument();
+    expect(screen.queryByText('hello')).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText('Слово'), 'hello');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+    await user.click(await screen.findByRole('button', { name: 'Далее' }));
+
+    expect(await screen.findByText('Новые слова выучены')).toBeInTheDocument();
+    expect(screen.getByText(/Выучено слов: 1/)).toBeInTheDocument();
+
+    const stored = await db.words.toArray();
+    expect(stored[0].stage).toBe('review');
+    expect(stored[0].rating).toBe(70);
   });
 
-  it('показывает предупреждение о дубликате, но не блокирует сохранение', async () => {
+  it('ошибка в фазе сбрасывает phaseStreak, но не переводит слово дальше', async () => {
+    await db.words.add(createWord('cat', 'кот'));
+    const user = userEvent.setup();
+    render(<NewWordsSession />);
+
+    await screen.findByText('cat');
+    await user.type(screen.getByLabelText('Слово'), 'dog');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+    await user.click(await screen.findByRole('button', { name: 'Далее' }));
+
+    // Слово остаётся в пуле (не выучено), фаза всё ещё A
+    expect(await screen.findByText('cat')).toBeInTheDocument();
+    const stored = await db.words.toArray();
+    expect(stored[0].learningPhase).toBe('A');
+    expect(stored[0].phaseStreak).toBe(0);
+  });
+});
+```
+
+- [ ] **Step 4: Запустить тесты**
+
+```bash
+npm run test -- src/features/newWords/NewWordsSession.test.tsx
+```
+
+Expected: PASS. Не забудь замокать confetti в тесте, если тест дойдёт до `NewWordsSummary` — добавь в начало файла:
+
+```typescript
+vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
+```
+
+(добавь этот вызов в `NewWordsSession.test.tsx` до остальных импортов, сразу после `import { ... } from 'vitest'`).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add -A
+git commit -m "feat: add interleaved new-words learning session"
+```
+
+---
+
+### Task 10: `ReviewSession` — сессия повторения по рейтингу
+
+**Files:**
+- Create: `src/features/review/ReviewSummary.tsx`
+- Create: `src/features/review/ReviewSession.tsx`
+- Test: `src/features/review/ReviewSession.test.tsx`
+
+**Interfaces:**
+- Consumes: `db` из `@/db/db`; `type Word` из `@/db/word.type`; `effectiveRating` из `@/lib/effectiveRating`; `applyReviewOutcome` из `@/lib/applyReviewOutcome`; `RecallCard` из `@/features/study/RecallCard`; `useUIStore` (`setScreen`) из `@/store/useUIStore`
+- Produces: `export function ReviewSummary({ correct, almost, wrong, onFinish }: {...})`, `export function ReviewSession()`
+
+- [ ] **Step 1: Реализовать `src/features/review/ReviewSummary.tsx`**
+
+```tsx
+import { useEffect } from 'react';
+import confetti from 'canvas-confetti';
+import { PartyPopper } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+
+const CONFETTI_COLORS = ['#3f7d70', '#c9a24a', '#f5f1e4', '#2f6b5e'];
+
+interface ReviewSummaryProps {
+  correct: number;
+  almost: number;
+  wrong: number;
+  onFinish: () => void;
+}
+
+export function ReviewSummary({ correct, almost, wrong, onFinish }: ReviewSummaryProps) {
+  useEffect(() => {
+    void confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 }, colors: CONFETTI_COLORS });
+  }, []);
+
+  return (
+    <Card className="flex flex-col items-center gap-4 p-6 text-center">
+      <PartyPopper className="h-7 w-7 text-status-mastered" aria-hidden="true" />
+      <h2 className="text-lg font-semibold">Повторение завершено</h2>
+      <div className="grid w-full grid-cols-3 gap-2 text-sm">
+        <div className="flex flex-col items-center gap-1.5 rounded-md bg-secondary py-3">
+          <span className="h-2 w-2 rounded-full bg-status-mastered" aria-hidden="true" />
+          <p className="font-mono font-semibold">Верно: {correct}</p>
+        </div>
+        <div className="flex flex-col items-center gap-1.5 rounded-md bg-secondary py-3">
+          <span className="h-2 w-2 rounded-full bg-status-learning" aria-hidden="true" />
+          <p className="font-mono font-semibold">Почти: {almost}</p>
+        </div>
+        <div className="flex flex-col items-center gap-1.5 rounded-md bg-secondary py-3">
+          <span className="h-2 w-2 rounded-full bg-destructive" aria-hidden="true" />
+          <p className="font-mono font-semibold">Неверно: {wrong}</p>
+        </div>
+      </div>
+      <Button type="button" onClick={onFinish} className="w-full">
+        На главную
+      </Button>
+    </Card>
+  );
+}
+```
+
+- [ ] **Step 2: Реализовать `src/features/review/ReviewSession.tsx`**
+
+```tsx
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { db } from '@/db/db';
+import type { Word } from '@/db/word.type';
+import { effectiveRating } from '@/lib/effectiveRating';
+import { applyReviewOutcome } from '@/lib/applyReviewOutcome';
+import type { MatchVerdict } from '@/lib/fuzzyMatch';
+import { useUIStore } from '@/store/useUIStore';
+import { RecallCard } from '@/features/study/RecallCard';
+import { ReviewSummary } from './ReviewSummary';
+
+interface Counters {
+  correct: number;
+  almost: number;
+  wrong: number;
+}
+
+export function ReviewSession() {
+  const [queue, setQueue] = useState<Word[] | null>(null);
+  const [index, setIndex] = useState(0);
+  const [counters, setCounters] = useState<Counters>({ correct: 0, almost: 0, wrong: 0 });
+  const setScreen = useUIStore((s) => s.setScreen);
+
+  useEffect(() => {
+    let cancelled = false;
+    void db.words
+      .where('stage')
+      .equals('review')
+      .toArray()
+      .then((words) => {
+        if (cancelled) return;
+        const now = Date.now();
+        const sorted = [...words].sort(
+          (a, b) => effectiveRating(a, now) - effectiveRating(b, now),
+        );
+        setQueue(sorted);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function handleAnswer(word: Word, verdict: MatchVerdict) {
+    const wordId = word.id;
+    if (wordId != null) {
+      const next = applyReviewOutcome(word, verdict, Date.now());
+      await db.words.update(wordId, next);
+    }
+    setCounters((c) => ({ ...c, [verdict]: c[verdict] + 1 }));
+    setIndex((i) => i + 1);
+  }
+
+  if (queue === null) {
+    return <p className="text-sm text-muted-foreground">Загрузка...</p>;
+  }
+
+  if (queue.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border p-8 text-center">
+        <p className="text-sm text-muted-foreground">Пока нечего повторять — сначала выучите новые слова.</p>
+        <Button type="button" onClick={() => setScreen('newWords')}>
+          Новые слова
+        </Button>
+      </div>
+    );
+  }
+
+  if (index >= queue.length) {
+    return (
+      <ReviewSummary
+        correct={counters.correct}
+        almost={counters.almost}
+        wrong={counters.wrong}
+        onFinish={() => setScreen('newWords')}
+      />
+    );
+  }
+
+  const current = queue[index];
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-right font-mono text-xs text-muted-foreground">
+        {index + 1} из {queue.length}
+      </p>
+      <RecallCard
+        key={current.id}
+        translation={current.translation}
+        expectedTerm={current.term}
+        onAnswer={(verdict) => void handleAnswer(current, verdict)}
+      />
+    </div>
+  );
+}
+```
+
+- [ ] **Step 3: Написать тест на прохождение одного слова**
+
+Создай `src/features/review/ReviewSession.test.tsx`:
+
+```tsx
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { ReviewSession } from './ReviewSession';
+import { db } from '@/db/db';
+import { useUIStore } from '@/store/useUIStore';
+
+vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
+
+describe('ReviewSession', () => {
+  beforeEach(async () => {
+    await db.words.clear();
+    useUIStore.setState({ screen: 'review' });
+  });
+
+  it('показывает пустое состояние, если нечего повторять', async () => {
+    render(<ReviewSession />);
+    expect(await screen.findByText(/нечего повторять/i)).toBeInTheDocument();
+  });
+
+  it('проходит одно слово: перевод показан, слово скрыто, верный ответ обновляет рейтинг', async () => {
     await db.words.add({
       term: 'hello',
       translation: 'привет',
       createdAt: 0,
-      easinessFactor: 2.5,
-      interval: 0,
-      repetitions: 0,
-      dueDate: 0,
+      stage: 'review',
+      learningPhase: 'B',
+      phaseStreak: 0,
+      rating: 70,
+      reviewStreak: 0,
     });
 
-    const onDone = vi.fn();
     const user = userEvent.setup();
-    render(<WordForm mode="create" onDone={onDone} />);
+    render(<ReviewSession />);
+
+    expect(await screen.findByText('привет')).toBeInTheDocument();
+    expect(screen.queryByText('hello')).not.toBeInTheDocument();
 
     await user.type(screen.getByLabelText('Слово'), 'hello');
-    await user.type(screen.getByLabelText('Перевод'), 'приветствие');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+    expect(await screen.findByTestId('feedback')).toHaveTextContent('Верно!');
+    await user.click(screen.getByRole('button', { name: 'Далее' }));
 
-    expect(await screen.findByText(/уже есть в словаре/i)).toBeInTheDocument();
+    expect(await screen.findByText('Повторение завершено')).toBeInTheDocument();
+    expect(screen.getByText('Верно: 1')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Сохранить' }));
-    await waitFor(async () => {
-      expect(await db.words.count()).toBe(2);
-    });
-  });
-
-  it('в режиме edit обновляет существующее слово', async () => {
-    const id = await db.words.add({
-      term: 'cat',
-      translation: 'кот',
-      createdAt: 0,
-      easinessFactor: 2.5,
-      interval: 0,
-      repetitions: 0,
-      dueDate: 0,
-    });
-    const existing = (await db.words.get(id))!;
-
-    const onDone = vi.fn();
-    const user = userEvent.setup();
-    render(<WordForm mode="edit" word={existing} onDone={onDone} />);
-
-    const translationInput = screen.getByLabelText('Перевод');
-    await user.clear(translationInput);
-    await user.type(translationInput, 'котик');
-    await user.click(screen.getByRole('button', { name: 'Сохранить' }));
-
-    await waitFor(async () => {
-      const updated = await db.words.get(id);
-      expect(updated?.translation).toBe('котик');
-    });
+    const stored = await db.words.toArray();
+    expect(stored[0].rating).toBe(85); // 70 + 15
+    expect(stored[0].reviewStreak).toBe(1);
   });
 });
 ```
 
-- [ ] **Step 2: Запустить и убедиться, что тест падает**
+- [ ] **Step 4: Запустить тесты**
 
 ```bash
-npm run test -- src/features/words/WordForm.test.tsx
+npm run test -- src/features/review/ReviewSession.test.tsx
 ```
 
-Expected: FAIL — файла ещё нет.
-
-- [ ] **Step 3: Реализовать `src/features/words/WordForm.tsx`**
-
-```tsx
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { createWord, db, type Word } from '@/db/db';
-
-export interface WordFormProps {
-  mode: 'create' | 'edit';
-  word?: Word;
-  onDone: () => void;
-}
-
-export function WordForm({ mode, word, onDone }: WordFormProps) {
-  const [term, setTerm] = useState(word?.term ?? '');
-  const [translation, setTranslation] = useState(word?.translation ?? '');
-  const [category, setCategory] = useState(word?.category ?? '');
-  const [duplicate, setDuplicate] = useState(false);
-
-  async function checkDuplicate(value: string) {
-    if (mode === 'edit' || value.trim() === '') {
-      setDuplicate(false);
-      return;
-    }
-    const count = await db.words.where('term').equalsIgnoreCase(value.trim()).count();
-    setDuplicate(count > 0);
-  }
-
-  async function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
-
-    if (mode === 'edit' && word?.id != null) {
-      await db.words.update(word.id, {
-        term: term.trim(),
-        translation: translation.trim(),
-        category: category.trim() || undefined,
-      });
-    } else {
-      await db.words.add(createWord(term.trim(), translation.trim(), category.trim() || undefined));
-    }
-
-    onDone();
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-      <label className="flex flex-col gap-1 text-sm">
-        Слово
-        <Input
-          aria-label="Слово"
-          value={term}
-          onChange={(e) => {
-            setTerm(e.target.value);
-            void checkDuplicate(e.target.value);
-          }}
-          required
-        />
-      </label>
-
-      {duplicate && (
-        <p className="text-sm text-amber-600">Такое слово уже есть в словаре — сохранить второй раз?</p>
-      )}
-
-      <label className="flex flex-col gap-1 text-sm">
-        Перевод
-        <Input
-          aria-label="Перевод"
-          value={translation}
-          onChange={(e) => setTranslation(e.target.value)}
-          required
-        />
-      </label>
-
-      <label className="flex flex-col gap-1 text-sm">
-        Категория (необязательно)
-        <Input
-          aria-label="Категория"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-        />
-      </label>
-
-      <Button type="submit">Сохранить</Button>
-    </form>
-  );
-}
-```
-
-- [ ] **Step 4: Запустить тесты и убедиться, что проходят**
-
-```bash
-npm run test -- src/features/words/WordForm.test.tsx
-```
-
-Expected: PASS.
-
-- [ ] **Step 5: Подключить `WordForm` в `App.tsx`**
-
-В `src/App.tsx` добавь импорт `import { WordForm } from '@/features/words/WordForm';` и `import { useUIStore } from '@/store/useUIStore';` (если ещё не импортирован), замени строку экрана `add`:
-
-```tsx
-{screen === 'add' && (
-  <WordForm mode="create" onDone={() => useUIStore.getState().setScreen('words')} />
-)}
-```
-
-- [ ] **Step 6: Проверить сборку**
-
-```bash
-npm run build
-```
-
-Expected: без ошибок.
-
-- [ ] **Step 7: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add -A
-git commit -m "feat: add word creation/edit form"
+git commit -m "feat: add rating-ordered review session"
 ```
 
 ---
 
-### Task 11: Экран «Мои слова» (`features/words/WordList.tsx`, `WordItem.tsx`)
+### Task 11: `WordItem`/`WordList` — адаптация под stage/rating
 
 **Files:**
-- Create: `src/features/words/WordItem.tsx`
-- Create: `src/features/words/WordList.tsx`
-- Test: `src/features/words/WordList.test.tsx`
-- Modify: `src/App.tsx` (подключить `WordList` на экране `words`)
+- Modify: `src/features/words/WordItem.tsx`
+- Modify: `src/features/words/WordList.tsx`
+- Modify: `src/features/words/WordList.test.tsx`
 
 **Interfaces:**
-- Consumes: `db`, `Word` из `src/db/db.ts`; `WordForm` из `src/features/words/WordForm.tsx`; `Dialog*` из `@/components/ui/dialog`
-- Produces: `export function WordList()`, `export function WordItem({ word, onEdit, onDelete }: { word: Word; onEdit: () => void; onDelete: () => void })`
+- Consumes: `effectiveRating` из `@/lib/effectiveRating`; `ratingColor` из `@/lib/ratingColor`; `RATING_DOT_CLASS` из `@/lib/ratingDotClass`; `RATING_TEXT_CLASS` из `@/lib/ratingTextClass`; `type Word` из `@/db/word.type`
 
-- [ ] **Step 1: Написать падающий тест**
-
-Создай `src/features/words/WordList.test.tsx`:
-
-```tsx
-import { beforeEach, describe, expect, it } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { WordList } from './WordList';
-import { db } from '@/db/db';
-
-function baseWord(overrides: Partial<Parameters<typeof db.words.add>[0]>) {
-  return {
-    term: 'hello',
-    translation: 'привет',
-    createdAt: 0,
-    easinessFactor: 2.5,
-    interval: 0,
-    repetitions: 0,
-    dueDate: 0,
-    ...overrides,
-  };
-}
-
-describe('WordList', () => {
-  beforeEach(async () => {
-    await db.words.clear();
-  });
-
-  it('показывает список сохранённых слов', async () => {
-    await db.words.add(baseWord({ term: 'hello', translation: 'привет' }));
-    await db.words.add(baseWord({ term: 'cat', translation: 'кот' }));
-
-    render(<WordList />);
-
-    expect(await screen.findByText('hello')).toBeInTheDocument();
-    expect(await screen.findByText('cat')).toBeInTheDocument();
-  });
-
-  it('фильтрует по тексту поиска', async () => {
-    await db.words.add(baseWord({ term: 'hello', translation: 'привет' }));
-    await db.words.add(baseWord({ term: 'cat', translation: 'кот' }));
-
-    const user = userEvent.setup();
-    render(<WordList />);
-    await screen.findByText('hello');
-
-    await user.type(screen.getByPlaceholderText('Поиск...'), 'cat');
-
-    expect(screen.getByText('cat')).toBeInTheDocument();
-    expect(screen.queryByText('hello')).not.toBeInTheDocument();
-  });
-
-  it('удаляет слово по кнопке', async () => {
-    await db.words.add(baseWord({ term: 'hello', translation: 'привет' }));
-
-    const user = userEvent.setup();
-    render(<WordList />);
-    await screen.findByText('hello');
-
-    await user.click(screen.getByRole('button', { name: 'Удалить' }));
-
-    await waitFor(async () => {
-      expect(await db.words.count()).toBe(0);
-    });
-  });
-});
-```
-
-- [ ] **Step 2: Запустить и убедиться, что тест падает**
-
-```bash
-npm run test -- src/features/words/WordList.test.tsx
-```
-
-Expected: FAIL — файлов ещё нет.
-
-- [ ] **Step 3: Реализовать `src/features/words/WordItem.tsx`**
+- [ ] **Step 1: Переписать `src/features/words/WordItem.tsx`**
 
 ```tsx
 import { Button } from '@/components/ui/button';
-import type { Word } from '@/db/db';
+import { CARD_CLASS } from '@/lib/cardClass';
+import { cn } from '@/lib/utils';
+import type { Word } from '@/db/word.type';
+import { effectiveRating } from '@/lib/effectiveRating';
+import { ratingColor } from '@/lib/ratingColor';
+import { RATING_DOT_CLASS } from '@/lib/ratingDotClass';
+import { RATING_TEXT_CLASS } from '@/lib/ratingTextClass';
 
 interface WordItemProps {
   word: Word;
@@ -1606,11 +1696,33 @@ interface WordItemProps {
 }
 
 export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
+  const badge =
+    word.stage === 'new' ? (
+      <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground">
+        Новое · Фаза {word.learningPhase}
+      </span>
+    ) : (
+      (() => {
+        const rating = effectiveRating(word, Date.now());
+        const color = ratingColor(rating);
+        return (
+          <span className="flex items-center gap-1.5 text-[11px]">
+            <span className={cn('h-2 w-2 rounded-full', RATING_DOT_CLASS[color])} aria-hidden="true" />
+            <span className="sr-only">Рейтинг</span>
+            <span className={cn('font-mono font-medium', RATING_TEXT_CLASS[color])}>{rating}</span>
+          </span>
+        );
+      })()
+    );
+
   return (
-    <li className="flex items-center justify-between rounded-md border p-3">
-      <div>
-        <p className="font-medium">{word.term}</p>
-        <p className="text-sm text-muted-foreground">{word.translation}</p>
+    <li className={cn(CARD_CLASS, 'flex items-center justify-between p-3')}>
+      <div className="flex items-center gap-3">
+        {badge}
+        <div>
+          <p className="font-mono font-medium">{word.term}</p>
+          <p className="text-sm text-muted-foreground">{word.translation}</p>
+        </div>
       </div>
       <div className="flex gap-2">
         <Button type="button" variant="outline" size="sm" onClick={onEdit}>
@@ -1625,45 +1737,57 @@ export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
 }
 ```
 
-- [ ] **Step 4: Реализовать `src/features/words/WordList.tsx`**
+- [ ] **Step 2: Переписать `src/features/words/WordList.tsx`**
 
 ```tsx
 import { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { db, type Word } from '@/db/db';
+import { db } from '@/db/db';
+import type { Word } from '@/db/word.type';
 import { WordForm } from './WordForm';
 import { WordItem } from './WordItem';
 
 export function WordList() {
-  const words = useLiveQuery(() => db.words.orderBy('term').toArray(), []) ?? [];
+  const words = useLiveQuery(() => db.words.toArray(), []);
   const [search, setSearch] = useState('');
   const [editingWord, setEditingWord] = useState<Word | null>(null);
 
+  const sorted = useMemo(
+    () => [...(words ?? [])].sort((a, b) => a.term.localeCompare(b.term)),
+    [words],
+  );
+
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return words;
-    return words.filter(
+    if (!query) return sorted;
+    return sorted.filter(
       (w) => w.term.toLowerCase().includes(query) || w.translation.toLowerCase().includes(query),
     );
-  }, [words, search]);
+  }, [sorted, search]);
 
   async function handleDelete(id?: number) {
     if (id == null) return;
     await db.words.delete(id);
   }
 
+  if (!words) {
+    return <p className="text-sm text-muted-foreground">Загрузка...</p>;
+  }
+
   return (
     <div className="flex flex-col gap-3">
-      <Input
-        placeholder="Поиск..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+        <Input placeholder="Поиск..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
+      </div>
 
       {filtered.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Слов пока нет.</p>
+        <p className="text-sm text-muted-foreground">
+          {words.length === 0 ? 'Слов пока нет.' : 'Ничего не найдено.'}
+        </p>
       ) : (
         <ul className="flex flex-col gap-2">
           {filtered.map((word) => (
@@ -1690,643 +1814,545 @@ export function WordList() {
 }
 ```
 
-- [ ] **Step 5: Запустить тесты и убедиться, что проходят**
+Обрати внимание: единственное отличие от текущей версии — убран легенд-блок статусов (new/learning/mastered), потому что новая индикация (бейдж «Новое·Фаза» либо цветная точка+число) уже самообъясняющая. `WordForm.tsx` не меняется вообще.
+
+- [ ] **Step 3: Обновить `src/features/words/WordList.test.tsx`**
+
+Замени фикстуры слов на новые обязательные поля (`stage`, `learningPhase`, `phaseStreak`, `rating`, `reviewStreak` вместо старых SM-2 полей). Открой текущий файл, найди функцию `baseWord`, замени её тело на:
+
+```typescript
+function baseWord(overrides: Partial<Parameters<typeof db.words.add>[0]>) {
+  return {
+    term: 'hello',
+    translation: 'привет',
+    createdAt: 0,
+    stage: 'new' as const,
+    learningPhase: 'A' as const,
+    phaseStreak: 0,
+    rating: 0,
+    reviewStreak: 0,
+    ...overrides,
+  };
+}
+```
+
+Остальные тесты в файле (список/поиск/удаление) не меняются — они не завязаны на конкретные поля SRS.
+
+- [ ] **Step 4: Запустить тесты**
 
 ```bash
 npm run test -- src/features/words/WordList.test.tsx
 ```
 
-Expected: PASS.
-
-- [ ] **Step 6: Подключить `WordList` в `App.tsx`**
-
-Добавь `import { WordList } from '@/features/words/WordList';`, замени строку экрана `words`:
-
-```tsx
-{screen === 'words' && <WordList />}
-```
-
-- [ ] **Step 7: Проверить сборку и полный прогон тестов**
-
-```bash
-npm run build
-npm run test
-```
-
-Expected: сборка и все тесты проходят.
-
-- [ ] **Step 8: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add -A
-git commit -m "feat: add word list screen with search, edit and delete"
+git commit -m "feat: adapt word list/item to stage and rating display"
 ```
 
 ---
 
-### Task 12: Экран «Учить» (`features/study/*`)
+### Task 12: Массовое добавление — `BulkAddForm` + `AddWordPage`
 
 **Files:**
-- Create: `src/features/study/Flashcard.tsx`
-- Create: `src/features/study/SessionSummary.tsx`
-- Create: `src/features/study/StudySession.tsx`
-- Test: `src/features/study/StudySession.test.tsx`
-- Modify: `src/App.tsx` (подключить `StudySession` на экране `study`)
+- Create: `src/features/words/BulkAddForm.tsx`
+- Create: `src/features/words/AddWordPage.tsx`
+- Test: `src/features/words/BulkAddForm.test.tsx`
 
 **Interfaces:**
-- Consumes: `db`, `Word` из `src/db/db.ts`; `nextSrsState`, `selectDueWords`, `DAY_MS` из `src/lib/srs.ts`; `matchAnswer` из `src/lib/fuzzyMatch.ts`; `speak` из `src/lib/tts.ts`; `useUIStore`, `StudySessionState` из `src/store/useUIStore.ts`
-- Produces: `export function Flashcard({ word }: { word: Word })`, `export function SessionSummary({ session, onFinish }: { session: StudySessionState; onFinish: () => void })`, `export function StudySession()`
+- Consumes: `parseWordLines` из `@/lib/parseWordLines`; `createWord`, `db` из `@/db/db`, `@/db/createWord`; `WordForm` из `./WordForm`
+- Produces: `export function BulkAddForm({ onDone }: { onDone: () => void })`, `export function AddWordPage()`
 
-- [ ] **Step 1: Реализовать `src/features/study/Flashcard.tsx`**
+- [ ] **Step 1: Написать падающий тест для `BulkAddForm`**
+
+Создай `src/features/words/BulkAddForm.test.tsx`:
 
 ```tsx
-import { useState } from 'react';
-import { motion } from 'motion/react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { db, type Word } from '@/db/db';
-import { DAY_MS, nextSrsState } from '@/lib/srs';
-import { matchAnswer, type MatchVerdict } from '@/lib/fuzzyMatch';
-import { speak, isSpeechSupported } from '@/lib/tts';
-import { useUIStore } from '@/store/useUIStore';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { BulkAddForm } from './BulkAddForm';
+import { db } from '@/db/db';
 
-interface FlashcardProps {
-  word: Word;
-}
+describe('BulkAddForm', () => {
+  beforeEach(async () => {
+    await db.words.clear();
+  });
 
-interface Feedback {
-  verdict: MatchVerdict;
-  correctAnswer: string;
-}
+  it('разбирает строки, показывает превью и сохраняет все валидные пары', async () => {
+    const onDone = vi.fn();
+    const user = userEvent.setup();
+    render(<BulkAddForm onDone={onDone} />);
 
-const FEEDBACK_TEXT: Record<MatchVerdict, (correct: string) => string> = {
-  correct: () => 'Верно!',
-  almost: (correct) => `Почти! Правильный ответ: ${correct}`,
-  wrong: (correct) => `Неверно. Правильный ответ: ${correct}`,
-};
+    await user.type(
+      screen.getByLabelText('Список слов'),
+      'hello - привет{Enter}cat - кот{Enter}bad line without delimiter',
+    );
 
-export function Flashcard({ word }: FlashcardProps) {
-  const [input, setInput] = useState('');
-  const [feedback, setFeedback] = useState<Feedback | null>(null);
-  const recordAnswer = useUIStore((s) => s.recordAnswer);
+    expect(await screen.findByText('hello')).toBeInTheDocument();
+    expect(screen.getByText('привет')).toBeInTheDocument();
+    expect(screen.getByText('cat')).toBeInTheDocument();
+    expect(screen.getByText(/bad line without delimiter/)).toBeInTheDocument();
 
-  async function handleCheck(event: React.FormEvent) {
-    event.preventDefault();
+    await user.click(screen.getByRole('button', { name: 'Сохранить всё' }));
 
-    const verdict = matchAnswer(input, word.translation);
-    const quality = verdict === 'correct' ? 5 : verdict === 'almost' ? 4 : 2;
-    const next = nextSrsState(word, quality);
-    const now = Date.now();
+    const words = await db.words.toArray();
+    expect(words).toHaveLength(2);
+    expect(words.map((w) => w.term).sort()).toEqual(['cat', 'hello']);
+    expect(onDone).toHaveBeenCalledOnce();
+  });
 
-    if (word.id != null) {
-      await db.words.update(word.id, {
-        ...next,
-        dueDate: now + next.interval * DAY_MS,
-        lastReviewedAt: now,
-      });
-      await db.reviews.add({ wordId: word.id, reviewedAt: now, correct: verdict !== 'wrong' });
-    }
+  it('кнопка сохранения отключена, если нет ни одной валидной пары', async () => {
+    const user = userEvent.setup();
+    render(<BulkAddForm onDone={vi.fn()} />);
 
-    setFeedback({ verdict, correctAnswer: word.translation });
-  }
+    await user.type(screen.getByLabelText('Список слов'), 'нет разделителя вообще');
 
-  function handleNext() {
-    if (!feedback) return;
-    recordAnswer(feedback.verdict);
-    setInput('');
-    setFeedback(null);
-  }
-
-  return (
-    <motion.div
-      key={word.id}
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-4 rounded-lg border p-6"
-    >
-      <div className="flex items-center justify-between">
-        <span className="text-2xl font-semibold">{word.term}</span>
-        {isSpeechSupported() && (
-          <button type="button" aria-label="Озвучить" onClick={() => speak(word.term)}>
-            🔊
-          </button>
-        )}
-      </div>
-
-      {!feedback ? (
-        <form onSubmit={handleCheck} className="flex flex-col gap-3">
-          <Input
-            aria-label="Перевод"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            autoFocus
-          />
-          <Button type="submit">Проверить</Button>
-        </form>
-      ) : (
-        <div className="flex flex-col gap-3">
-          <p
-            data-testid="feedback"
-            className={
-              feedback.verdict === 'correct'
-                ? 'text-green-600'
-                : feedback.verdict === 'almost'
-                  ? 'text-amber-600'
-                  : 'text-red-600'
-            }
-          >
-            {FEEDBACK_TEXT[feedback.verdict](feedback.correctAnswer)}
-          </p>
-          <Button type="button" onClick={handleNext}>
-            Далее
-          </Button>
-        </div>
-      )}
-    </motion.div>
-  );
-}
+    expect(await screen.findByRole('button', { name: 'Сохранить всё' })).toBeDisabled();
+  });
+});
 ```
 
-- [ ] **Step 2: Реализовать `src/features/study/SessionSummary.tsx`**
+Запусти и убедись, что падает.
+
+- [ ] **Step 2: Реализовать `src/features/words/BulkAddForm.tsx`**
 
 ```tsx
-import { useEffect } from 'react';
-import confetti from 'canvas-confetti';
+import { useMemo, useState } from 'react';
+import { TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { StudySessionState } from '@/store/useUIStore';
+import { db } from '@/db/db';
+import { createWord } from '@/db/createWord';
+import { parseWordLines } from '@/lib/parseWordLines';
 
-interface SessionSummaryProps {
-  session: StudySessionState;
-  onFinish: () => void;
+interface BulkAddFormProps {
+  onDone: () => void;
 }
 
-export function SessionSummary({ session, onFinish }: SessionSummaryProps) {
-  useEffect(() => {
-    void confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
-  }, []);
+export function BulkAddForm({ onDone }: BulkAddFormProps) {
+  const [text, setText] = useState('');
+
+  const { valid, invalidLines } = useMemo(() => parseWordLines(text), [text]);
+
+  async function handleSaveAll() {
+    if (valid.length === 0) return;
+    await db.words.bulkAdd(valid.map((line) => createWord(line.term, line.translation)));
+    onDone();
+  }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border p-6 text-center">
-      <h2 className="text-xl font-semibold">Сессия завершена</h2>
-      <p>Верно: {session.correct}</p>
-      <p>Почти: {session.almost}</p>
-      <p>Неверно: {session.wrong}</p>
-      <Button type="button" onClick={onFinish}>
-        На главную
+    <div className="flex flex-col gap-4">
+      <label className="flex flex-col gap-1.5 text-sm">
+        Список слов
+        <textarea
+          aria-label="Список слов"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={8}
+          placeholder={'hello - привет\ncat - кот'}
+          className="w-full rounded-lg border border-input bg-transparent p-2.5 font-mono text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        />
+      </label>
+
+      {valid.length > 0 && (
+        <ul className="flex flex-col gap-1.5">
+          {valid.map((line, i) => (
+            <li key={i} className="flex items-center gap-2 rounded-md bg-secondary px-2.5 py-1.5 text-sm">
+              <span className="font-mono font-medium">{line.term}</span>
+              <span className="text-muted-foreground">—</span>
+              <span className="text-muted-foreground">{line.translation}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {invalidLines.length > 0 && (
+        <ul className="flex flex-col gap-1.5">
+          {invalidLines.map((line, i) => (
+            <li key={i} className="flex items-start gap-2 rounded-md bg-destructive/10 px-2.5 py-1.5 text-sm text-destructive">
+              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>
+                Не удалось разобрать: <span className="font-mono">{line}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <Button type="button" onClick={() => void handleSaveAll()} disabled={valid.length === 0}>
+        Сохранить всё
       </Button>
     </div>
   );
 }
 ```
 
-- [ ] **Step 3: Реализовать `src/features/study/StudySession.tsx`**
+- [ ] **Step 3: Запустить тесты `BulkAddForm`**
+
+```bash
+npm run test -- src/features/words/BulkAddForm.test.tsx
+```
+
+- [ ] **Step 4: Реализовать `src/features/words/AddWordPage.tsx`**
 
 ```tsx
-import { useEffect } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { db } from '@/db/db';
-import { selectDueWords } from '@/lib/srs';
 import { useUIStore } from '@/store/useUIStore';
-import { Flashcard } from './Flashcard';
-import { SessionSummary } from './SessionSummary';
+import { WordForm } from './WordForm';
+import { BulkAddForm } from './BulkAddForm';
 
-export function StudySession() {
-  const words = useLiveQuery(() => db.words.toArray(), []);
-  const session = useUIStore((s) => s.session);
-  const startSession = useUIStore((s) => s.startSession);
-  const endSession = useUIStore((s) => s.endSession);
+type Mode = 'single' | 'bulk';
+
+export function AddWordPage() {
+  const [mode, setMode] = useState<Mode>('single');
   const setScreen = useUIStore((s) => s.setScreen);
 
-  useEffect(() => {
-    if (!session && words) {
-      startSession(selectDueWords(words, Date.now()));
-    }
-  }, [session, words, startSession]);
-
-  if (!words || !session) {
-    return <p>Загрузка...</p>;
-  }
-
-  if (session.queue.length === 0) {
-    return (
-      <div className="flex flex-col gap-3">
-        <p>Сегодня повторять нечего — все слова уже выучены на сегодня.</p>
-        <Button
-          type="button"
-          onClick={() => {
-            endSession();
-            setScreen('home');
-          }}
-        >
-          На главную
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex gap-2">
+        <Button type="button" variant={mode === 'single' ? 'default' : 'outline'} size="sm" onClick={() => setMode('single')}>
+          Одно слово
+        </Button>
+        <Button type="button" variant={mode === 'bulk' ? 'default' : 'outline'} size="sm" onClick={() => setMode('bulk')}>
+          Список
         </Button>
       </div>
-    );
-  }
 
-  if (session.index >= session.queue.length) {
-    return (
-      <SessionSummary
-        session={session}
-        onFinish={() => {
-          endSession();
-          setScreen('home');
-        }}
-      />
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-3">
-      <p className="text-sm text-muted-foreground">
-        {session.index + 1} из {session.queue.length}
-      </p>
-      <Flashcard word={session.queue[session.index]} />
+      {mode === 'single' ? (
+        <WordForm mode="create" onDone={() => setScreen('words')} />
+      ) : (
+        <BulkAddForm onDone={() => setScreen('words')} />
+      )}
     </div>
   );
 }
 ```
 
-- [ ] **Step 4: Написать тест на полный проход одной карточки**
+- [ ] **Step 5: Запустить полный набор тестов и сборку**
 
-Создай `src/features/study/StudySession.test.tsx`:
+```bash
+npm run test
+npm run build
+```
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add -A
+git commit -m "feat: add bulk word import with single/bulk mode toggle"
+```
+
+---
+
+### Task 13: `SettingsPage` — настройки N/M
+
+**Files:**
+- Create: `src/features/settings/SettingsPage.tsx`
+- Test: `src/features/settings/SettingsPage.test.tsx`
+
+**Interfaces:**
+- Consumes: `useUIStore` (`phaseARepeats`, `phaseBRepeats`, `setPhaseARepeats`, `setPhaseBRepeats`) из `@/store/useUIStore`
+
+- [ ] **Step 1: Написать падающий тест**
+
+Создай `src/features/settings/SettingsPage.test.tsx`:
 
 ```tsx
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { StudySession } from './StudySession';
-import { db } from '@/db/db';
+import { SettingsPage } from './SettingsPage';
 import { useUIStore } from '@/store/useUIStore';
 
-vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
-
-describe('StudySession', () => {
-  beforeEach(async () => {
-    await db.words.clear();
-    await db.reviews.clear();
-    useUIStore.setState({ session: null });
+describe('SettingsPage', () => {
+  beforeEach(() => {
+    useUIStore.setState({ phaseARepeats: 3, phaseBRepeats: 3 });
   });
 
-  it('показывает сообщение, если на сегодня нет слов', async () => {
-    render(<StudySession />);
-    expect(await screen.findByText(/повторять нечего/i)).toBeInTheDocument();
-  });
-
-  it('проходит одну карточку: ответ -> фидбек -> далее -> итог сессии', async () => {
-    await db.words.add({
-      term: 'hello',
-      translation: 'привет',
-      createdAt: 0,
-      easinessFactor: 2.5,
-      interval: 0,
-      repetitions: 0,
-      dueDate: Date.now() - 1000,
-    });
-
+  it('показывает текущие значения и обновляет их через сторy', async () => {
     const user = userEvent.setup();
-    render(<StudySession />);
+    render(<SettingsPage />);
 
-    await user.type(await screen.findByLabelText('Перевод'), 'привет');
-    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+    const phaseAInput = screen.getByLabelText(/Повторов в фазе узнавания/);
+    expect(phaseAInput).toHaveValue(3);
 
-    expect(await screen.findByTestId('feedback')).toHaveTextContent('Верно!');
+    await user.clear(phaseAInput);
+    await user.type(phaseAInput, '5');
 
-    await user.click(screen.getByRole('button', { name: 'Далее' }));
-
-    expect(await screen.findByText('Сессия завершена')).toBeInTheDocument();
-    expect(screen.getByText('Верно: 1')).toBeInTheDocument();
-
-    await waitFor(async () => {
-      const reviews = await db.reviews.toArray();
-      expect(reviews).toHaveLength(1);
-      expect(reviews[0].correct).toBe(true);
-    });
+    expect(useUIStore.getState().phaseARepeats).toBe(5);
   });
 });
 ```
 
-- [ ] **Step 5: Запустить тесты**
+Запусти и убедись, что падает.
 
-```bash
-npm run test -- src/features/study/StudySession.test.tsx
-```
-
-Expected: PASS.
-
-- [ ] **Step 6: Подключить `StudySession` в `App.tsx`**
-
-Добавь `import { StudySession } from '@/features/study/StudySession';`, замени строку экрана `study`:
+- [ ] **Step 2: Реализовать `src/features/settings/SettingsPage.tsx`**
 
 ```tsx
-{screen === 'study' && <StudySession />}
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { useUIStore } from '@/store/useUIStore';
+
+export function SettingsPage() {
+  const phaseARepeats = useUIStore((s) => s.phaseARepeats);
+  const setPhaseARepeats = useUIStore((s) => s.setPhaseARepeats);
+  const phaseBRepeats = useUIStore((s) => s.phaseBRepeats);
+  const setPhaseBRepeats = useUIStore((s) => s.setPhaseBRepeats);
+
+  function parsePositiveInt(value: string): number | null {
+    const parsed = Number(value);
+    return Number.isInteger(parsed) && parsed >= 1 && parsed <= 10 ? parsed : null;
+  }
+
+  return (
+    <Card className="flex flex-col gap-4 p-4">
+      <label className="flex flex-col gap-1.5 text-sm">
+        Повторов в фазе узнавания (слово + перевод)
+        <Input
+          aria-label="Повторов в фазе узнавания (слово + перевод)"
+          type="number"
+          min={1}
+          max={10}
+          value={phaseARepeats}
+          onChange={(e) => {
+            const value = parsePositiveInt(e.target.value);
+            if (value != null) setPhaseARepeats(value);
+          }}
+          className="font-mono"
+        />
+      </label>
+
+      <label className="flex flex-col gap-1.5 text-sm">
+        Повторов в фазе вспоминания (только перевод)
+        <Input
+          aria-label="Повторов в фазе вспоминания (только перевод)"
+          type="number"
+          min={1}
+          max={10}
+          value={phaseBRepeats}
+          onChange={(e) => {
+            const value = parsePositiveInt(e.target.value);
+            if (value != null) setPhaseBRepeats(value);
+          }}
+          className="font-mono"
+        />
+      </label>
+    </Card>
+  );
+}
 ```
 
-- [ ] **Step 7: Проверить сборку и полный прогон тестов**
+- [ ] **Step 3: Запустить тесты**
+
+```bash
+npm run test -- src/features/settings/SettingsPage.test.tsx
+```
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add -A
+git commit -m "feat: add settings screen for phase-repeat counts"
+```
+
+---
+
+### Task 14: `NavBar` — новые 5 пунктов
+
+**Files:**
+- Modify: `src/components/layout/NavBar.tsx`
+
+**Interfaces:**
+- Consumes: `Screen` из `@/store/screen.type` (уже обновлён в Task 6)
+
+- [ ] **Step 1: Переписать `src/components/layout/NavBar.tsx`**
+
+```tsx
+import { motion } from 'motion/react';
+import { BookOpen, Layers, ListChecks, Plus, Settings } from 'lucide-react';
+import { useUIStore } from '@/store/useUIStore';
+import type { Screen } from '@/store/screen.type';
+
+const ITEMS: { screen: Screen; label: string; icon: typeof Layers }[] = [
+  { screen: 'newWords', label: 'Новые', icon: Layers },
+  { screen: 'review', label: 'Повторение', icon: BookOpen },
+  { screen: 'add', label: 'Добавить', icon: Plus },
+  { screen: 'words', label: 'Слова', icon: ListChecks },
+  { screen: 'settings', label: 'Настройки', icon: Settings },
+];
+
+export function NavBar() {
+  const screen = useUIStore((s) => s.screen);
+  const setScreen = useUIStore((s) => s.setScreen);
+
+  return (
+    <nav className="fixed inset-x-0 bottom-0 flex justify-around border-t border-border bg-card/95 backdrop-blur px-1 py-1.5">
+      {ITEMS.map((item) => {
+        const active = screen === item.screen;
+        const Icon = item.icon;
+        return (
+          <motion.button
+            key={item.screen}
+            type="button"
+            whileTap={{ scale: 0.92 }}
+            onClick={() => setScreen(item.screen)}
+            className={
+              'flex flex-1 flex-col items-center gap-0.5 rounded-md py-1.5 text-[11px] transition-colors ' +
+              (active ? 'text-primary' : 'text-muted-foreground hover:text-foreground')
+            }
+          >
+            <span
+              className={
+                'flex h-8 w-8 items-center justify-center rounded-full transition-colors ' +
+                (active ? 'bg-primary/12' : '')
+              }
+            >
+              <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.4 : 2} aria-hidden="true" />
+            </span>
+            {item.label}
+          </motion.button>
+        );
+      })}
+    </nav>
+  );
+}
+```
+
+- [ ] **Step 2: Проверить сборку**
 
 ```bash
 npm run build
-npm run test
 ```
 
-Expected: без ошибок, все тесты зелёные.
-
-- [ ] **Step 8: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
 git add -A
-git commit -m "feat: add study session with flashcards and session summary"
+git commit -m "feat: update NavBar for new-words/review/add/words/settings"
 ```
 
 ---
 
-### Task 13: Главный экран (`features/home/Dashboard.tsx`)
+### Task 15: `App.tsx` + удаление старых экранов
 
 **Files:**
-- Create: `src/features/home/Dashboard.tsx`
-- Test: `src/features/home/Dashboard.test.tsx`
-- Modify: `src/App.tsx` (подключить `Dashboard` на экране `home`)
+- Modify: `src/App.tsx`
+- Delete: `src/features/home/Dashboard.tsx`, `src/features/home/Dashboard.test.tsx` (и папка `src/features/home/`)
+- Delete: `src/features/stats/StatsPage.tsx`, `src/features/stats/StatsPage.test.tsx`, `src/features/stats/StatTile.tsx` (и папка `src/features/stats/`)
+- Delete: `src/features/study/Flashcard.tsx`, `src/features/study/SessionSummary.tsx`, `src/features/study/StudySession.tsx`, `src/features/study/StudySession.test.tsx`
 
 **Interfaces:**
-- Consumes: `db` из `src/db/db.ts`; `selectDueWords` из `src/lib/srs.ts`; `computeStreak` из `src/lib/stats.ts`; `useUIStore` из `src/store/useUIStore.ts`
-- Produces: `export function Dashboard()`
+- Consumes: `NewWordsSession` из `@/features/newWords/NewWordsSession`; `ReviewSession` из `@/features/review/ReviewSession`; `AddWordPage` из `@/features/words/AddWordPage`; `WordList` из `@/features/words/WordList`; `SettingsPage` из `@/features/settings/SettingsPage`
 
-- [ ] **Step 1: Написать падающий тест**
-
-Создай `src/features/home/Dashboard.test.tsx`:
-
-```tsx
-import { beforeEach, describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { Dashboard } from './Dashboard';
-import { db } from '@/db/db';
-
-describe('Dashboard', () => {
-  beforeEach(async () => {
-    await db.words.clear();
-    await db.reviews.clear();
-  });
-
-  it('показывает количество слов на сегодня и всего слов', async () => {
-    await db.words.add({
-      term: 'hello',
-      translation: 'привет',
-      createdAt: 0,
-      easinessFactor: 2.5,
-      interval: 0,
-      repetitions: 0,
-      dueDate: Date.now() - 1000,
-    });
-    await db.words.add({
-      term: 'cat',
-      translation: 'кот',
-      createdAt: 0,
-      easinessFactor: 2.5,
-      interval: 5,
-      repetitions: 1,
-      dueDate: Date.now() + 10 * 24 * 60 * 60 * 1000,
-    });
-
-    render(<Dashboard />);
-
-    expect(await screen.findByText(/Слов на сегодня: 1/)).toBeInTheDocument();
-    expect(await screen.findByText(/Всего слов: 2/)).toBeInTheDocument();
-  });
-
-  it('кнопка "Учить" отключена, если на сегодня нечего повторять', async () => {
-    render(<Dashboard />);
-    const button = await screen.findByRole('button', { name: 'Учить' });
-    expect(button).toBeDisabled();
-  });
-});
-```
-
-- [ ] **Step 2: Запустить и убедиться, что тест падает**
+- [ ] **Step 1: Удалить старые экраны**
 
 ```bash
-npm run test -- src/features/home/Dashboard.test.tsx
+rm -rf src/features/home
+rm -rf src/features/stats
+rm src/features/study/Flashcard.tsx src/features/study/SessionSummary.tsx
+rm src/features/study/StudySession.tsx src/features/study/StudySession.test.tsx
 ```
 
-Expected: FAIL — файла ещё нет.
-
-- [ ] **Step 3: Реализовать `src/features/home/Dashboard.tsx`**
+- [ ] **Step 2: Переписать `src/App.tsx`**
 
 ```tsx
-import { useLiveQuery } from 'dexie-react-hooks';
-import { Button } from '@/components/ui/button';
-import { db } from '@/db/db';
-import { selectDueWords } from '@/lib/srs';
-import { computeStreak } from '@/lib/stats';
+import { useLayoutEffect } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { NavBar } from '@/components/layout/NavBar';
+import { ThemeToggle } from '@/components/layout/ThemeToggle';
+import { NewWordsSession } from '@/features/newWords/NewWordsSession';
+import { ReviewSession } from '@/features/review/ReviewSession';
+import { AddWordPage } from '@/features/words/AddWordPage';
+import { WordList } from '@/features/words/WordList';
+import { SettingsPage } from '@/features/settings/SettingsPage';
 import { useUIStore } from '@/store/useUIStore';
 
-export function Dashboard() {
-  const words = useLiveQuery(() => db.words.toArray(), []) ?? [];
-  const reviews = useLiveQuery(() => db.reviews.toArray(), []) ?? [];
-  const setScreen = useUIStore((s) => s.setScreen);
+function App() {
+  const screen = useUIStore((s) => s.screen);
+  const theme = useUIStore((s) => s.theme);
 
-  const now = Date.now();
-  const dueCount = selectDueWords(words, now, Number.POSITIVE_INFINITY).length;
-  const streak = computeStreak(reviews, now);
+  useLayoutEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="rounded-lg border p-4">
-        <p>Слов на сегодня: {dueCount}</p>
-        <p>Всего слов: {words.length}</p>
-        <p>Streak: {streak} дн.</p>
-      </div>
-
-      <div className="flex gap-2">
-        <Button type="button" disabled={dueCount === 0} onClick={() => setScreen('study')}>
-          Учить
-        </Button>
-        <Button type="button" variant="outline" onClick={() => setScreen('add')}>
-          Добавить слово
-        </Button>
-      </div>
+    <div className="min-h-screen bg-background pb-20 text-foreground">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/90 px-4 py-3 backdrop-blur">
+        <h1 className="font-mono text-base font-semibold tracking-tight">Мой словарь</h1>
+        <ThemeToggle />
+      </header>
+      <main className="mx-auto max-w-md p-4">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={screen}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.15 }}
+          >
+            {screen === 'newWords' && <NewWordsSession />}
+            {screen === 'review' && <ReviewSession />}
+            {screen === 'add' && <AddWordPage />}
+            {screen === 'words' && <WordList />}
+            {screen === 'settings' && <SettingsPage />}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+      <NavBar />
     </div>
   );
 }
+
+export default App;
 ```
 
-- [ ] **Step 4: Запустить тесты и убедиться, что проходят**
+- [ ] **Step 3: Проверить полную сборку и полный прогон тестов**
 
 ```bash
-npm run test -- src/features/home/Dashboard.test.tsx
+npm run test
+npm run build
+npx tsc -b
 ```
 
-Expected: PASS.
+Expected: все зелёное. Если `tsc` находит осиротевшие импорты старых модулей (Dashboard/Stats/srs/stats/mastery) — это значит какой-то файл пропущен в задачах 6–14, найди и почини именно там, а не здесь свежим кодом.
 
-- [ ] **Step 5: Подключить `Dashboard` в `App.tsx`**
-
-Добавь `import { Dashboard } from '@/features/home/Dashboard';`, замени строку экрана `home`:
-
-```tsx
-{screen === 'home' && <Dashboard />}
-```
-
-- [ ] **Step 6: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add -A
-git commit -m "feat: add home dashboard with due count and streak"
+git commit -m "feat: wire new screens into App, remove Dashboard/Stats/old Study"
 ```
 
 ---
 
-### Task 14: Экран «Статистика» (`features/stats/StatsPage.tsx`)
-
-**Files:**
-- Create: `src/features/stats/StatsPage.tsx`
-- Test: `src/features/stats/StatsPage.test.tsx`
-- Modify: `src/App.tsx` (подключить `StatsPage` на экране `stats`)
-
-**Interfaces:**
-- Consumes: `db` из `src/db/db.ts`; `computeAccuracy`, `computeStreak`, `countMastered`, `last30DaysActivity` из `src/lib/stats.ts`
-- Produces: `export function StatsPage()`
-
-- [ ] **Step 1: Написать падающий тест**
-
-Создай `src/features/stats/StatsPage.test.tsx`:
-
-```tsx
-import { beforeEach, describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { StatsPage } from './StatsPage';
-import { db } from '@/db/db';
-
-describe('StatsPage', () => {
-  beforeEach(async () => {
-    await db.words.clear();
-    await db.reviews.clear();
-  });
-
-  it('показывает количество выученных слов и точность', async () => {
-    await db.words.add({
-      term: 'hello',
-      translation: 'привет',
-      createdAt: 0,
-      easinessFactor: 2.6,
-      interval: 25,
-      repetitions: 3,
-      dueDate: Date.now() + 10 * 24 * 60 * 60 * 1000,
-    });
-    await db.reviews.add({ wordId: 1, reviewedAt: Date.now(), correct: true });
-
-    render(<StatsPage />);
-
-    expect(await screen.findByText(/Выучено слов: 1/)).toBeInTheDocument();
-    expect(await screen.findByText(/Точность за 7 дней: 100%/)).toBeInTheDocument();
-  });
-});
-```
-
-- [ ] **Step 2: Запустить и убедиться, что тест падает**
-
-```bash
-npm run test -- src/features/stats/StatsPage.test.tsx
-```
-
-Expected: FAIL — файла ещё нет.
-
-- [ ] **Step 3: Реализовать `src/features/stats/StatsPage.tsx`**
-
-```tsx
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/db/db';
-import { computeAccuracy, computeStreak, countMastered, last30DaysActivity } from '@/lib/stats';
-
-export function StatsPage() {
-  const words = useLiveQuery(() => db.words.toArray(), []) ?? [];
-  const reviews = useLiveQuery(() => db.reviews.toArray(), []) ?? [];
-  const now = Date.now();
-
-  const mastered = countMastered(words);
-  const accuracy7 = computeAccuracy(reviews, 7, now);
-  const accuracy30 = computeAccuracy(reviews, 30, now);
-  const streak = computeStreak(reviews, now);
-  const activity = last30DaysActivity(reviews, now);
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="rounded-lg border p-4">
-        <p>Выучено слов: {mastered}</p>
-        <p>Точность за 7 дней: {accuracy7}%</p>
-        <p>Точность за 30 дней: {accuracy30}%</p>
-        <p>Streak: {streak} дн.</p>
-      </div>
-
-      <div>
-        <p className="mb-2 text-sm text-muted-foreground">Активность за 30 дней</p>
-        <div className="grid grid-cols-10 gap-1">
-          {activity.map((active, i) => (
-            <div
-              key={i}
-              className={`h-4 w-4 rounded-sm ${active ? 'bg-primary' : 'bg-muted'}`}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-```
-
-- [ ] **Step 4: Запустить тесты и убедиться, что проходят**
-
-```bash
-npm run test -- src/features/stats/StatsPage.test.tsx
-```
-
-Expected: PASS.
-
-- [ ] **Step 5: Подключить `StatsPage` в `App.tsx`**
-
-Добавь `import { StatsPage } from '@/features/stats/StatsPage';`, замени строку экрана `stats`:
-
-```tsx
-{screen === 'stats' && <StatsPage />}
-```
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add -A
-git commit -m "feat: add stats screen with accuracy, mastered count and activity grid"
-```
-
----
-
-### Task 15: Финальная проверка
+### Task 16: Финальная проверка
 
 **Files:** без новых файлов — только верификация.
 
-- [ ] **Step 1: Полный прогон тестов**
+- [ ] **Step 1: Полный прогон тестов и сборки**
 
 ```bash
 npm run test
-```
-
-Expected: все тесты во всех файлах проходят.
-
-- [ ] **Step 2: Полная сборка**
-
-```bash
 npm run build
+npx tsc -b
+npm run lint
 ```
 
-Expected: сборка без ошибок TypeScript и без ошибок Vite.
+Expected: всё чисто (lint может показать 1 уже известный warning в `button.tsx` от shadcn — это норма, не трогать).
 
-- [ ] **Step 3: Ручная проверка в браузере**
+- [ ] **Step 2: Ручная проверка в браузере**
 
 ```bash
 npm run dev
 ```
 
-Открыть `http://localhost:5173`, вручную пройти путь: добавить слово → перейти в «Мои слова» и убедиться, что оно там → перейти в «Учить», ответить на карточку → увидеть итог сессии с confetti → зайти в «Статистика» и увидеть обновлённые цифры → переключить тему.
+Пройти вживую: Добавить (одно слово) → Слова (видно бейдж «Новое · Фаза A») → Новые слова (пройти Фазу A нужное число раз, слово переходит в Фазу B, пройти и её — попадает в Повторение) → Повторение (слово появляется, показывается только перевод, ответить) → Слова (видно цветную точку и число рейтинга) → Настройки (поменять число повторов, убедиться что сохраняется) → Добавить → переключиться на «Список», вставить 2-3 пары через дефис, сохранить → Слова (обе пары появились).
 
-- [ ] **Step 4: Commit (если после ручной проверки были правки)**
+Отдельно проверить миграцию: если в IndexedDB (Application → IndexedDB в DevTools) осталась `vocab-db` версии 1 с данными из предыдущей сессии, после `npm run dev` и открытия приложения база должна тихо апгрейднуться до версии 2 без ошибок в консоли, старые слова — появиться в «Слова» с `stage: review` и разумным `rating`.
+
+- [ ] **Step 3: Commit (если после ручной проверки были правки)**
 
 ```bash
 git add -A
