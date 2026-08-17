@@ -12,7 +12,6 @@ export interface WordFormProps {
 export function WordForm({ mode, word, onDone }: WordFormProps) {
   const [term, setTerm] = useState(word?.term ?? '');
   const [translation, setTranslation] = useState(word?.translation ?? '');
-  const [category, setCategory] = useState(word?.category ?? '');
   const [duplicate, setDuplicate] = useState(false);
 
   async function checkDuplicate(value: string) {
@@ -33,10 +32,9 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
       await db.words.update(word.id, {
         term: term.trim(),
         translation: translation.trim(),
-        category: category.trim() || undefined,
       });
     } else {
-      await db.words.add(createWord(term.trim(), translation.trim(), category.trim() || undefined));
+      await db.words.add(createWord(term.trim(), translation.trim()));
     }
 
     onDone();
@@ -68,15 +66,6 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
           value={translation}
           onChange={(e) => setTranslation(e.target.value)}
           required
-        />
-      </label>
-
-      <label className="flex flex-col gap-1 text-sm">
-        Категория (необязательно)
-        <Input
-          aria-label="Категория"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
         />
       </label>
 

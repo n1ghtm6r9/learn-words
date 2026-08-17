@@ -1,10 +1,10 @@
 # Мой словарь
 
-A single-page vocabulary trainer. Add words with translations and an optional
-category, then review them using a spaced-repetition schedule (SM-2 style)
-that spaces out reviews based on how well you remember each word. Includes a
-flashcard study session, a word list with search/edit/delete, and a stats
-page with accuracy and activity tracking.
+A single-page vocabulary trainer. Add words with translations, then review
+them using a spaced-repetition schedule (SM-2 style) that spaces out reviews
+based on how well you remember each word. Includes a flashcard study session,
+a word list with search/edit/delete, and a stats page with accuracy and
+activity tracking.
 
 All data is stored locally in the browser (IndexedDB) — there is no backend.
 

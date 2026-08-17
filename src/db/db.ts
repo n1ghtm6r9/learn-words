@@ -4,7 +4,6 @@ export interface Word {
   id?: number;
   term: string;
   translation: string;
-  category?: string;
   createdAt: number;
   easinessFactor: number;
   interval: number;
@@ -27,7 +26,7 @@ export class VocabDB extends Dexie {
   constructor() {
     super('vocab-db');
     this.version(1).stores({
-      words: '++id, term, category, dueDate',
+      words: '++id, term, dueDate',
       reviews: '++id, wordId, reviewedAt',
     });
   }
@@ -35,12 +34,11 @@ export class VocabDB extends Dexie {
 
 export const db = new VocabDB();
 
-export function createWord(term: string, translation: string, category?: string): Word {
+export function createWord(term: string, translation: string): Word {
   const now = Date.now();
   return {
     term,
     translation,
-    category,
     createdAt: now,
     easinessFactor: 2.5,
     interval: 0,

@@ -9,12 +9,11 @@ describe('VocabDB', () => {
 
   it('creates a word with default SRS state due immediately', () => {
     const before = Date.now();
-    const word = createWord('hello', 'привет', 'english');
+    const word = createWord('hello', 'привет');
     const after = Date.now();
 
     expect(word.term).toBe('hello');
     expect(word.translation).toBe('привет');
-    expect(word.category).toBe('english');
     expect(word.easinessFactor).toBe(2.5);
     expect(word.interval).toBe(0);
     expect(word.repetitions).toBe(0);
