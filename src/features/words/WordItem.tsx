@@ -1,18 +1,14 @@
 import { Button } from '@/components/ui/button';
 import type { Word } from '@/db/db';
-import { MASTERY_LABEL, masteryStatus } from '@/lib/mastery';
+import { masteryStatus } from '@/lib/mastery';
+import { MASTERY_LABEL } from '@/lib/masteryLabel';
+import { STATUS_DOT_CLASS } from '@/lib/statusDotClass';
 
 interface WordItemProps {
   word: Word;
   onEdit: () => void;
   onDelete: () => void;
 }
-
-export const STATUS_DOT_CLASS = {
-  new: 'bg-status-new',
-  learning: 'bg-status-learning',
-  mastered: 'bg-status-mastered',
-} as const;
 
 export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
   const status = masteryStatus(word.interval);

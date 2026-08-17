@@ -4,9 +4,10 @@ import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { db, type Word } from '@/db/db';
-import { MASTERY_LABEL } from '@/lib/mastery';
+import { MASTERY_LABEL } from '@/lib/masteryLabel';
+import { STATUS_DOT_CLASS } from '@/lib/statusDotClass';
 import { WordForm } from './WordForm';
-import { WordItem, STATUS_DOT_CLASS } from './WordItem';
+import { WordItem } from './WordItem';
 
 export function WordList() {
   const words = useLiveQuery(() => db.words.orderBy('term').toArray(), []) ?? [];

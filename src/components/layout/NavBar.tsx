@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { BarChart3, House, ListChecks, Plus, SquareLibrary } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useUIStore, type Screen } from '@/store/useUIStore';
 
 const ITEMS: { screen: Screen; label: string; icon: typeof House }[] = [
@@ -25,18 +26,16 @@ export function NavBar() {
             type="button"
             whileTap={{ scale: 0.92 }}
             onClick={() => setScreen(item.screen)}
-            className={
-              'flex flex-1 flex-col items-center gap-0.5 rounded-md py-1.5 text-[11px] transition-colors ' +
-              (active
-                ? 'text-primary'
-                : 'text-muted-foreground hover:text-foreground')
-            }
+            className={cn(
+              'flex flex-1 flex-col items-center gap-0.5 rounded-md py-1.5 text-[11px] transition-colors',
+              active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
+            )}
           >
             <span
-              className={
-                'flex h-8 w-8 items-center justify-center rounded-full transition-colors ' +
-                (active ? 'bg-primary/12' : '')
-              }
+              className={cn(
+                'flex h-8 w-8 items-center justify-center rounded-full transition-colors',
+                active && 'bg-primary/12',
+              )}
             >
               <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.4 : 2} aria-hidden="true" />
             </span>

@@ -12,7 +12,11 @@ export function ThemeToggle() {
       aria-label="Переключить тему"
       className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
     >
-      {theme === 'light' ? <Moon className="h-[18px] w-[18px]" /> : <Sun className="h-[18px] w-[18px]" />}
+      {theme === 'light' ? (
+        <Moon className="h-[18px] w-[18px]" aria-hidden="true" />
+      ) : (
+        <Sun className="h-[18px] w-[18px]" aria-hidden="true" />
+      )}
     </button>
   );
 }

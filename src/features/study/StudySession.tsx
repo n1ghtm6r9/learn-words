@@ -73,7 +73,7 @@ export function StudySession() {
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
           <motion.div
             className="h-full rounded-full bg-primary"
-            animate={{ width: `${(session.index / session.queue.length) * 100}%` }}
+            animate={{ width: `${((session.index + 1) / session.queue.length) * 100}%` }}
             transition={{ duration: 0.25, ease: 'easeOut' }}
           />
         </div>
