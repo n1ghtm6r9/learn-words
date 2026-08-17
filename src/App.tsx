@@ -1,5 +1,6 @@
 import { NavBar } from '@/components/layout/NavBar';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
+import { StudySession } from '@/features/study/StudySession';
 import { WordForm } from '@/features/words/WordForm';
 import { WordList } from '@/features/words/WordList';
 import { useUIStore } from '@/store/useUIStore';
@@ -19,7 +20,7 @@ function App() {
           <WordForm mode="create" onDone={() => useUIStore.getState().setScreen('words')} />
         )}
         {screen === 'words' && <WordList />}
-        {screen === 'study' && <p>Учить (Task 12)</p>}
+        {screen === 'study' && <StudySession />}
         {screen === 'stats' && <p>Статистика (Task 14)</p>}
       </main>
       <NavBar />
