@@ -1,1 +1,1 @@
-export type Screen = 'newWords' | 'review' | 'words' | 'settings';
+export type Screen = 'newWords' | 'review' | 'words';

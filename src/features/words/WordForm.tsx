@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { db } from '@/db/db';
 import { createWord } from '@/db/createWord';
 import type { Word } from '@/db/word.type';
+import { useTranslation } from '@/lib/useTranslation';
 
 const DUPLICATE_CHECK_DEBOUNCE_MS = 300;
 
@@ -20,6 +21,7 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
   const [duplicate, setDuplicate] = useState(false);
   const duplicateRequestId = useRef(0);
   const duplicateTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const t = useTranslation();
 
   useEffect(() => {
     return () => clearTimeout(duplicateTimeout.current);
@@ -67,9 +69,9 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1.5 text-sm">
-        Слово
+        {t.wordInputLabel}
         <Input
-          aria-label="Слово"
+          aria-label={t.wordInputLabel}
           value={term}
           onChange={(e) => {
             setTerm(e.target.value);
@@ -83,14 +85,14 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
       {duplicate && (
         <p className="flex items-start gap-2 rounded-md bg-status-learning/10 p-2.5 text-sm text-status-learning">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          Такое слово уже есть в словаре — сохранить второй раз?
+          {t.duplicateWarning}
         </p>
       )}
 
       <label className="flex flex-col gap-1.5 text-sm">
-        Перевод
+        {t.translationInputLabel}
         <Input
-          aria-label="Перевод"
+          aria-label={t.translationInputLabel}
           value={translation}
           onChange={(e) => setTranslation(e.target.value)}
           required
@@ -98,7 +100,7 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
         />
       </label>
 
-      <Button type="submit">Сохранить</Button>
+      <Button type="submit">{t.save}</Button>
     </form>
   );
 }

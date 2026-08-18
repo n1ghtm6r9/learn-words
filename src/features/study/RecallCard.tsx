@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { CARD_CLASS } from '@/lib/cardClass';
 import { matchAnswer, type MatchVerdict } from '@/lib/fuzzyMatch';
 import { speak, isSpeechSupported } from '@/lib/tts';
+import { useTranslation } from '@/lib/useTranslation';
+import type { TranslationKeys } from '@/lib/translationKeys.type';
 
 export interface RecallCardProps {
   translation: string;
@@ -18,21 +20,22 @@ interface Feedback {
   correctAnswer: string;
 }
 
-const FEEDBACK_TEXT: Record<MatchVerdict, (correct: string) => string> = {
-  correct: () => 'Верно!',
-  almost: (correct) => `Почти! Правильное слово: ${correct}`,
-  wrong: (correct) => `Неверно. Правильное слово: ${correct}`,
-};
-
 const FEEDBACK_COLOR: Record<MatchVerdict, string> = {
   correct: 'text-status-mastered',
   almost: 'text-status-learning',
   wrong: 'text-destructive',
 };
 
+function feedbackText(t: TranslationKeys, verdict: MatchVerdict, correctAnswer: string): string {
+  if (verdict === 'correct') return t.feedbackCorrect;
+  if (verdict === 'almost') return t.recallFeedbackAlmost(correctAnswer);
+  return t.recallFeedbackWrong(correctAnswer);
+}
+
 export function RecallCard({ translation, expectedTerm, onAnswer }: RecallCardProps) {
   const [input, setInput] = useState('');
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const t = useTranslation();
 
   function handleCheck(event: React.FormEvent) {
     event.preventDefault();
@@ -57,19 +60,19 @@ export function RecallCard({ translation, expectedTerm, onAnswer }: RecallCardPr
 
       {!feedback ? (
         <form onSubmit={handleCheck} className="flex flex-col gap-3">
-          <Input aria-label="Слово" value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="font-mono" />
-          <Button type="submit">Проверить</Button>
+          <Input aria-label={t.wordInputLabel} value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="font-mono" />
+          <Button type="submit">{t.checkAnswer}</Button>
         </form>
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
             <p data-testid="feedback" className={`text-sm font-medium ${FEEDBACK_COLOR[feedback.verdict]}`}>
-              {FEEDBACK_TEXT[feedback.verdict](feedback.correctAnswer)}
+              {feedbackText(t, feedback.verdict, feedback.correctAnswer)}
             </p>
             {isSpeechSupported() && (
               <button
                 type="button"
-                aria-label="Озвучить"
+                aria-label={t.speak}
                 onClick={() => speak(expectedTerm)}
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
               >
@@ -78,7 +81,7 @@ export function RecallCard({ translation, expectedTerm, onAnswer }: RecallCardPr
             )}
           </div>
           <Button type="button" onClick={handleNext}>
-            Далее
+            {t.next}
           </Button>
         </div>
       )}

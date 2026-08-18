@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { CARD_CLASS } from '@/lib/cardClass';
 import { matchAnswer, type MatchVerdict } from '@/lib/fuzzyMatch';
 import { speak, isSpeechSupported } from '@/lib/tts';
+import { useTranslation } from '@/lib/useTranslation';
+import type { TranslationKeys } from '@/lib/translationKeys.type';
 
 export interface RecognitionCardProps {
   term: string;
@@ -17,21 +19,22 @@ interface Feedback {
   verdict: MatchVerdict;
 }
 
-const FEEDBACK_TEXT: Record<MatchVerdict, string> = {
-  correct: 'Верно!',
-  almost: 'Почти! Проверь написание ещё раз.',
-  wrong: 'Неверно. Посмотри на слово выше и попробуй снова.',
-};
-
 const FEEDBACK_COLOR: Record<MatchVerdict, string> = {
   correct: 'text-status-mastered',
   almost: 'text-status-learning',
   wrong: 'text-destructive',
 };
 
+function feedbackText(t: TranslationKeys, verdict: MatchVerdict): string {
+  if (verdict === 'correct') return t.feedbackCorrect;
+  if (verdict === 'almost') return t.recognitionFeedbackAlmost;
+  return t.recognitionFeedbackWrong;
+}
+
 export function RecognitionCard({ term, translation, onAnswer }: RecognitionCardProps) {
   const [input, setInput] = useState('');
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const t = useTranslation();
 
   function handleCheck(event: React.FormEvent) {
     event.preventDefault();
@@ -58,7 +61,7 @@ export function RecognitionCard({ term, translation, onAnswer }: RecognitionCard
         {isSpeechSupported() && (
           <button
             type="button"
-            aria-label="Озвучить"
+            aria-label={t.speak}
             onClick={() => speak(term)}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
           >
@@ -69,16 +72,16 @@ export function RecognitionCard({ term, translation, onAnswer }: RecognitionCard
 
       {!feedback ? (
         <form onSubmit={handleCheck} className="flex flex-col gap-3">
-          <Input aria-label="Слово" value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="font-mono" />
-          <Button type="submit">Проверить</Button>
+          <Input aria-label={t.wordInputLabel} value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="font-mono" />
+          <Button type="submit">{t.checkAnswer}</Button>
         </form>
       ) : (
         <div className="flex flex-col gap-3">
           <p data-testid="feedback" className={`text-sm font-medium ${FEEDBACK_COLOR[feedback.verdict]}`}>
-            {FEEDBACK_TEXT[feedback.verdict]}
+            {feedbackText(t, feedback.verdict)}
           </p>
           <Button type="button" onClick={handleNext}>
-            Далее
+            {t.next}
           </Button>
         </div>
       )}

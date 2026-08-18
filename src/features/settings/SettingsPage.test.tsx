@@ -6,7 +6,7 @@ import { useUIStore } from '@/store/useUIStore';
 
 describe('SettingsPage', () => {
   beforeEach(() => {
-    useUIStore.setState({ phaseARepeats: 3, phaseBRepeats: 3, theme: 'light', accentColor: 'blue' });
+    useUIStore.setState({ phaseARepeats: 3, phaseBRepeats: 3, theme: 'light', accentColor: 'blue', language: 'ru' });
   });
 
   it('показывает текущие значения и обновляет их через сторy', async () => {
@@ -44,5 +44,18 @@ describe('SettingsPage', () => {
     expect(useUIStore.getState().accentColor).toBe('purple');
     expect(screen.getByRole('button', { name: 'Фиолетовый' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: 'Синий' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('переключает язык интерфейса и перерисовывает подписи', async () => {
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+
+    expect(screen.getByText('Тема')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'English' }));
+
+    expect(useUIStore.getState().language).toBe('en');
+    expect(screen.getByText('Theme')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Repeats in the recognition phase/)).toBeInTheDocument();
   });
 });

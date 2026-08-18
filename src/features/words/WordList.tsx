@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { db } from '@/db/db';
 import type { Word } from '@/db/word.type';
+import { useTranslation } from '@/lib/useTranslation';
 import { WordForm } from './WordForm';
 import { WordItem } from './WordItem';
 
@@ -12,6 +13,7 @@ export function WordList() {
   const words = useLiveQuery(() => db.words.toArray(), []);
   const [search, setSearch] = useState('');
   const [editingWord, setEditingWord] = useState<Word | null>(null);
+  const t = useTranslation();
 
   const sorted = useMemo(
     () => [...(words ?? [])].sort((a, b) => a.term.localeCompare(b.term)),
@@ -32,19 +34,19 @@ export function WordList() {
   }
 
   if (!words) {
-    return <p className="text-sm text-muted-foreground">Загрузка...</p>;
+    return <p className="text-sm text-muted-foreground">{t.loading}</p>;
   }
 
   return (
     <div className="flex flex-col gap-3">
       <div className="relative">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-        <Input placeholder="Поиск..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
+        <Input placeholder={t.searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
       </div>
 
       {filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          {words.length === 0 ? 'Слов пока нет.' : 'Ничего не найдено.'}
+          {words.length === 0 ? t.noWordsYet : t.nothingFound}
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -61,7 +63,7 @@ export function WordList() {
 
       <Dialog open={editingWord != null} onOpenChange={(open) => !open && setEditingWord(null)}>
         <DialogContent>
-          <DialogTitle>Изменить слово</DialogTitle>
+          <DialogTitle>{t.editWordDialogTitle}</DialogTitle>
           {editingWord && (
             <WordForm mode="edit" word={editingWord} onDone={() => setEditingWord(null)} />
           )}

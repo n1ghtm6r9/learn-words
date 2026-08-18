@@ -1,22 +1,23 @@
 import { motion } from 'motion/react';
-import { BookOpen, Layers, ListChecks, Settings } from 'lucide-react';
+import { BookOpen, Layers, ListChecks } from 'lucide-react';
+import { useTranslation } from '@/lib/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 import type { Screen } from '@/store/screen.type';
-
-const ITEMS: { screen: Screen; label: string; icon: typeof Layers }[] = [
-  { screen: 'newWords', label: 'Новые', icon: Layers },
-  { screen: 'review', label: 'Повторение', icon: BookOpen },
-  { screen: 'words', label: 'Слова', icon: ListChecks },
-  { screen: 'settings', label: 'Настройки', icon: Settings },
-];
 
 export function NavBar() {
   const screen = useUIStore((s) => s.screen);
   const setScreen = useUIStore((s) => s.setScreen);
+  const t = useTranslation();
+
+  const items: { screen: Screen; label: string; icon: typeof Layers }[] = [
+    { screen: 'newWords', label: t.navNewWords, icon: Layers },
+    { screen: 'review', label: t.navReview, icon: BookOpen },
+    { screen: 'words', label: t.navWords, icon: ListChecks },
+  ];
 
   return (
     <nav className="fixed inset-x-0 bottom-0 flex justify-around border-t border-border bg-card/95 backdrop-blur px-1 py-1.5">
-      {ITEMS.map((item) => {
+      {items.map((item) => {
         const active = screen === item.screen;
         const Icon = item.icon;
         return (

@@ -1,8 +1,7 @@
 import { useLayoutEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Plus } from 'lucide-react';
+import { Plus, Settings as SettingsIcon } from 'lucide-react';
 import { NavBar } from '@/components/layout/NavBar';
-import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { NewWordsSession } from '@/features/newWords/NewWordsSession';
 import { ReviewSession } from '@/features/review/ReviewSession';
@@ -11,6 +10,7 @@ import { WordList } from '@/features/words/WordList';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { useUIStore } from '@/store/useUIStore';
 import { applyAccentColor } from '@/lib/applyAccentColor';
+import { useTranslation } from '@/lib/useTranslation';
 
 function App() {
   const screen = useUIStore((s) => s.screen);
@@ -18,7 +18,10 @@ function App() {
   const accentColor = useUIStore((s) => s.accentColor);
   const addWordOpen = useUIStore((s) => s.addWordOpen);
   const setAddWordOpen = useUIStore((s) => s.setAddWordOpen);
+  const settingsOpen = useUIStore((s) => s.settingsOpen);
+  const setSettingsOpen = useUIStore((s) => s.setSettingsOpen);
   const setScreen = useUIStore((s) => s.setScreen);
+  const t = useTranslation();
 
   useLayoutEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -31,8 +34,15 @@ function App() {
   return (
     <div className="min-h-screen bg-background pb-20 text-foreground">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/90 px-4 py-3 backdrop-blur">
-        <h1 className="font-mono text-base font-semibold tracking-tight">Мой словарь</h1>
-        <ThemeToggle />
+        <h1 className="font-mono text-base font-semibold tracking-tight">{t.appTitle}</h1>
+        <button
+          type="button"
+          aria-label={t.settingsButtonLabel}
+          onClick={() => setSettingsOpen(true)}
+          className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+        >
+          <SettingsIcon className="h-[18px] w-[18px]" aria-hidden="true" />
+        </button>
       </header>
       <main className="mx-auto max-w-md p-4">
         <AnimatePresence mode="wait">
@@ -46,14 +56,13 @@ function App() {
             {screen === 'newWords' && <NewWordsSession />}
             {screen === 'review' && <ReviewSession />}
             {screen === 'words' && <WordList />}
-            {screen === 'settings' && <SettingsPage />}
           </motion.div>
         </AnimatePresence>
       </main>
 
       <motion.button
         type="button"
-        aria-label="Добавить слово"
+        aria-label={t.addWordButtonLabel}
         whileTap={{ scale: 0.92 }}
         onClick={() => setAddWordOpen(true)}
         className="fixed right-4 bottom-20 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
@@ -63,13 +72,20 @@ function App() {
 
       <Dialog open={addWordOpen} onOpenChange={setAddWordOpen}>
         <DialogContent>
-          <DialogTitle>Добавить слово</DialogTitle>
+          <DialogTitle>{t.addWordButtonLabel}</DialogTitle>
           <AddWordDialog
             onDone={() => {
               setAddWordOpen(false);
               setScreen('words');
             }}
           />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent>
+          <DialogTitle>{t.settingsButtonLabel}</DialogTitle>
+          <SettingsPage />
         </DialogContent>
       </Dialog>
 

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { db } from '@/db/db';
 import type { Word } from '@/db/word.type';
 import type { MatchVerdict } from '@/lib/fuzzyMatch';
+import { useTranslation } from '@/lib/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 import { RecognitionCard } from '@/features/study/RecognitionCard';
 import { RecallCard } from '@/features/study/RecallCard';
@@ -27,6 +28,7 @@ export function NewWordsSession() {
   const phaseBRepeats = useUIStore((s) => s.phaseBRepeats);
   const setScreen = useUIStore((s) => s.setScreen);
   const setAddWordOpen = useUIStore((s) => s.setAddWordOpen);
+  const t = useTranslation();
 
   useEffect(() => {
     let cancelled = false;
@@ -87,7 +89,7 @@ export function NewWordsSession() {
   }
 
   if (pool === null) {
-    return <p className="text-sm text-muted-foreground">Загрузка...</p>;
+    return <p className="text-sm text-muted-foreground">{t.loading}</p>;
   }
 
   if (pool.length === 0) {
@@ -96,9 +98,9 @@ export function NewWordsSession() {
     }
     return (
       <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border p-8 text-center">
-        <p className="text-sm text-muted-foreground">Нет новых слов — добавьте немного!</p>
+        <p className="text-sm text-muted-foreground">{t.noNewWords}</p>
         <Button type="button" onClick={() => setAddWordOpen(true)}>
-          Добавить
+          {t.addWordCta}
         </Button>
       </div>
     );
@@ -108,7 +110,7 @@ export function NewWordsSession() {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-right font-mono text-xs text-muted-foreground">Осталось слов: {pool.length}</p>
+      <p className="text-right font-mono text-xs text-muted-foreground">{t.remainingWords(pool.length)}</p>
       {current.learningPhase === 'A' ? (
         <RecognitionCard
           key={`${current.id}-A-${turn}`}

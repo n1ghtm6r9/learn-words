@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from '@/lib/useTranslation';
 import { WordForm } from './WordForm';
 import { BulkAddForm } from './BulkAddForm';
 
@@ -11,15 +12,16 @@ interface AddWordDialogProps {
 
 export function AddWordDialog({ onDone }: AddWordDialogProps) {
   const [mode, setMode] = useState<Mode>('single');
+  const t = useTranslation();
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex gap-2">
         <Button type="button" variant={mode === 'single' ? 'default' : 'outline'} size="sm" onClick={() => setMode('single')}>
-          Одно слово
+          {t.singleWordMode}
         </Button>
         <Button type="button" variant={mode === 'bulk' ? 'default' : 'outline'} size="sm" onClick={() => setMode('bulk')}>
-          Список
+          {t.bulkMode}
         </Button>
       </div>
 

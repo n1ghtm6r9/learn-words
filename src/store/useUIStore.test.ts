@@ -19,6 +19,19 @@ describe('useUIStore', () => {
     expect(useUIStore.getState().addWordOpen).toBe(false);
   });
 
+  it('setSettingsOpen переключает видимость попапа настроек', () => {
+    useUIStore.getState().setSettingsOpen(true);
+    expect(useUIStore.getState().settingsOpen).toBe(true);
+    useUIStore.getState().setSettingsOpen(false);
+    expect(useUIStore.getState().settingsOpen).toBe(false);
+  });
+
+  it('setLanguage обновляет язык интерфейса и сохраняет в localStorage', () => {
+    useUIStore.getState().setLanguage('en');
+    expect(useUIStore.getState().language).toBe('en');
+    expect(window.localStorage.getItem('language')).toBe('en');
+  });
+
   it('toggleTheme переключает тему и сохраняет в localStorage', () => {
     const before = useUIStore.getState().theme;
     useUIStore.getState().toggleTheme();

@@ -6,6 +6,7 @@ import { effectiveRating } from '@/lib/effectiveRating';
 import { ratingColor } from '@/lib/ratingColor';
 import { RATING_DOT_CLASS } from '@/lib/ratingDotClass';
 import { RATING_TEXT_CLASS } from '@/lib/ratingTextClass';
+import { useTranslation } from '@/lib/useTranslation';
 
 interface WordItemProps {
   word: Word;
@@ -14,6 +15,8 @@ interface WordItemProps {
 }
 
 export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
+  const t = useTranslation();
+
   const badge =
     word.stage === 'new' ? (
       <span className="flex items-center gap-1.5 rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground">
@@ -21,10 +24,8 @@ export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
           <span className="h-1.5 w-1.5 rounded-full bg-primary" />
           <span className={cn('h-1.5 w-1.5 rounded-full', word.learningPhase === 'B' ? 'bg-primary' : 'bg-border')} />
         </span>
-        <span className="sr-only">
-          Учится, шаг {word.learningPhase === 'A' ? 1 : 2} из 2
-        </span>
-        Учится
+        <span className="sr-only">{t.newWordStepStatus(word.learningPhase === 'A' ? 1 : 2)}</span>
+        {t.learningBadge}
       </span>
     ) : (
       (() => {
@@ -33,7 +34,7 @@ export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
         return (
           <span className="flex items-center gap-1.5 text-[11px]">
             <span className={cn('h-2 w-2 rounded-full', RATING_DOT_CLASS[color])} aria-hidden="true" />
-            <span className="sr-only">Рейтинг</span>
+            <span className="sr-only">{t.ratingSrLabel}</span>
             <span className={cn('font-mono font-medium', RATING_TEXT_CLASS[color])}>{rating}</span>
           </span>
         );
@@ -51,10 +52,10 @@ export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
       </div>
       <div className="flex gap-2">
         <Button type="button" variant="outline" size="sm" onClick={onEdit}>
-          Изменить
+          {t.edit}
         </Button>
         <Button type="button" variant="destructive" size="sm" onClick={onDelete}>
-          Удалить
+          {t.delete}
         </Button>
       </div>
     </li>

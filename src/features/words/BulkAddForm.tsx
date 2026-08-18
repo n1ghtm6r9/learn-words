@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { db } from '@/db/db';
 import { createWord } from '@/db/createWord';
 import { parseWordLines } from '@/lib/parseWordLines';
+import { useTranslation } from '@/lib/useTranslation';
 
 interface BulkAddFormProps {
   onDone: () => void;
@@ -13,6 +14,7 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
   const [text, setText] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
+  const t = useTranslation();
 
   const { valid, invalidLines } = useMemo(() => parseWordLines(text), [text]);
 
@@ -32,9 +34,9 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
   return (
     <div className="flex flex-col gap-4">
       <label className="flex flex-col gap-1.5 text-sm">
-        Список слов
+        {t.wordListLabel}
         <textarea
-          aria-label="Список слов"
+          aria-label={t.wordListLabel}
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={8}
@@ -61,7 +63,7 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
             <li key={i} className="flex items-start gap-2 rounded-md bg-destructive/10 px-2.5 py-1.5 text-sm text-destructive">
               <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
               <span>
-                Не удалось разобрать: <span className="font-mono">{line}</span>
+                {t.parseErrorPrefix} <span className="font-mono">{line}</span>
               </span>
             </li>
           ))}
@@ -71,12 +73,12 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
       {saveError && (
         <p className="flex items-start gap-2 rounded-md bg-destructive/10 px-2.5 py-1.5 text-sm text-destructive">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          Не удалось сохранить слова. Попробуйте ещё раз.
+          {t.bulkSaveError}
         </p>
       )}
 
       <Button type="button" onClick={() => void handleSaveAll()} disabled={valid.length === 0 || isSaving}>
-        Сохранить всё
+        {t.saveAll}
       </Button>
     </div>
   );

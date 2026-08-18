@@ -5,6 +5,7 @@ import type { Word } from '@/db/word.type';
 import { effectiveRating } from '@/lib/effectiveRating';
 import { applyReviewOutcome } from '@/lib/applyReviewOutcome';
 import type { MatchVerdict } from '@/lib/fuzzyMatch';
+import { useTranslation } from '@/lib/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 import { RecallCard } from '@/features/study/RecallCard';
 import { ReviewSummary } from './ReviewSummary';
@@ -21,6 +22,7 @@ export function ReviewSession() {
   const [counters, setCounters] = useState<Counters>({ correct: 0, almost: 0, wrong: 0 });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const setScreen = useUIStore((s) => s.setScreen);
+  const t = useTranslation();
 
   useEffect(() => {
     let cancelled = false;
@@ -60,15 +62,15 @@ export function ReviewSession() {
   }
 
   if (queue === null) {
-    return <p className="text-sm text-muted-foreground">Загрузка...</p>;
+    return <p className="text-sm text-muted-foreground">{t.loading}</p>;
   }
 
   if (queue.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border p-8 text-center">
-        <p className="text-sm text-muted-foreground">Пока нечего повторять — сначала выучите новые слова.</p>
+        <p className="text-sm text-muted-foreground">{t.noReviewsYet}</p>
         <Button type="button" onClick={() => setScreen('newWords')}>
-          Новые слова
+          {t.goToNewWords}
         </Button>
       </div>
     );
@@ -90,7 +92,7 @@ export function ReviewSession() {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-right font-mono text-xs text-muted-foreground">
-        {index + 1} из {queue.length}
+        {t.reviewProgress(index + 1, queue.length)}
       </p>
       <RecallCard
         key={current.id}

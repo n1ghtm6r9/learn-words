@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useTranslation } from '@/lib/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 import { ThemeSection } from './ThemeSection';
 import { AccentColorSection } from './AccentColorSection';
+import { LanguageSection } from './LanguageSection';
 
 function parsePositiveInt(value: string): number | null {
   const parsed = Number(value);
@@ -15,6 +17,7 @@ export function SettingsPage() {
   const setPhaseARepeats = useUIStore((s) => s.setPhaseARepeats);
   const phaseBRepeats = useUIStore((s) => s.phaseBRepeats);
   const setPhaseBRepeats = useUIStore((s) => s.setPhaseBRepeats);
+  const t = useTranslation();
 
   const [phaseAInput, setPhaseAInput] = useState(String(phaseARepeats));
   const [phaseBInput, setPhaseBInput] = useState(String(phaseBRepeats));
@@ -24,13 +27,14 @@ export function SettingsPage() {
       <Card className="flex flex-col gap-4 p-4">
         <ThemeSection />
         <AccentColorSection />
+        <LanguageSection />
       </Card>
 
       <Card className="flex flex-col gap-4 p-4">
         <label className="flex flex-col gap-1.5 text-sm">
-          Повторов в фазе узнавания (слово + перевод)
+          {t.phaseARepeatsLabel}
           <Input
-            aria-label="Повторов в фазе узнавания (слово + перевод)"
+            aria-label={t.phaseARepeatsLabel}
             type="number"
             min={1}
             max={10}
@@ -45,9 +49,9 @@ export function SettingsPage() {
         </label>
 
         <label className="flex flex-col gap-1.5 text-sm">
-          Повторов в фазе вспоминания (только перевод)
+          {t.phaseBRepeatsLabel}
           <Input
-            aria-label="Повторов в фазе вспоминания (только перевод)"
+            aria-label={t.phaseBRepeatsLabel}
             type="number"
             min={1}
             max={10}
