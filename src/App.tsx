@@ -10,10 +10,12 @@ import { AddWordDialog } from '@/features/words/AddWordDialog';
 import { WordList } from '@/features/words/WordList';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { useUIStore } from '@/store/useUIStore';
+import { applyAccentColor } from '@/lib/applyAccentColor';
 
 function App() {
   const screen = useUIStore((s) => s.screen);
   const theme = useUIStore((s) => s.theme);
+  const accentColor = useUIStore((s) => s.accentColor);
   const addWordOpen = useUIStore((s) => s.addWordOpen);
   const setAddWordOpen = useUIStore((s) => s.setAddWordOpen);
   const setScreen = useUIStore((s) => s.setScreen);
@@ -21,6 +23,10 @@ function App() {
   useLayoutEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
+
+  useLayoutEffect(() => {
+    applyAccentColor(accentColor, theme);
+  }, [accentColor, theme]);
 
   return (
     <div className="min-h-screen bg-background pb-20 text-foreground">
