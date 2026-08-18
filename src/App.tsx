@@ -1,17 +1,22 @@
 import { useLayoutEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { Plus } from 'lucide-react';
 import { NavBar } from '@/components/layout/NavBar';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
-import { Dashboard } from '@/features/home/Dashboard';
-import { StudySession } from '@/features/study/StudySession';
-import { StatsPage } from '@/features/stats/StatsPage';
-import { WordForm } from '@/features/words/WordForm';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { NewWordsSession } from '@/features/newWords/NewWordsSession';
+import { ReviewSession } from '@/features/review/ReviewSession';
+import { AddWordDialog } from '@/features/words/AddWordDialog';
 import { WordList } from '@/features/words/WordList';
+import { SettingsPage } from '@/features/settings/SettingsPage';
 import { useUIStore } from '@/store/useUIStore';
 
 function App() {
   const screen = useUIStore((s) => s.screen);
   const theme = useUIStore((s) => s.theme);
+  const addWordOpen = useUIStore((s) => s.addWordOpen);
+  const setAddWordOpen = useUIStore((s) => s.setAddWordOpen);
+  const setScreen = useUIStore((s) => s.setScreen);
 
   useLayoutEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -32,16 +37,36 @@ function App() {
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.15 }}
           >
-            {screen === 'home' && <Dashboard />}
-            {screen === 'add' && (
-              <WordForm mode="create" onDone={() => useUIStore.getState().setScreen('words')} />
-            )}
+            {screen === 'newWords' && <NewWordsSession />}
+            {screen === 'review' && <ReviewSession />}
             {screen === 'words' && <WordList />}
-            {screen === 'study' && <StudySession />}
-            {screen === 'stats' && <StatsPage />}
+            {screen === 'settings' && <SettingsPage />}
           </motion.div>
         </AnimatePresence>
       </main>
+
+      <motion.button
+        type="button"
+        aria-label="Добавить слово"
+        whileTap={{ scale: 0.92 }}
+        onClick={() => setAddWordOpen(true)}
+        className="fixed right-4 bottom-20 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
+      >
+        <Plus className="h-6 w-6" aria-hidden="true" />
+      </motion.button>
+
+      <Dialog open={addWordOpen} onOpenChange={setAddWordOpen}>
+        <DialogContent>
+          <DialogTitle>Добавить слово</DialogTitle>
+          <AddWordDialog
+            onDone={() => {
+              setAddWordOpen(false);
+              setScreen('words');
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
       <NavBar />
     </div>
   );

@@ -1,15 +1,13 @@
 import { motion } from 'motion/react';
-import { BarChart3, House, ListChecks, Plus, SquareLibrary } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { BookOpen, Layers, ListChecks, Settings } from 'lucide-react';
 import { useUIStore } from '@/store/useUIStore';
 import type { Screen } from '@/store/screen.type';
 
-const ITEMS: { screen: Screen; label: string; icon: typeof House }[] = [
-  { screen: 'home', label: 'Главная', icon: House },
-  { screen: 'study', label: 'Учить', icon: SquareLibrary },
-  { screen: 'add', label: 'Добавить', icon: Plus },
+const ITEMS: { screen: Screen; label: string; icon: typeof Layers }[] = [
+  { screen: 'newWords', label: 'Новые', icon: Layers },
+  { screen: 'review', label: 'Повторение', icon: BookOpen },
   { screen: 'words', label: 'Слова', icon: ListChecks },
-  { screen: 'stats', label: 'Статистика', icon: BarChart3 },
+  { screen: 'settings', label: 'Настройки', icon: Settings },
 ];
 
 export function NavBar() {
@@ -27,16 +25,16 @@ export function NavBar() {
             type="button"
             whileTap={{ scale: 0.92 }}
             onClick={() => setScreen(item.screen)}
-            className={cn(
-              'flex flex-1 flex-col items-center gap-0.5 rounded-md py-1.5 text-[11px] transition-colors',
-              active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
-            )}
+            className={
+              'flex flex-1 flex-col items-center gap-0.5 rounded-md py-1.5 text-[11px] transition-colors ' +
+              (active ? 'text-primary' : 'text-muted-foreground hover:text-foreground')
+            }
           >
             <span
-              className={cn(
-                'flex h-8 w-8 items-center justify-center rounded-full transition-colors',
-                active && 'bg-primary/12',
-              )}
+              className={
+                'flex h-8 w-8 items-center justify-center rounded-full transition-colors ' +
+                (active ? 'bg-primary/12' : '')
+              }
             >
               <Icon className="h-[18px] w-[18px]" strokeWidth={active ? 2.4 : 2} aria-hidden="true" />
             </span>

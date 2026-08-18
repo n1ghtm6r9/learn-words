@@ -9,10 +9,11 @@ function baseWord(overrides: Partial<Parameters<typeof db.words.add>[0]>) {
     term: 'hello',
     translation: 'привет',
     createdAt: 0,
-    easinessFactor: 2.5,
-    interval: 0,
-    repetitions: 0,
-    dueDate: 0,
+    stage: 'new' as const,
+    learningPhase: 'A' as const,
+    phaseStreak: 0,
+    rating: 0,
+    reviewStreak: 0,
     ...overrides,
   };
 }

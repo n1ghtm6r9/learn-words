@@ -5,7 +5,6 @@ import { createWord } from './createWord';
 describe('VocabDB', () => {
   beforeEach(async () => {
     await db.words.clear();
-    await db.reviews.clear();
   });
 
   it('persists and retrieves a word via Dexie', async () => {
@@ -14,15 +13,19 @@ describe('VocabDB', () => {
 
     const stored = await db.words.get(id);
     expect(stored?.term).toBe('cat');
-    expect(stored?.translation).toBe('кот');
+    expect(stored?.stage).toBe('new');
   });
 
-  it('persists a review log linked to a word', async () => {
-    const wordId = await db.words.add(createWord('dog', 'собака'));
-    await db.reviews.add({ wordId, reviewedAt: Date.now(), correct: true });
+  it('filters words by stage using the stage index', async () => {
+    await db.words.add(createWord('cat', 'кот'));
+    await db.words.add({ ...createWord('dog', 'собака'), stage: 'review', rating: 70 });
 
-    const reviews = await db.reviews.where('wordId').equals(wordId).toArray();
-    expect(reviews).toHaveLength(1);
-    expect(reviews[0].correct).toBe(true);
+    const newWords = await db.words.where('stage').equals('new').toArray();
+    const reviewWords = await db.words.where('stage').equals('review').toArray();
+
+    expect(newWords).toHaveLength(1);
+    expect(newWords[0].term).toBe('cat');
+    expect(reviewWords).toHaveLength(1);
+    expect(reviewWords[0].term).toBe('dog');
   });
 });

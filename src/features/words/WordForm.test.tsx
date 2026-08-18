@@ -31,10 +31,11 @@ describe('WordForm', () => {
       term: 'hello',
       translation: 'привет',
       createdAt: 0,
-      easinessFactor: 2.5,
-      interval: 0,
-      repetitions: 0,
-      dueDate: 0,
+      stage: 'new',
+      learningPhase: 'A',
+      phaseStreak: 0,
+      rating: 0,
+      reviewStreak: 0,
     });
 
     const onDone = vi.fn();
@@ -57,10 +58,11 @@ describe('WordForm', () => {
       term: 'cat',
       translation: 'кот',
       createdAt: 0,
-      easinessFactor: 2.5,
-      interval: 0,
-      repetitions: 0,
-      dueDate: 0,
+      stage: 'new',
+      learningPhase: 'A',
+      phaseStreak: 0,
+      rating: 0,
+      reviewStreak: 0,
     });
     const existing = (await db.words.get(id))!;
 

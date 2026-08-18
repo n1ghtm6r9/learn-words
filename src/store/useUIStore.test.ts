@@ -1,29 +1,22 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useUIStore } from './useUIStore';
-import type { Word } from '../db/word.type';
-
-function word(id: number): Word {
-  return {
-    id,
-    term: `t${id}`,
-    translation: `p${id}`,
-    createdAt: 0,
-    easinessFactor: 2.5,
-    interval: 0,
-    repetitions: 0,
-    dueDate: 0,
-  };
-}
 
 describe('useUIStore', () => {
   beforeEach(() => {
-    useUIStore.setState({ screen: 'home', session: null, theme: 'light' });
+    useUIStore.setState({ screen: 'newWords', theme: 'light', phaseARepeats: 3, phaseBRepeats: 3 });
     window.localStorage.clear();
   });
 
   it('setScreen меняет текущий экран', () => {
-    useUIStore.getState().setScreen('study');
-    expect(useUIStore.getState().screen).toBe('study');
+    useUIStore.getState().setScreen('review');
+    expect(useUIStore.getState().screen).toBe('review');
+  });
+
+  it('setAddWordOpen переключает видимость попапа добавления слова', () => {
+    useUIStore.getState().setAddWordOpen(true);
+    expect(useUIStore.getState().addWordOpen).toBe(true);
+    useUIStore.getState().setAddWordOpen(false);
+    expect(useUIStore.getState().addWordOpen).toBe(false);
   });
 
   it('toggleTheme переключает тему и сохраняет в localStorage', () => {
@@ -35,27 +28,15 @@ describe('useUIStore', () => {
     expect(window.localStorage.getItem('theme')).toBe(after);
   });
 
-  it('startSession инициализирует сессию с нулевыми счётчиками', () => {
-    useUIStore.getState().startSession([word(1), word(2)]);
-    const session = useUIStore.getState().session;
-
-    expect(session?.queue).toHaveLength(2);
-    expect(session?.index).toBe(0);
-    expect(session?.correct).toBe(0);
+  it('setPhaseARepeats обновляет значение и сохраняет в localStorage', () => {
+    useUIStore.getState().setPhaseARepeats(5);
+    expect(useUIStore.getState().phaseARepeats).toBe(5);
+    expect(window.localStorage.getItem('phaseARepeats')).toBe('5');
   });
 
-  it('recordAnswer увеличивает счётчик и индекс', () => {
-    useUIStore.getState().startSession([word(1), word(2)]);
-    useUIStore.getState().recordAnswer('correct');
-
-    const session = useUIStore.getState().session;
-    expect(session?.correct).toBe(1);
-    expect(session?.index).toBe(1);
-  });
-
-  it('endSession очищает сессию', () => {
-    useUIStore.getState().startSession([word(1)]);
-    useUIStore.getState().endSession();
-    expect(useUIStore.getState().session).toBeNull();
+  it('setPhaseBRepeats обновляет значение и сохраняет в localStorage', () => {
+    useUIStore.getState().setPhaseBRepeats(7);
+    expect(useUIStore.getState().phaseBRepeats).toBe(7);
+    expect(window.localStorage.getItem('phaseBRepeats')).toBe('7');
   });
 });

@@ -1,21 +1,24 @@
 import { create } from 'zustand';
-import type { Word } from '../db/word.type';
-import type { MatchVerdict } from '../lib/fuzzyMatch';
 import type { Screen } from './screen.type';
 import type { Theme } from './theme.type';
-import type { StudySessionState } from './studySessionState.type';
+
+const DEFAULT_PHASE_REPEATS = 3;
 
 interface UIStore {
   screen: Screen;
   setScreen: (screen: Screen) => void;
 
+  addWordOpen: boolean;
+  setAddWordOpen: (open: boolean) => void;
+
   theme: Theme;
   toggleTheme: () => void;
 
-  session: StudySessionState | null;
-  startSession: (queue: Word[]) => void;
-  recordAnswer: (verdict: MatchVerdict) => void;
-  endSession: () => void;
+  phaseARepeats: number;
+  setPhaseARepeats: (value: number) => void;
+
+  phaseBRepeats: number;
+  setPhaseBRepeats: (value: number) => void;
 }
 
 function readInitialTheme(): Theme {
@@ -23,9 +26,19 @@ function readInitialTheme(): Theme {
   return window.localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
 }
 
+function readInitialNumber(key: string, fallback: number): number {
+  if (typeof window === 'undefined') return fallback;
+  const stored = window.localStorage.getItem(key);
+  const parsed = stored ? Number(stored) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 export const useUIStore = create<UIStore>((set) => ({
-  screen: 'home',
+  screen: 'newWords',
   setScreen: (screen) => set({ screen }),
+
+  addWordOpen: false,
+  setAddWordOpen: (open) => set({ addWordOpen: open }),
 
   theme: readInitialTheme(),
   toggleTheme: () =>
@@ -37,14 +50,19 @@ export const useUIStore = create<UIStore>((set) => ({
       return { theme: next };
     }),
 
-  session: null,
-  startSession: (queue) =>
-    set({ session: { queue, index: 0, correct: 0, almost: 0, wrong: 0 } }),
-  recordAnswer: (verdict) =>
-    set((state) => {
-      if (!state.session) return state;
-      const session = { ...state.session, [verdict]: state.session[verdict] + 1, index: state.session.index + 1 };
-      return { session };
-    }),
-  endSession: () => set({ session: null }),
+  phaseARepeats: readInitialNumber('phaseARepeats', DEFAULT_PHASE_REPEATS),
+  setPhaseARepeats: (value) => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('phaseARepeats', String(value));
+    }
+    set({ phaseARepeats: value });
+  },
+
+  phaseBRepeats: readInitialNumber('phaseBRepeats', DEFAULT_PHASE_REPEATS),
+  setPhaseBRepeats: (value) => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('phaseBRepeats', String(value));
+    }
+    set({ phaseBRepeats: value });
+  },
 }));
