@@ -9,6 +9,7 @@ function baseWord(overrides: Partial<Parameters<typeof db.words.add>[0]>) {
     term: 'hello',
     translation: 'привет',
     createdAt: 0,
+    kind: 'word' as const,
     stage: 'new' as const,
     learningPhase: 'A' as const,
     phaseStreak: 0,

@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie';
+import { detectWordKind } from '@/lib/detectWordKind';
 import type { Word } from './word.type';
 
 interface LegacyWordV1 {
@@ -11,8 +12,8 @@ interface LegacyWordV1 {
 export class VocabDB extends Dexie {
   words!: Table<Word, number>;
 
-  constructor() {
-    super('vocab-db');
+  constructor(name = 'vocab-db') {
+    super(name);
 
     this.version(1).stores({
       words: '++id, term, dueDate',
@@ -39,6 +40,19 @@ export class VocabDB extends Dexie {
             delete word.interval;
             delete word.repetitions;
             delete word.dueDate;
+          });
+      });
+
+    this.version(3)
+      .stores({
+        words: '++id, term, stage, kind',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table<Word, number>('words')
+          .toCollection()
+          .modify((word) => {
+            word.kind = detectWordKind(word.term);
           });
       });
   }

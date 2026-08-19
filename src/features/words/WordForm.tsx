@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { db } from '@/db/db';
 import { createWord } from '@/db/createWord';
 import type { Word } from '@/db/word.type';
+import { detectWordKind } from '@/lib/detectWordKind';
 import { useTranslation } from '@/lib/useTranslation';
 
 const DUPLICATE_CHECK_DEBOUNCE_MS = 300;
@@ -55,9 +56,11 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
     if (!term.trim() || !translation.trim()) return;
 
     if (mode === 'edit' && word?.id != null) {
+      const trimmedTerm = term.trim();
       await db.words.update(word.id, {
-        term: term.trim(),
+        term: trimmedTerm,
         translation: translation.trim(),
+        kind: detectWordKind(trimmedTerm),
       });
     } else {
       await db.words.add(createWord(term.trim(), translation.trim()));

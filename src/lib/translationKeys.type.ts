@@ -51,6 +51,7 @@ export interface TranslationKeys {
   learningBadge: string;
   newWordStepStatus: (step: number) => string;
   ratingSrLabel: string;
+  phraseTag: string;
   edit: string;
   delete: string;
 

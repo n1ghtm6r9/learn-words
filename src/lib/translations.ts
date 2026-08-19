@@ -54,6 +54,7 @@ const ru: TranslationKeys = {
   learningBadge: 'Учится',
   newWordStepStatus: (step) => `Учится, шаг ${step} из 2`,
   ratingSrLabel: 'Рейтинг',
+  phraseTag: 'Фраза',
   edit: 'Изменить',
   delete: 'Удалить',
 
@@ -123,6 +124,7 @@ const en: TranslationKeys = {
   learningBadge: 'Learning',
   newWordStepStatus: (step) => `Learning, step ${step} of 2`,
   ratingSrLabel: 'Rating',
+  phraseTag: 'Phrase',
   edit: 'Edit',
   delete: 'Delete',
 

@@ -1,3 +1,4 @@
+import { detectWordKind } from '@/lib/detectWordKind';
 import type { Word } from './word.type';
 
 export function createWord(term: string, translation: string): Word {
@@ -5,6 +6,7 @@ export function createWord(term: string, translation: string): Word {
     term,
     translation,
     createdAt: Date.now(),
+    kind: detectWordKind(term),
     stage: 'new',
     learningPhase: 'A',
     phaseStreak: 0,

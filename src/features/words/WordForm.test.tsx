@@ -22,6 +22,7 @@ describe('WordForm', () => {
       const words = await db.words.toArray();
       expect(words).toHaveLength(1);
       expect(words[0].term).toBe('hello');
+      expect(words[0].kind).toBe('word');
     });
     expect(onDone).toHaveBeenCalledOnce();
   });
@@ -31,6 +32,7 @@ describe('WordForm', () => {
       term: 'hello',
       translation: 'привет',
       createdAt: 0,
+      kind: 'word',
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
@@ -58,6 +60,7 @@ describe('WordForm', () => {
       term: 'cat',
       translation: 'кот',
       createdAt: 0,
+      kind: 'word',
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
@@ -78,6 +81,62 @@ describe('WordForm', () => {
     await waitFor(async () => {
       const updated = await db.words.get(id);
       expect(updated?.translation).toBe('котик');
+    });
+  });
+
+  it('в режиме edit пересчитывает kind, если слово превращается в словосочетание', async () => {
+    const id = await db.words.add({
+      term: 'good',
+      translation: 'хороший',
+      createdAt: 0,
+      kind: 'word',
+      stage: 'new',
+      learningPhase: 'A',
+      phaseStreak: 0,
+      rating: 0,
+      reviewStreak: 0,
+    });
+    const existing = (await db.words.get(id))!;
+
+    const user = userEvent.setup();
+    render(<WordForm mode="edit" word={existing} onDone={vi.fn()} />);
+
+    const termInput = screen.getByLabelText('Слово');
+    await user.type(termInput, ' morning');
+    await user.click(screen.getByRole('button', { name: 'Сохранить' }));
+
+    await waitFor(async () => {
+      const updated = await db.words.get(id);
+      expect(updated?.term).toBe('good morning');
+      expect(updated?.kind).toBe('phrase');
+    });
+  });
+
+  it('в режиме edit не считает фразовый глагол фразой', async () => {
+    const id = await db.words.add({
+      term: 'give',
+      translation: 'давать',
+      createdAt: 0,
+      kind: 'word',
+      stage: 'new',
+      learningPhase: 'A',
+      phaseStreak: 0,
+      rating: 0,
+      reviewStreak: 0,
+    });
+    const existing = (await db.words.get(id))!;
+
+    const user = userEvent.setup();
+    render(<WordForm mode="edit" word={existing} onDone={vi.fn()} />);
+
+    const termInput = screen.getByLabelText('Слово');
+    await user.type(termInput, ' up');
+    await user.click(screen.getByRole('button', { name: 'Сохранить' }));
+
+    await waitFor(async () => {
+      const updated = await db.words.get(id);
+      expect(updated?.term).toBe('give up');
+      expect(updated?.kind).toBe('word');
     });
   });
 });

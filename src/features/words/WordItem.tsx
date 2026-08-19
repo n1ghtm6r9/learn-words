@@ -46,7 +46,14 @@ export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
       <div className="flex items-center gap-3">
         {badge}
         <div>
-          <p className="font-mono font-medium">{word.term}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="font-mono font-medium">{word.term}</p>
+            {word.kind === 'phrase' && (
+              <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                {t.phraseTag}
+              </span>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">{word.translation}</p>
         </div>
       </div>

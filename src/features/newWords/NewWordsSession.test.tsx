@@ -59,8 +59,12 @@ describe('NewWordsSession', () => {
     await user.click(screen.getByRole('button', { name: 'Проверить' }));
     await user.click(await screen.findByRole('button', { name: 'Далее' }));
 
+    // 'cat' виден и до, и после ремонта карточки через разные узлы — та же
+    // гонка, что и в тесте на переход A->B. Пустое поле ввода существует
+    // только в свежей (пост-ремонтной) карточке, поэтому это однозначный
+    // сигнал, что состояние осело, прежде чем читать БД.
+    expect(await screen.findByLabelText('Слово')).toHaveValue('');
     // Слово остаётся в пуле (не выучено), фаза всё ещё A
-    expect(await screen.findByText('cat')).toBeInTheDocument();
     const stored = await db.words.toArray();
     expect(stored[0].learningPhase).toBe('A');
     expect(stored[0].phaseStreak).toBe(0);
@@ -87,7 +91,13 @@ describe('NewWordsSession', () => {
 
     const seenTerms: string[] = [];
     for (let i = 0; i < 4; i++) {
-      const termNode = await screen.findByText(/^(one|two)$/);
+      // Ждём поле ввода — оно существует только в свежей (пост-ремонтной)
+      // карточке, поэтому его появление однозначно сигнализирует, что DOM
+      // осел и старая карточка точно размонтирована. Только после этого
+      // безопасно синхронно прочитать термин — иначе findByText может
+      // поймать узел ещё не размонтированной предыдущей карточки.
+      await screen.findByLabelText('Слово');
+      const termNode = screen.getByText(/^(one|two)$/);
       seenTerms.push(termNode.textContent ?? '');
       await user.type(screen.getByLabelText('Слово'), 'wrong');
       await user.click(screen.getByRole('button', { name: 'Проверить' }));
