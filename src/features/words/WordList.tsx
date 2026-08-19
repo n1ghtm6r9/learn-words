@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { db } from '@/db/db';
+import { isUsableWord } from '@/db/isUsableWord';
 import type { Word } from '@/db/word.type';
+import { normalizeTerm } from '@/lib/normalizeTerm';
 import { useTranslation } from '@/lib/useTranslation';
 import { ExportDialog } from './ExportDialog';
 import { ImportDialog } from './ImportDialog';
@@ -22,15 +24,17 @@ export function WordList() {
   const t = useTranslation();
 
   const sorted = useMemo(
-    () => [...(words ?? [])].sort((a, b) => a.term.localeCompare(b.term)),
+    () => (words ?? []).filter(isUsableWord).sort((a, b) => a.term.localeCompare(b.term)),
     [words],
   );
 
   const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = normalizeTerm(search).toLowerCase();
     if (!query) return sorted;
     return sorted.filter(
-      (w) => w.term.toLowerCase().includes(query) || w.translation.toLowerCase().includes(query),
+      (w) =>
+        normalizeTerm(w.term).toLowerCase().includes(query) ||
+        normalizeTerm(w.translation).toLowerCase().includes(query),
     );
   }, [sorted, search]);
 

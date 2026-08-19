@@ -53,7 +53,11 @@ export class VocabDB extends Dexie {
         await tx
           .table<Word, number>('words')
           .toCollection()
-          .modify((word) => {
+          .modify((word, ref: { value?: Word }) => {
+            if (typeof word.term !== 'string' || typeof word.translation !== 'string') {
+              delete ref.value;
+              return;
+            }
             word.kind = detectWordKind(word.term);
           });
       });

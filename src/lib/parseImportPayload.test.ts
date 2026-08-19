@@ -15,6 +15,23 @@ describe('parseImportPayload', () => {
     expect(parseImportPayload('[1,2,3]').valid).toBe(false);
   });
 
+  it('accepts the supported export version', () => {
+    expect(parseImportPayload('{"version":1,"words":[]}').valid).toBe(true);
+  });
+
+  it('accepts a legacy file that carries no version at all', () => {
+    expect(parseImportPayload('{"words":[]}').valid).toBe(true);
+  });
+
+  it('rejects a newer export format instead of mis-parsing it as the current one', () => {
+    expect(parseImportPayload('{"version":2,"words":[{"term":"cat","translation":"кот"}]}').valid).toBe(false);
+  });
+
+  it('rejects a version field that is not a number', () => {
+    expect(parseImportPayload('{"version":"2","words":[{"term":"cat","translation":"кот"}]}').valid).toBe(false);
+    expect(parseImportPayload('{"version":null,"words":[]}').valid).toBe(false);
+  });
+
   it('is valid for an empty object with no words or settings', () => {
     const result = parseImportPayload('{}');
 

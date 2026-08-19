@@ -2,6 +2,32 @@ import { describe, expect, it } from 'vitest';
 import { normalizeTerm } from './normalizeTerm';
 
 describe('normalizeTerm', () => {
+  it('keeps a trailing apostrophe that belongs to the word', () => {
+    expect(normalizeTerm("boys'")).toBe("boys'");
+    expect(normalizeTerm("'tis")).toBe("'tis");
+    expect(normalizeTerm("rock 'n'")).toBe("rock 'n'");
+  });
+
+  it('strips only a matched pair of wrapping quotes', () => {
+    expect(normalizeTerm('"hello"')).toBe('hello');
+    expect(normalizeTerm("'hello'")).toBe('hello');
+    expect(normalizeTerm('" \'good morning\' "')).toBe('good morning');
+  });
+
+  it('is idempotent, so a re-normalized term stays identical', () => {
+    for (const input of ['" \'cat\' "', "''x''", '"  spaced  "', "boys'", '“quoted”']) {
+      const once = normalizeTerm(input);
+      expect(normalizeTerm(once)).toBe(once);
+    }
+  });
+
+  it('preserves zero-width joiners that carry meaning', () => {
+    const persian = 'می‌رود';
+    const family = '👨‍👩‍👧';
+    expect(normalizeTerm(persian)).toBe(persian);
+    expect(normalizeTerm(family)).toBe(family);
+  });
+
   it('leaves a clean word untouched', () => {
     expect(normalizeTerm('hello')).toBe('hello');
   });

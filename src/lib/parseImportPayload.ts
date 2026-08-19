@@ -69,7 +69,10 @@ export function parseImportPayload(jsonText: string): ParsedImportPayload {
 
   const payload = parsedJson as Record<string, unknown>;
 
-  if (typeof payload.version === 'number' && payload.version > SUPPORTED_EXPORT_VERSION) {
+  const hasUnsupportedVersion =
+    payload.version !== undefined &&
+    (typeof payload.version !== 'number' || payload.version > SUPPORTED_EXPORT_VERSION);
+  if (hasUnsupportedVersion) {
     return { valid: false, words: [], settings: null };
   }
 

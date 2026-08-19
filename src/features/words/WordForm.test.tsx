@@ -143,6 +143,121 @@ describe('WordForm', () => {
     expect(screen.queryByText(/уже есть в словаре/i)).not.toBeInTheDocument();
   });
 
+  it('saves a term whose casing rules break IndexedDB range queries', async () => {
+    const onDone = vi.fn();
+    const user = userEvent.setup();
+    render(<WordForm mode="create" onDone={onDone} />);
+
+    await user.type(screen.getByLabelText('Слово'), 'ჩემი');
+    await user.type(screen.getByLabelText('Перевод'), 'мой');
+    await user.click(screen.getByRole('button', { name: 'Сохранить' }));
+
+    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    const words = await db.words.toArray();
+    expect(words.map((w) => w.term)).toEqual(['ჩემი']);
+  });
+
+  it('reports a save failure instead of silently losing the word', async () => {
+    const addSpy = vi.spyOn(db.words, 'add').mockRejectedValueOnce(new Error('quota'));
+    const onDone = vi.fn();
+    const user = userEvent.setup();
+    render(<WordForm mode="create" onDone={onDone} />);
+
+    await user.type(screen.getByLabelText('Слово'), 'boom');
+    await user.type(screen.getByLabelText('Перевод'), 'бум');
+    await user.click(screen.getByRole('button', { name: 'Сохранить' }));
+
+    expect(await screen.findByText(/не удалось сохранить слово/i)).toBeInTheDocument();
+    expect(onDone).not.toHaveBeenCalled();
+    addSpy.mockRestore();
+  });
+
+  it('explains why a punctuation-only term is refused instead of doing nothing', async () => {
+    const onDone = vi.fn();
+    const user = userEvent.setup();
+    render(<WordForm mode="create" onDone={onDone} />);
+
+    await user.type(screen.getByLabelText('Слово'), '...');
+    await user.type(screen.getByLabelText('Перевод'), '123');
+    await user.click(screen.getByRole('button', { name: 'Сохранить' }));
+
+    expect(await screen.findByText(/хотя бы одна буква/i)).toBeInTheDocument();
+    expect(await db.words.count()).toBe(0);
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it('normalizes the term when saving an edit, not just a plain trim', async () => {
+    const id = await db.words.add({
+      term: 'morning',
+      translation: 'утро',
+      createdAt: 0,
+      kind: 'word',
+      stage: 'new',
+      learningPhase: 'A',
+      phaseStreak: 0,
+      rating: 0,
+      reviewStreak: 0,
+    });
+    const existing = (await db.words.get(id))!;
+
+    const user = userEvent.setup();
+    render(<WordForm mode="edit" word={existing} onDone={vi.fn()} />);
+
+    const termInput = screen.getByLabelText('Слово');
+    await user.clear(termInput);
+    await user.type(termInput, 'good   morning');
+    await user.click(screen.getByRole('button', { name: 'Сохранить' }));
+
+    await waitFor(async () => {
+      const updated = await db.words.get(id);
+      expect(updated?.term).toBe('good morning');
+    });
+  });
+
+  it('re-checks for a duplicate when the term changes while a save is in flight', async () => {
+    await db.words.add({
+      term: 'dog',
+      translation: 'собака',
+      createdAt: 0,
+      kind: 'word',
+      stage: 'new',
+      learningPhase: 'A',
+      phaseStreak: 0,
+      rating: 0,
+      reviewStreak: 0,
+    });
+
+    const onDone = vi.fn();
+    const user = userEvent.setup();
+    render(<WordForm mode="create" onDone={onDone} />);
+
+    await user.type(screen.getByLabelText('Слово'), 'cat');
+    await user.type(screen.getByLabelText('Перевод'), 'кошка');
+    await user.click(screen.getByRole('button', { name: 'Сохранить' }));
+    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+
+    await user.clear(screen.getByLabelText('Слово'));
+    await user.type(screen.getByLabelText('Слово'), 'dog');
+    await user.click(screen.getByRole('button', { name: /Сохранить/ }));
+
+    expect(await screen.findByText(/уже есть в словаре/i)).toBeInTheDocument();
+    expect(await db.words.where('term').equals('dog').count()).toBe(1);
+  });
+
+  it('clears the validation message as soon as the term is corrected', async () => {
+    const user = userEvent.setup();
+    render(<WordForm mode="create" onDone={vi.fn()} />);
+
+    await user.type(screen.getByLabelText('Слово'), '...');
+    await user.type(screen.getByLabelText('Перевод'), 'кот');
+    await user.click(screen.getByRole('button', { name: 'Сохранить' }));
+    expect(await screen.findByText(/хотя бы одна буква/i)).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Слово'), 'cat');
+
+    expect(screen.queryByText(/хотя бы одна буква/i)).not.toBeInTheDocument();
+  });
+
   it('a double-tap on Save does not create two rows', async () => {
     const onDone = vi.fn();
     const user = userEvent.setup();

@@ -48,6 +48,57 @@ describe('WordList', () => {
     expect(screen.queryByText('hello')).not.toBeInTheDocument();
   });
 
+  it('finds a word by its translation, not just its term', async () => {
+    await db.words.add(baseWord({ term: 'hello', translation: 'привет' }));
+    await db.words.add(baseWord({ term: 'cat', translation: 'кот' }));
+
+    const user = userEvent.setup();
+    render(<WordList />);
+    await screen.findByText('hello');
+
+    await user.type(screen.getByPlaceholderText('Поиск...'), 'кот');
+
+    expect(screen.getByText('cat')).toBeInTheDocument();
+    expect(screen.queryByText('hello')).not.toBeInTheDocument();
+  });
+
+  it('finds a word typed with a curly apostrophe that was folded on save', async () => {
+    await db.words.add(baseWord({ term: "don't", translation: 'не' }));
+
+    const user = userEvent.setup();
+    render(<WordList />);
+    await screen.findByText("don't");
+
+    await user.type(screen.getByPlaceholderText('Поиск...'), 'don’t');
+
+    expect(screen.getByText("don't")).toBeInTheDocument();
+    expect(screen.queryByText('Ничего не найдено.')).not.toBeInTheDocument();
+  });
+
+  it('finds a phrase typed with doubled spaces', async () => {
+    await db.words.add(baseWord({ term: 'good morning', translation: 'доброе утро' }));
+
+    const user = userEvent.setup();
+    render(<WordList />);
+    await screen.findByText('good morning');
+
+    await user.type(screen.getByPlaceholderText('Поиск...'), 'good  morning');
+
+    expect(screen.getByText('good morning')).toBeInTheDocument();
+  });
+
+  it('lists words in alphabetical order regardless of insertion order', async () => {
+    await db.words.add(baseWord({ term: 'zebra', translation: 'зебра' }));
+    await db.words.add(baseWord({ term: 'apple', translation: 'яблоко' }));
+    await db.words.add(baseWord({ term: 'mango', translation: 'манго' }));
+
+    render(<WordList />);
+    await screen.findByText('apple');
+
+    const terms = screen.getAllByText(/^(zebra|apple|mango)$/).map((n) => n.textContent);
+    expect(terms).toEqual(['apple', 'mango', 'zebra']);
+  });
+
   it('deletes a word via the button after confirming', async () => {
     await db.words.add(baseWord({ term: 'hello', translation: 'привет' }));
 

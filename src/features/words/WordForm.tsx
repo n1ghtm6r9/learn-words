@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { db } from '@/db/db';
 import { createWord } from '@/db/createWord';
+import { isUsableWord } from '@/db/isUsableWord';
 import type { Word } from '@/db/word.type';
 import { detectWordKind } from '@/lib/detectWordKind';
 import { normalizeTerm } from '@/lib/normalizeTerm';
 import { useTranslation } from '@/lib/useTranslation';
 
 const DUPLICATE_CHECK_DEBOUNCE_MS = 300;
+const HAS_MEANINGFUL_CHARACTER = /[\p{L}\p{N}]/u;
 
 export interface WordFormProps {
   mode: 'create' | 'edit';
@@ -21,8 +23,10 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
   const [term, setTerm] = useState(word?.term ?? '');
   const [translation, setTranslation] = useState(word?.translation ?? '');
   const [duplicate, setDuplicate] = useState(false);
-  const [duplicateConfirmed, setDuplicateConfirmed] = useState(false);
+  const [duplicateConfirmed, setDuplicateConfirmed] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  const [invalid, setInvalid] = useState(false);
   const duplicateRequestId = useRef(0);
   const duplicateTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const t = useTranslation();
@@ -32,25 +36,31 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
   }, []);
 
   async function countExistingCollisions(value: string): Promise<number> {
+    const needle = value.toLowerCase();
     return db.words
-      .where('term')
-      .equalsIgnoreCase(value)
-      .and((w) => w.id !== word?.id)
+      .filter((w) => w.id !== word?.id && isUsableWord(w) && w.term.toLowerCase() === needle)
       .count();
   }
 
   async function checkDuplicate(value: string) {
     const requestId = ++duplicateRequestId.current;
-    const count = await countExistingCollisions(normalizeTerm(value));
-    if (requestId === duplicateRequestId.current) {
-      setDuplicate(count > 0);
+    try {
+      const count = await countExistingCollisions(normalizeTerm(value));
+      if (requestId === duplicateRequestId.current) {
+        setDuplicate(count > 0);
+      }
+    } catch {
+      if (requestId === duplicateRequestId.current) {
+        setDuplicate(false);
+      }
     }
   }
 
   function scheduleDuplicateCheck(value: string) {
     clearTimeout(duplicateTimeout.current);
     duplicateRequestId.current += 1;
-    setDuplicateConfirmed(false);
+    setInvalid(false);
+    setSaveError(false);
 
     if (value.trim() === '') {
       setDuplicate(false);
@@ -68,15 +78,21 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
 
     const trimmedTerm = normalizeTerm(term);
     const trimmedTranslation = normalizeTerm(translation);
-    if (!trimmedTerm || !trimmedTranslation) return;
+
+    if (!HAS_MEANINGFUL_CHARACTER.test(trimmedTerm) || !trimmedTranslation) {
+      setInvalid(true);
+      return;
+    }
+    setInvalid(false);
 
     setIsSaving(true);
+    setSaveError(false);
     try {
-      if (!duplicateConfirmed) {
+      if (duplicateConfirmed !== trimmedTerm) {
         const collisions = await countExistingCollisions(trimmedTerm);
         if (collisions > 0) {
           setDuplicate(true);
-          setDuplicateConfirmed(true);
+          setDuplicateConfirmed(trimmedTerm);
           return;
         }
       }
@@ -92,6 +108,8 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
       }
 
       onDone();
+    } catch {
+      setSaveError(true);
     } finally {
       setIsSaving(false);
     }
@@ -127,11 +145,29 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
           aria-label={t.translationInputLabel}
           value={translation}
           maxLength={200}
-          onChange={(e) => setTranslation(e.target.value)}
+          onChange={(e) => {
+            setTranslation(e.target.value);
+            setInvalid(false);
+            setSaveError(false);
+          }}
           required
           className="font-mono"
         />
       </label>
+
+      {invalid && (
+        <p role="alert" className="flex items-start gap-2 rounded-md bg-destructive/10 p-2.5 text-sm text-destructive">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          {t.wordFormInvalid}
+        </p>
+      )}
+
+      {saveError && (
+        <p role="alert" className="flex items-start gap-2 rounded-md bg-destructive/10 p-2.5 text-sm text-destructive">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          {t.wordFormSaveError}
+        </p>
+      )}
 
       <Button type="submit" disabled={isSaving}>
         {duplicate ? t.saveAnyway : t.save}

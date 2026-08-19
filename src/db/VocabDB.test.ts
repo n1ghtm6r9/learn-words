@@ -74,6 +74,26 @@ describe('VocabDB migration v2 -> v3', () => {
     await Dexie.delete(TEST_DB_NAME);
   });
 
+  it('discards an unusable row instead of bricking the database or keeping a term-less word', async () => {
+    const legacy = new Dexie(TEST_DB_NAME);
+    legacy.version(2).stores({ words: '++id, term, stage' });
+    await legacy.open();
+    await legacy.table('words').bulkAdd([
+      { translation: 'без слова', createdAt: 0, stage: 'new', learningPhase: 'A', phaseStreak: 0, rating: 0, reviewStreak: 0 },
+      { term: 'apple', translation: 'яблоко', createdAt: 0, stage: 'new', learningPhase: 'A', phaseStreak: 0, rating: 0, reviewStreak: 0 },
+    ]);
+    legacy.close();
+
+    const upgraded = new VocabDB(TEST_DB_NAME);
+    const words = await upgraded.words.toArray();
+
+    expect(words).toHaveLength(1);
+    expect(words[0].term).toBe('apple');
+    expect(words[0].kind).toBe('word');
+    expect(words.every((w) => typeof w.term === 'string')).toBe(true);
+    upgraded.close();
+  });
+
   it('backfills kind on existing words based on their term', async () => {
     const legacy = new Dexie(TEST_DB_NAME);
     legacy.version(2).stores({ words: '++id, term, stage' });

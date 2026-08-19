@@ -139,6 +139,39 @@ describe('ImportDialog', () => {
     expect(await screen.findByText('Настройки применены')).toBeInTheDocument();
   });
 
+  it('restores progress onto an existing word when the replace option is ticked', async () => {
+    await db.words.add({
+      term: 'cat',
+      translation: 'кот',
+      createdAt: 0,
+      kind: 'word',
+      stage: 'new',
+      learningPhase: 'A',
+      phaseStreak: 0,
+      rating: 0,
+      reviewStreak: 0,
+    });
+
+    const user = userEvent.setup();
+    render(<ImportDialog open onOpenChange={vi.fn()} />);
+
+    const file = jsonFile({
+      version: 1,
+      exportedAt: 0,
+      words: [{ term: 'cat', translation: 'кот', stage: 'review', rating: 88, reviewStreak: 9 }],
+    });
+    await user.upload(screen.getByLabelText('Выберите файл'), file);
+    await screen.findByText('Найдено слов: 1');
+
+    await user.click(screen.getByRole('checkbox', { name: 'Заменить прогресс уже существующих слов' }));
+    await user.click(screen.getByRole('button', { name: 'Импортировать' }));
+
+    expect(await screen.findByText('Обновлён прогресс: 1')).toBeInTheDocument();
+    const [word] = await db.words.toArray();
+    expect(word.rating).toBe(88);
+    expect(word.stage).toBe('review');
+  });
+
   it('forgets the previous file once the dialog is closed', async () => {
     const onOpenChange = vi.fn();
     const user = userEvent.setup();

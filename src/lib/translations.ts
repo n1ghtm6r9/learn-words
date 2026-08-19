@@ -40,11 +40,14 @@ const ru: TranslationKeys = {
 
   translationInputLabel: 'Перевод',
   duplicateWarning: 'Такое слово уже есть в словаре — сохранить второй раз?',
+  wordFormInvalid: 'Введите слово (хотя бы одна буква) и перевод.',
+  wordFormSaveError: 'Не удалось сохранить слово. Попробуйте ещё раз.',
   save: 'Сохранить',
   saveAnyway: 'Сохранить всё равно',
   close: 'Закрыть',
 
   wordListLabel: 'Список слов',
+  wordListPlaceholder: 'привет - hello\nкот - cat',
   parseErrorPrefix: 'Не удалось разобрать:',
   bulkSaveError: 'Не удалось сохранить слова. Попробуйте ещё раз.',
   bulkDuplicatesSkipped: (count) => `Пропущено дубликатов: ${count}`,
@@ -78,6 +81,7 @@ const ru: TranslationKeys = {
   importSummary: (words, hasSettings) =>
     hasSettings ? `Найдено слов: ${words}, есть настройки` : `Найдено слов: ${words}`,
   importSuccess: (count) => `Импортировано слов: ${count}`,
+  importReplaceExisting: 'Заменить прогресс уже существующих слов',
   importUpdated: (count) => `Обновлён прогресс: ${count}`,
   importSkipped: (count) => `Пропущено (уже в словаре): ${count}`,
   importSettingsApplied: 'Настройки применены',
@@ -137,11 +141,14 @@ const en: TranslationKeys = {
 
   translationInputLabel: 'Translation',
   duplicateWarning: 'This word is already in the dictionary — save it again?',
+  wordFormInvalid: 'Enter a word (at least one letter) and a translation.',
+  wordFormSaveError: 'Could not save the word. Please try again.',
   save: 'Save',
   saveAnyway: 'Save anyway',
   close: 'Close',
 
   wordListLabel: 'Word list',
+  wordListPlaceholder: 'hello - привет\ncat - кот',
   parseErrorPrefix: 'Could not parse:',
   bulkSaveError: 'Could not save the words. Please try again.',
   bulkDuplicatesSkipped: (count) => `Duplicates skipped: ${count}`,
@@ -175,6 +182,7 @@ const en: TranslationKeys = {
   importSummary: (words, hasSettings) =>
     hasSettings ? `Words found: ${words}, settings included` : `Words found: ${words}`,
   importSuccess: (count) => `Words imported: ${count}`,
+  importReplaceExisting: 'Replace progress for words already in the dictionary',
   importUpdated: (count) => `Progress updated: ${count}`,
   importSkipped: (count) => `Skipped (already in the dictionary): ${count}`,
   importSettingsApplied: 'Settings applied',

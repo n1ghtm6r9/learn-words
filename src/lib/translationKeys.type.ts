@@ -37,11 +37,14 @@ export interface TranslationKeys {
 
   translationInputLabel: string;
   duplicateWarning: string;
+  wordFormInvalid: string;
+  wordFormSaveError: string;
   save: string;
   saveAnyway: string;
   close: string;
 
   wordListLabel: string;
+  wordListPlaceholder: string;
   parseErrorPrefix: string;
   bulkSaveError: string;
   bulkDuplicatesSkipped: (count: number) => string;
@@ -74,6 +77,7 @@ export interface TranslationKeys {
   importFileLabel: string;
   importSummary: (words: number, hasSettings: boolean) => string;
   importSuccess: (count: number) => string;
+  importReplaceExisting: string;
   importUpdated: (count: number) => string;
   importSkipped: (count: number) => string;
   importSettingsApplied: string;

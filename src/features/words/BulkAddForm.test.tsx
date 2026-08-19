@@ -78,6 +78,31 @@ describe('BulkAddForm', () => {
     expect(words.map((w) => w.term).sort()).toEqual(['cat', 'dog']);
   });
 
+  it('recognizes an existing word even when the pasted line is wrapped in quotes and spaces', async () => {
+    await db.words.add({
+      term: 'good morning',
+      translation: 'доброе утро',
+      createdAt: 0,
+      kind: 'phrase',
+      stage: 'new',
+      learningPhase: 'A',
+      phaseStreak: 0,
+      rating: 0,
+      reviewStreak: 0,
+    });
+
+    const onDone = vi.fn();
+    const user = userEvent.setup();
+    render(<BulkAddForm onDone={onDone} />);
+
+    await user.type(screen.getByLabelText('Список слов'), '" \'good morning\' " - доброе утро');
+    await user.click(await screen.findByRole('button', { name: 'Сохранить всё' }));
+
+    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    const words = await db.words.toArray();
+    expect(words).toHaveLength(1);
+  });
+
   it('disables the save button when there are no valid pairs', async () => {
     const user = userEvent.setup();
     render(<BulkAddForm onDone={vi.fn()} />);

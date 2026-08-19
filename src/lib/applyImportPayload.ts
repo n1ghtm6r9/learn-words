@@ -1,4 +1,5 @@
 import { db } from '@/db/db';
+import { isUsableWord } from '@/db/isUsableWord';
 import type { Word } from '@/db/word.type';
 import { clamp } from '@/lib/clamp';
 import { detectWordKind } from '@/lib/detectWordKind';
@@ -9,6 +10,7 @@ import type { ImportResult } from './importResult.type';
 import type { ParsedImportPayload } from './parsedImportPayload.type';
 
 const MAX_IMPORTED_STREAK = 1000;
+const HAS_MEANINGFUL_CHARACTER = /[\p{L}\p{N}]/u;
 
 type ImportedWord = ParsedImportPayload['words'][number];
 
@@ -21,7 +23,8 @@ function importedStreak(value: unknown): number {
 }
 
 function importedTimestamp(value: unknown, now: number): number | null {
-  return isFiniteNumber(value) && value >= 0 && value <= now ? value : null;
+  if (!isFiniteNumber(value) || value < 0) return null;
+  return Math.min(value, now);
 }
 
 function buildWord(entry: ImportedWord, term: string, translation: string, now: number): Word {
@@ -51,18 +54,18 @@ function buildWord(entry: ImportedWord, term: string, translation: string, now: 
 
 function dedupeByNormalizedTerm(
   words: ImportedWord[],
-): Array<{ entry: ImportedWord; term: string; translation: string; key: string }> {
+): Array<{ entry: ImportedWord; term: string; translation: string }> {
   const seen = new Set<string>();
-  const unique: Array<{ entry: ImportedWord; term: string; translation: string; key: string }> = [];
+  const unique: Array<{ entry: ImportedWord; term: string; translation: string }> = [];
 
   for (const entry of words) {
     const term = normalizeTerm(entry.term);
     const translation = normalizeTerm(entry.translation);
-    if (term === '' || translation === '') continue;
+    if (!HAS_MEANINGFUL_CHARACTER.test(term) || translation === '') continue;
     const key = term.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    unique.push({ entry, term, translation, key });
+    unique.push({ entry, term, translation });
   }
 
   return unique;
@@ -70,7 +73,7 @@ function dedupeByNormalizedTerm(
 
 export async function applyImportPayload(
   parsed: ParsedImportPayload,
-  options: { importWords: boolean; importSettings: boolean },
+  options: { importWords: boolean; importSettings: boolean; replaceExisting: boolean },
 ): Promise<ImportResult> {
   let importedCount = 0;
   let updatedCount = 0;
@@ -80,33 +83,36 @@ export async function applyImportPayload(
   if (options.importWords && parsed.words.length > 0) {
     const now = Date.now();
     const unique = dedupeByNormalizedTerm(parsed.words);
-    const existingByTerm = new Map((await db.words.toArray()).map((w) => [w.term.toLowerCase(), w]));
 
-    const toAdd: Word[] = [];
-    const toUpdate: Word[] = [];
+    await db.transaction('rw', db.words, async () => {
+      const existingByTerm = new Map(
+        (await db.words.toArray()).filter(isUsableWord).map((w) => [w.term.toLowerCase(), w]),
+      );
 
-    for (const { entry, term, translation, key } of unique) {
-      const candidate = buildWord(entry, term, translation, now);
-      const existing = existingByTerm.get(key);
+      const toAdd: Word[] = [];
+      const toUpdate: Word[] = [];
 
-      if (!existing) {
-        toAdd.push(candidate);
-        continue;
+      for (const { entry, term, translation } of unique) {
+        const candidate = buildWord(entry, term, translation, now);
+        const existing = existingByTerm.get(term.toLowerCase());
+
+        if (!existing) {
+          toAdd.push(candidate);
+        } else if (options.replaceExisting) {
+          toUpdate.push({ ...candidate, id: existing.id });
+        }
       }
-      if ((candidate.lastReviewedAt ?? 0) > (existing.lastReviewedAt ?? 0)) {
-        toUpdate.push({ ...candidate, id: existing.id });
-      }
-    }
 
-    if (toAdd.length > 0) {
-      await db.words.bulkAdd(toAdd);
-    }
-    if (toUpdate.length > 0) {
-      await db.words.bulkPut(toUpdate);
-    }
-    importedCount = toAdd.length;
-    updatedCount = toUpdate.length;
-    skippedCount = parsed.words.length - toAdd.length - toUpdate.length;
+      if (toAdd.length > 0) {
+        await db.words.bulkAdd(toAdd);
+      }
+      if (toUpdate.length > 0) {
+        await db.words.bulkPut(toUpdate);
+      }
+      importedCount = toAdd.length;
+      updatedCount = toUpdate.length;
+      skippedCount = unique.length - toAdd.length - toUpdate.length;
+    });
   }
 
   if (options.importSettings && parsed.settings) {

@@ -16,6 +16,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
   const [parsed, setParsed] = useState<ParsedImportPayload | null>(null);
   const [importWords, setImportWords] = useState(false);
   const [importSettings, setImportSettings] = useState(false);
+  const [replaceExisting, setReplaceExisting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [failed, setFailed] = useState(false);
@@ -31,6 +32,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     setParsed(null);
     setImportWords(false);
     setImportSettings(false);
+    setReplaceExisting(false);
     setImportResult(null);
     setFailed(false);
   }
@@ -64,6 +66,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
       const result = await applyImportPayload(parsed, {
         importWords: importWords && hasWords,
         importSettings: importSettings && hasSettings,
+        replaceExisting,
       });
       setImportResult(result);
     } catch {
@@ -107,6 +110,19 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
                     className="h-4 w-4 shrink-0 rounded border border-input accent-primary"
                   />
                   {t.exportIncludeWords}
+                </label>
+              )}
+
+              {hasWords && importWords && (
+                <label className="flex items-center gap-2 pl-6 text-sm">
+                  <input
+                    type="checkbox"
+                    aria-label={t.importReplaceExisting}
+                    checked={replaceExisting}
+                    onChange={(e) => setReplaceExisting(e.target.checked)}
+                    className="h-4 w-4 shrink-0 rounded border border-input accent-primary"
+                  />
+                  {t.importReplaceExisting}
                 </label>
               )}
 

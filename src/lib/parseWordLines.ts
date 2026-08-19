@@ -3,16 +3,36 @@ import { normalizeTerm } from './normalizeTerm';
 
 const UNPADDED_DELIMITERS = ['=', ':', '\t'];
 const PADDED_ONLY_DELIMITERS = ['-', '–', '—'];
-const LEADING_LIST_MARKER = /^(?:[-–—*•·‣▪]+\s+|\d+[.)]\s+)/;
-const HAS_LETTER = /\p{L}/u;
+const LEADING_LIST_MARKER = /^(?:[-–—*•·‣▪●○◦▸▹»>]+\s+|\d+[.)]\s+|\[[ xX]?\]\s+)/;
+const LINE_SEPARATOR_CODE_POINTS = [0x2028, 0x2029];
+const LINE_BREAKS = new RegExp(
+  `\\r\\n|[\\n\\r${LINE_SEPARATOR_CODE_POINTS.map((code) => String.fromCodePoint(code)).join('')}]`,
+);
+const HAS_MEANINGFUL_CHARACTER = /[\p{L}\p{N}]/u;
 
-function findDelimiter(line: string): { index: number; length: number } | null {
-  let best: { index: number; length: number } | null = null;
+type Delimiter = { index: number; length: number };
+
+const DIGIT = /\d/;
+
+function isTimeLikeColon(line: string, index: number): boolean {
+  return line[index] === ':' && DIGIT.test(line[index - 1] ?? '') && DIGIT.test(line[index + 1] ?? '');
+}
+
+function findDelimiter(line: string): Delimiter | null {
+  let best: Delimiter | null = null;
 
   for (const delimiter of UNPADDED_DELIMITERS) {
-    const index = line.indexOf(delimiter);
-    if (index !== -1 && (best === null || index < best.index)) {
-      best = { index, length: delimiter.length };
+    let searchFrom = 0;
+    while (true) {
+      const index = line.indexOf(delimiter, searchFrom);
+      if (index === -1) break;
+      if (!isTimeLikeColon(line, index)) {
+        if (best === null || index < best.index) {
+          best = { index, length: delimiter.length };
+        }
+        break;
+      }
+      searchFrom = index + 1;
     }
   }
 
@@ -44,7 +64,7 @@ function splitLine(originalLine: string): ParsedWordLine | null {
   const term = normalizeTerm(withoutMarker.slice(0, delimiter.index));
   const translation = normalizeTerm(withoutMarker.slice(delimiter.index + delimiter.length));
 
-  if (!term || !translation || !HAS_LETTER.test(term)) return null;
+  if (!term || !translation || !HAS_MEANINGFUL_CHARACTER.test(term)) return null;
 
   return { term, translation };
 }
@@ -53,7 +73,7 @@ export function parseWordLines(text: string): { valid: ParsedWordLine[]; invalid
   const valid: ParsedWordLine[] = [];
   const invalidLines: string[] = [];
 
-  for (const rawLine of text.split('\n')) {
+  for (const rawLine of text.split(LINE_BREAKS)) {
     const line = rawLine.trim();
     if (!line) continue;
 

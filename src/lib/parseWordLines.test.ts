@@ -75,6 +75,52 @@ describe('parseWordLines', () => {
     expect(result.valid).toEqual([{ term: 'hello', translation: 'привет' }]);
   });
 
+  it('splits on line separators other than \\n instead of merging words together', () => {
+    const lineSeparator = String.fromCodePoint(0x2028);
+    const result = parseWordLines(`hello - привет${lineSeparator}cat - кот`);
+
+    expect(result.valid).toEqual([
+      { term: 'hello', translation: 'привет' },
+      { term: 'cat', translation: 'кот' },
+    ]);
+  });
+
+  it('splits on a lone carriage return', () => {
+    const result = parseWordLines('hello - привет\rcat - кот');
+
+    expect(result.valid).toHaveLength(2);
+  });
+
+  it('does not treat a colon between digits as a separator', () => {
+    const result = parseWordLines('9:00 - девять часов');
+
+    expect(result.valid).toEqual([{ term: '9:00', translation: 'девять часов' }]);
+  });
+
+  it('splits on a colon even when the translation contains a spaced dash', () => {
+    const result = parseWordLines('cat: кот - животное');
+
+    expect(result.valid).toEqual([{ term: 'cat', translation: 'кот - животное' }]);
+  });
+
+  it('strips bullet markers used by common editors', () => {
+    const result = parseWordLines('● hello - привет\n◦ cat - кот');
+
+    expect(result.valid).toEqual([
+      { term: 'hello', translation: 'привет' },
+      { term: 'cat', translation: 'кот' },
+    ]);
+  });
+
+  it('keeps a leading hyphen that belongs to a suffix entry', () => {
+    const result = parseWordLines('-ing - окончание\n-ся = частица');
+
+    expect(result.valid).toEqual([
+      { term: '-ing', translation: 'окончание' },
+      { term: '-ся', translation: 'частица' },
+    ]);
+  });
+
   it('ignores empty lines', () => {
     const result = parseWordLines('hello - привет\n\n\ncat - кот');
     expect(result.valid).toHaveLength(2);

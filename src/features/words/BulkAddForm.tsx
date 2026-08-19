@@ -3,6 +3,8 @@ import { TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { db } from '@/db/db';
 import { createWord } from '@/db/createWord';
+import { isUsableWord } from '@/db/isUsableWord';
+import { normalizeTerm } from '@/lib/normalizeTerm';
 import { parseWordLines } from '@/lib/parseWordLines';
 import type { ParsedWordLine } from '@/lib/parsedWordLine.type';
 import { useTranslation } from '@/lib/useTranslation';
@@ -46,10 +48,14 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
     setIsSaving(true);
     setSaveError(false);
     try {
-      const existing = new Set((await db.words.toArray()).map((w) => w.term.toLowerCase()));
-      const toSave = valid.filter((line) => !existing.has(line.term.toLowerCase()));
+      const existing = new Set(
+        (await db.words.toArray()).filter(isUsableWord).map((w) => normalizeTerm(w.term).toLowerCase()),
+      );
+      const toSave = valid
+        .map((line) => createWord(line.term, line.translation))
+        .filter((word) => !existing.has(word.term.toLowerCase()));
       if (toSave.length > 0) {
-        await db.words.bulkAdd(toSave.map((line) => createWord(line.term, line.translation)));
+        await db.words.bulkAdd(toSave);
       }
       onDone();
     } catch {
@@ -68,7 +74,7 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={8}
-          placeholder={'hello - привет\ncat - кот'}
+          placeholder={t.wordListPlaceholder}
           className="w-full rounded-lg border border-input bg-transparent p-2.5 font-mono text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
       </label>
