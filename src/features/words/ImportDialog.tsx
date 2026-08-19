@@ -154,9 +154,15 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
                 </div>
               )}
 
-              <Button type="button" onClick={() => void handleImport()} disabled={!canImport || isImporting}>
-                {t.importConfirmButton}
-              </Button>
+              {importResult ? (
+                <Button type="button" onClick={() => handleOpenChange(false)} autoFocus>
+                  {t.done}
+                </Button>
+              ) : (
+                <Button type="button" onClick={() => void handleImport()} disabled={!canImport || isImporting}>
+                  {t.importConfirmButton}
+                </Button>
+              )}
             </>
           )}
         </div>

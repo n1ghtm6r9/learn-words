@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { WordList } from './WordList';
 import { db } from '@/db/db';
@@ -97,6 +97,54 @@ describe('WordList', () => {
 
     const terms = screen.getAllByText(/^(zebra|apple|mango)$/).map((n) => n.textContent);
     expect(terms).toEqual(['apple', 'mango', 'zebra']);
+  });
+
+  it('shows how many words there are in total', async () => {
+    await db.words.add(baseWord({ term: 'hello', translation: 'привет' }));
+    await db.words.add(baseWord({ term: 'cat', translation: 'кот' }));
+
+    render(<WordList />);
+
+    expect(await screen.findByText('Всего слов: 2')).toBeInTheDocument();
+  });
+
+  it('shows how many words the search narrowed the list down to', async () => {
+    await db.words.add(baseWord({ term: 'hello', translation: 'привет' }));
+    await db.words.add(baseWord({ term: 'cat', translation: 'кот' }));
+
+    const user = userEvent.setup();
+    render(<WordList />);
+    await screen.findByText('Всего слов: 2');
+
+    await user.type(screen.getByPlaceholderText('Поиск...'), 'cat');
+
+    expect(screen.getByText('Показано: 1 из 2')).toBeInTheDocument();
+  });
+
+  it('opens a details view with the full term and translation when a card is clicked', async () => {
+    await db.words.add(
+      baseWord({
+        term: 'at the end of my tether',
+        translation: 'быть на пределе терпения',
+        kind: 'phrase',
+        stage: 'review',
+        rating: 90,
+        reviewStreak: 5,
+        lastReviewedAt: Date.now(),
+      }),
+    );
+
+    const user = userEvent.setup();
+    render(<WordList />);
+    await screen.findByText('at the end of my tether');
+
+    await user.click(screen.getByRole('button', { name: /Открыть подробности/ }));
+
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('at the end of my tether')).toBeInTheDocument();
+    expect(within(dialog).getByText('быть на пределе терпения')).toBeInTheDocument();
+    expect(within(dialog).getByText('На повторении')).toBeInTheDocument();
+    expect(within(dialog).getByText('90.00')).toBeInTheDocument();
   });
 
   it('deletes a word via the button after confirming', async () => {

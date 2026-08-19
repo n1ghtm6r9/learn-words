@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Volume2 } from 'lucide-react';
+import { Pencil, Trash2, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CARD_CLASS } from '@/lib/cardClass';
 import { cn } from '@/lib/utils';
@@ -15,9 +15,10 @@ interface WordItemProps {
   word: Word;
   onEdit: () => void;
   onDelete: () => void;
+  onOpenDetails: () => void;
 }
 
-export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
+export function WordItem({ word, onEdit, onDelete, onOpenDetails }: WordItemProps) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const t = useTranslation();
 
@@ -47,29 +48,36 @@ export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
 
   return (
     <li className={cn(CARD_CLASS, 'flex items-center justify-between gap-3 p-3')}>
-      <div className="flex min-w-0 items-center gap-3">
-        {badge}
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <p className="min-w-0 truncate font-mono font-medium">{word.term}</p>
-            {word.kind === 'phrase' && (
-              <span className="shrink-0 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                {t.phraseTag}
-              </span>
-            )}
-            {isSpeechSupported() && (
-              <button
-                type="button"
-                aria-label={t.speak}
-                onClick={() => speak(word.term)}
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
-              >
-                <Volume2 className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-          <p className="truncate text-sm text-muted-foreground">{word.translation}</p>
-        </div>
+      <div className="flex min-w-0 items-center gap-2">
+        <button
+          type="button"
+          aria-label={`${t.openWordDetails}: ${word.term}`}
+          onClick={onOpenDetails}
+          className="flex min-w-0 items-center gap-3 rounded-md text-left transition-colors hover:bg-secondary/60 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+        >
+          {badge}
+          <span className="min-w-0">
+            <span className="flex items-center gap-1.5">
+              <span className="min-w-0 truncate font-mono font-medium">{word.term}</span>
+              {word.kind === 'phrase' && (
+                <span className="shrink-0 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  {t.phraseTag}
+                </span>
+              )}
+            </span>
+            <span className="block truncate text-sm text-muted-foreground">{word.translation}</span>
+          </span>
+        </button>
+        {isSpeechSupported() && (
+          <button
+            type="button"
+            aria-label={t.speak}
+            onClick={() => speak(word.term)}
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
+          >
+            <Volume2 className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
       {confirmingDelete ? (
         <div className="flex shrink-0 flex-col items-end gap-1.5">
@@ -86,12 +94,19 @@ export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
           </div>
         </div>
       ) : (
-        <div className="flex shrink-0 gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={onEdit}>
-            {t.edit}
+        <div className="flex shrink-0 gap-1">
+          <Button type="button" variant="ghost" size="icon-sm" aria-label={t.edit} onClick={onEdit}>
+            <Pencil className="h-3.5 w-3.5" />
           </Button>
-          <Button type="button" variant="destructive" size="sm" onClick={() => setConfirmingDelete(true)}>
-            {t.delete}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t.delete}
+            onClick={() => setConfirmingDelete(true)}
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       )}

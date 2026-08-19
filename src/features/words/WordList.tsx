@@ -11,6 +11,7 @@ import { normalizeTerm } from '@/lib/normalizeTerm';
 import { useTranslation } from '@/lib/useTranslation';
 import { ExportDialog } from './ExportDialog';
 import { ImportDialog } from './ImportDialog';
+import { WordDetailsDialog } from './WordDetailsDialog';
 import { WordForm } from './WordForm';
 import { WordItem } from './WordItem';
 
@@ -18,6 +19,7 @@ export function WordList() {
   const words = useLiveQuery(() => db.words.toArray(), []);
   const [search, setSearch] = useState('');
   const [editingWord, setEditingWord] = useState<Word | null>(null);
+  const [detailsWord, setDetailsWord] = useState<Word | null>(null);
   const [deleteError, setDeleteError] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -74,9 +76,17 @@ export function WordList() {
         </p>
       )}
 
+      {sorted.length > 0 && (
+        <p className="font-mono text-xs text-muted-foreground">
+          {filtered.length === sorted.length
+            ? t.wordsTotal(sorted.length)
+            : t.wordsFiltered(filtered.length, sorted.length)}
+        </p>
+      )}
+
       {filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          {words.length === 0 ? t.noWordsYet : t.nothingFound}
+          {sorted.length === 0 ? t.noWordsYet : t.nothingFound}
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -86,6 +96,7 @@ export function WordList() {
               word={word}
               onEdit={() => setEditingWord(word)}
               onDelete={() => void handleDelete(word.id)}
+              onOpenDetails={() => setDetailsWord(word)}
             />
           ))}
         </ul>
@@ -99,6 +110,8 @@ export function WordList() {
           )}
         </DialogContent>
       </Dialog>
+
+      <WordDetailsDialog word={detailsWord} onOpenChange={(open) => !open && setDetailsWord(null)} />
 
       <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
       <ImportDialog open={importOpen} onOpenChange={setImportOpen} />

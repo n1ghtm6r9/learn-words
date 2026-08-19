@@ -172,6 +172,24 @@ describe('ImportDialog', () => {
     expect(word.stage).toBe('review');
   });
 
+  it('offers a way to dismiss the dialog once the import is done', async () => {
+    const onOpenChange = vi.fn();
+    const user = userEvent.setup();
+    render(<ImportDialog open onOpenChange={onOpenChange} />);
+
+    const file = jsonFile({ version: 1, exportedAt: 0, words: [{ term: 'cat', translation: 'кот' }] });
+    await user.upload(screen.getByLabelText('Выберите файл'), file);
+    await screen.findByText('Найдено слов: 1');
+
+    await user.click(screen.getByRole('button', { name: 'Импортировать' }));
+    await screen.findByText('Импортировано слов: 1');
+
+    expect(screen.queryByRole('button', { name: 'Импортировать' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Готово' }));
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
   it('forgets the previous file once the dialog is closed', async () => {
     const onOpenChange = vi.fn();
     const user = userEvent.setup();
