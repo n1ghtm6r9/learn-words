@@ -24,7 +24,7 @@ describe('WordList', () => {
     await db.words.clear();
   });
 
-  it('показывает список сохранённых слов', async () => {
+  it('shows the list of saved words', async () => {
     await db.words.add(baseWord({ term: 'hello', translation: 'привет' }));
     await db.words.add(baseWord({ term: 'cat', translation: 'кот' }));
 
@@ -34,7 +34,7 @@ describe('WordList', () => {
     expect(await screen.findByText('cat')).toBeInTheDocument();
   });
 
-  it('фильтрует по тексту поиска', async () => {
+  it('filters by search text', async () => {
     await db.words.add(baseWord({ term: 'hello', translation: 'привет' }));
     await db.words.add(baseWord({ term: 'cat', translation: 'кот' }));
 
@@ -48,7 +48,7 @@ describe('WordList', () => {
     expect(screen.queryByText('hello')).not.toBeInTheDocument();
   });
 
-  it('удаляет слово по кнопке', async () => {
+  it('deletes a word via the button', async () => {
     await db.words.add(baseWord({ term: 'hello', translation: 'привет' }));
 
     const user = userEvent.setup();

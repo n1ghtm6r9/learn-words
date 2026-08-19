@@ -3,16 +3,16 @@ import { isSpeechSupported, speak } from './tts';
 
 describe('tts', () => {
   afterEach(() => {
-    // @ts-expect-error — убираем тестовый мок между тестами
+    // @ts-expect-error
     delete window.speechSynthesis;
     vi.restoreAllMocks();
   });
 
-  it('isSpeechSupported возвращает false, если API недоступен', () => {
+  it('isSpeechSupported returns false when the API is unavailable', () => {
     expect(isSpeechSupported()).toBe(false);
   });
 
-  it('speak вызывает cancel и speak с текстом', () => {
+  it('speak calls cancel and speak with the text', () => {
     const cancel = vi.fn();
     const speakFn = vi.fn();
     Object.defineProperty(window, 'speechSynthesis', {
@@ -29,7 +29,7 @@ describe('tts', () => {
     expect(utterance.lang).toBe('en-US');
   });
 
-  it('speak ничего не делает, если API недоступен', () => {
+  it('speak does nothing when the API is unavailable', () => {
     expect(() => speak('hello')).not.toThrow();
   });
 });

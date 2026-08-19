@@ -20,21 +20,21 @@ function baseWord(overrides: Partial<Word> = {}): Word {
 }
 
 describe('WordItem', () => {
-  it('показывает бейдж "Учится" для нового слова без тега фразы', () => {
+  it('shows the "Learning" badge for a new word without a phrase tag', () => {
     render(<WordItem word={baseWord()} onEdit={vi.fn()} onDelete={vi.fn()} />);
 
     expect(screen.getByText('Учится')).toBeInTheDocument();
     expect(screen.queryByText('Фраза')).not.toBeInTheDocument();
   });
 
-  it('показывает тег "Фраза" рядом со словосочетанием на стадии Новое', () => {
+  it('shows the "Phrase" tag next to a phrase in the New stage', () => {
     render(<WordItem word={baseWord({ term: 'as soon as possible', kind: 'phrase' })} onEdit={vi.fn()} onDelete={vi.fn()} />);
 
     expect(screen.getByText('Учится')).toBeInTheDocument();
     expect(screen.getByText('Фраза')).toBeInTheDocument();
   });
 
-  it('показывает цветную точку и число рейтинга для слова на повторении', () => {
+  it('shows a colored dot and rating number for a word in review', () => {
     render(
       <WordItem
         word={baseWord({ stage: 'review', learningPhase: 'B', rating: 85, lastReviewedAt: Date.now() })}
@@ -48,7 +48,7 @@ describe('WordItem', () => {
     expect(screen.queryByText('Учится')).not.toBeInTheDocument();
   });
 
-  it('показывает тег "Фраза" и рейтинг одновременно для словосочетания на повторении', () => {
+  it('shows the "Phrase" tag and rating together for a phrase in review', () => {
     render(
       <WordItem
         word={baseWord({
@@ -68,7 +68,7 @@ describe('WordItem', () => {
     expect(screen.getByText('Фраза')).toBeInTheDocument();
   });
 
-  it('вызывает onEdit и onDelete при клике на кнопки', async () => {
+  it('calls onEdit and onDelete when the buttons are clicked', async () => {
     const onEdit = vi.fn();
     const onDelete = vi.fn();
     render(<WordItem word={baseWord()} onEdit={onEdit} onDelete={onDelete} />);

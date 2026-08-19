@@ -51,10 +51,7 @@ export function ReviewSession() {
       try {
         const next = applyReviewOutcome(word, verdict, Date.now());
         await db.words.update(wordId, next);
-      } catch {
-        // проглатываем: слово остаётся в stage 'review' и попадёт в следующую
-        // сессию — лучше не сохранить один результат, чем зависнуть без выхода
-      }
+      } catch {}
     }
     setCounters((c) => ({ ...c, [verdict]: c[verdict] + 1 }));
     setIndex((i) => i + 1);

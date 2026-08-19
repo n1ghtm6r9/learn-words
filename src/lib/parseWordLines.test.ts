@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseWordLines } from './parseWordLines';
 
 describe('parseWordLines', () => {
-  it('разбирает строки по дефису', () => {
+  it('parses lines by hyphen', () => {
     const result = parseWordLines('hello - привет\ncat - кот');
     expect(result.valid).toEqual([
       { term: 'hello', translation: 'привет' },
@@ -11,7 +11,7 @@ describe('parseWordLines', () => {
     expect(result.invalidLines).toHaveLength(0);
   });
 
-  it('поддерживает разные разделители: длинное/короткое тире, =, :, таб', () => {
+  it('supports different separators: em dash, en dash, =, :, tab', () => {
     const result = parseWordLines('a - b\nc – d\ne — f\ng=h\ni:j\nk\tl');
     expect(result.valid).toEqual([
       { term: 'a', translation: 'b' },
@@ -23,28 +23,28 @@ describe('parseWordLines', () => {
     ]);
   });
 
-  it('обрезает пробелы по краям слова и перевода', () => {
+  it('trims whitespace around the word and translation', () => {
     const result = parseWordLines('  hello   -   привет  ');
     expect(result.valid).toEqual([{ term: 'hello', translation: 'привет' }]);
   });
 
-  it('использует первое вхождение разделителя, остальное уходит в перевод', () => {
+  it('uses the first separator occurrence, the rest goes into the translation', () => {
     const result = parseWordLines('well-known - хорошо известный');
     expect(result.valid).toEqual([{ term: 'well', translation: 'known - хорошо известный' }]);
   });
 
-  it('игнорирует пустые строки', () => {
+  it('ignores empty lines', () => {
     const result = parseWordLines('hello - привет\n\n\ncat - кот');
     expect(result.valid).toHaveLength(2);
   });
 
-  it('помечает строки без разделителя как невалидные', () => {
+  it('marks lines without a separator as invalid', () => {
     const result = parseWordLines('hello privet');
     expect(result.valid).toHaveLength(0);
     expect(result.invalidLines).toEqual(['hello privet']);
   });
 
-  it('помечает строки с пустой частью (до или после разделителя) как невалидные', () => {
+  it('marks lines with an empty part (before or after the separator) as invalid', () => {
     const result = parseWordLines('hello -\n- привет');
     expect(result.valid).toHaveLength(0);
     expect(result.invalidLines).toEqual(['hello -', '- привет']);

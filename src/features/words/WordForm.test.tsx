@@ -9,7 +9,7 @@ describe('WordForm', () => {
     await db.words.clear();
   });
 
-  it('создаёт слово и вызывает onDone', async () => {
+  it('creates a word and calls onDone', async () => {
     const onDone = vi.fn();
     const user = userEvent.setup();
     render(<WordForm mode="create" onDone={onDone} />);
@@ -27,7 +27,7 @@ describe('WordForm', () => {
     expect(onDone).toHaveBeenCalledOnce();
   });
 
-  it('показывает предупреждение о дубликате, но не блокирует сохранение', async () => {
+  it('shows a duplicate warning but does not block saving', async () => {
     await db.words.add({
       term: 'hello',
       translation: 'привет',
@@ -55,7 +55,7 @@ describe('WordForm', () => {
     });
   });
 
-  it('в режиме edit обновляет существующее слово', async () => {
+  it('updates the existing word in edit mode', async () => {
     const id = await db.words.add({
       term: 'cat',
       translation: 'кот',
@@ -84,7 +84,7 @@ describe('WordForm', () => {
     });
   });
 
-  it('в режиме edit пересчитывает kind, если слово превращается в словосочетание', async () => {
+  it('recalculates kind in edit mode when the word becomes a phrase', async () => {
     const id = await db.words.add({
       term: 'good',
       translation: 'хороший',
@@ -112,7 +112,7 @@ describe('WordForm', () => {
     });
   });
 
-  it('в режиме edit не считает фразовый глагол фразой', async () => {
+  it('does not treat a phrasal verb as a phrase in edit mode', async () => {
     const id = await db.words.add({
       term: 'give',
       translation: 'давать',

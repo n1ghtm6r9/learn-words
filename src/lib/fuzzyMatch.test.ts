@@ -2,27 +2,27 @@ import { describe, expect, it } from 'vitest';
 import { matchAnswer } from './fuzzyMatch';
 
 describe('matchAnswer', () => {
-  it('точное совпадение — correct', () => {
+  it('exact match — correct', () => {
     expect(matchAnswer('привет', 'привет')).toBe('correct');
   });
 
-  it('регистр и пробелы по краям не влияют на результат', () => {
+  it('case and surrounding whitespace do not affect the result', () => {
     expect(matchAnswer('  Привет  ', 'привет')).toBe('correct');
   });
 
-  it('одна опечатка в коротком слове — almost', () => {
+  it('one typo in a short word — almost', () => {
     expect(matchAnswer('кот', 'код')).toBe('almost');
   });
 
-  it('одна опечатка в длинном слове — almost', () => {
+  it('one typo in a long word — almost', () => {
     expect(matchAnswer('путешествие', 'путешествия')).toBe('almost');
   });
 
-  it('совсем другое слово — wrong', () => {
+  it('completely different word — wrong', () => {
     expect(matchAnswer('собака', 'кот')).toBe('wrong');
   });
 
-  it('пустой ввод — wrong', () => {
+  it('empty input — wrong', () => {
     expect(matchAnswer('', 'привет')).toBe('wrong');
   });
 });

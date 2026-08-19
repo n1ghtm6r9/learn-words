@@ -13,12 +13,12 @@ describe('ReviewSession', () => {
     useUIStore.setState({ screen: 'review' });
   });
 
-  it('показывает пустое состояние, если нечего повторять', async () => {
+  it('shows the empty state when there is nothing to review', async () => {
     render(<ReviewSession />);
     expect(await screen.findByText(/нечего повторять/i)).toBeInTheDocument();
   });
 
-  it('проходит одно слово: перевод показан, слово скрыто, верный ответ обновляет рейтинг', async () => {
+  it('reviews one word: translation shown, word hidden, correct answer updates the rating', async () => {
     await db.words.add({
       term: 'hello',
       translation: 'привет',
@@ -50,7 +50,7 @@ describe('ReviewSession', () => {
     expect(stored[0].reviewStreak).toBe(1);
   });
 
-  it('сортирует по рейтингу (худшее слово первым) и проходит несколько слов подряд', async () => {
+  it('sorts by rating (worst word first) and reviews several words in a row', async () => {
     const now = Date.now();
     await db.words.add({
       term: 'strong',

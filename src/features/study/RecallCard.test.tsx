@@ -9,7 +9,7 @@ vi.mock('@/lib/tts', () => ({
 }));
 
 describe('RecallCard', () => {
-  it('показывает перевод, принимает ввод слова и сообщает вердикт по кнопке Далее', async () => {
+  it('shows the translation, accepts word input, and reports the verdict via the Next button', async () => {
     const onAnswer = vi.fn();
     const user = userEvent.setup();
     render(<RecallCard translation="привет" expectedTerm="hello" onAnswer={onAnswer} />);
@@ -26,7 +26,7 @@ describe('RecallCard', () => {
     expect(onAnswer).toHaveBeenCalledWith('correct');
   });
 
-  it('при неверном ответе показывает правильное слово и сообщает вердикт wrong', async () => {
+  it('shows the correct word and reports a wrong verdict on an incorrect answer', async () => {
     const onAnswer = vi.fn();
     const user = userEvent.setup();
     render(<RecallCard translation="кот" expectedTerm="cat" onAnswer={onAnswer} />);
@@ -40,7 +40,7 @@ describe('RecallCard', () => {
     expect(onAnswer).toHaveBeenCalledWith('wrong');
   });
 
-  it('не даёт озвучить слово до ответа и даёт после, чтобы не сливать ответ через TTS', async () => {
+  it('disables speech playback before answering and enables it after, so TTS cannot leak the answer', async () => {
     const onAnswer = vi.fn();
     const user = userEvent.setup();
     render(<RecallCard translation="привет" expectedTerm="hello" onAnswer={onAnswer} />);

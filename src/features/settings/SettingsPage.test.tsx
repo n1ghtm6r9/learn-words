@@ -9,7 +9,7 @@ describe('SettingsPage', () => {
     useUIStore.setState({ phaseARepeats: 3, phaseBRepeats: 3, theme: 'light', accentColor: 'blue', language: 'ru' });
   });
 
-  it('показывает текущие значения и обновляет их через сторy', async () => {
+  it('shows current values and updates them through the store', async () => {
     const user = userEvent.setup();
     render(<SettingsPage />);
 
@@ -22,7 +22,7 @@ describe('SettingsPage', () => {
     expect(useUIStore.getState().phaseARepeats).toBe(5);
   });
 
-  it('переключает тему через кнопки', async () => {
+  it('switches the theme using the buttons', async () => {
     const user = userEvent.setup();
     render(<SettingsPage />);
 
@@ -33,7 +33,7 @@ describe('SettingsPage', () => {
     expect(useUIStore.getState().theme).toBe('light');
   });
 
-  it('меняет цвет акцента и отмечает выбранный вариант', async () => {
+  it('changes the accent color and marks the selected option', async () => {
     const user = userEvent.setup();
     render(<SettingsPage />);
 
@@ -46,7 +46,7 @@ describe('SettingsPage', () => {
     expect(screen.getByRole('button', { name: 'Синий' })).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('переключает язык интерфейса и перерисовывает подписи', async () => {
+  it('switches the interface language and re-renders labels', async () => {
     const user = userEvent.setup();
     render(<SettingsPage />);
 

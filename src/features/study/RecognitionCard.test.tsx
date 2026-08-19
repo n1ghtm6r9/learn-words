@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { RecognitionCard } from './RecognitionCard';
 
 describe('RecognitionCard', () => {
-  it('показывает и слово, и перевод одновременно, принимает ввод слова', async () => {
+  it('shows both the word and the translation at once, and accepts word input', async () => {
     const onAnswer = vi.fn();
     const user = userEvent.setup();
     render(<RecognitionCard term="hello" translation="привет" onAnswer={onAnswer} />);

@@ -13,29 +13,24 @@ describe('NewWordsSession', () => {
     useUIStore.setState({ phaseARepeats: 1, phaseBRepeats: 1, screen: 'newWords' });
   });
 
-  it('показывает пустое состояние, если новых слов нет', async () => {
+  it('shows the empty state when there are no new words', async () => {
     render(<NewWordsSession />);
     expect(await screen.findByText('Нет новых слов — добавьте немного!')).toBeInTheDocument();
   });
 
-  it('проводит слово через Фазу A и Фазу B (по 1 повтору) и переводит его в Повторение', async () => {
+  it('takes a word through Phase A and Phase B (1 repeat each) and moves it into review', async () => {
     await db.words.add(createWord('hello', 'привет'));
     const user = userEvent.setup();
     render(<NewWordsSession />);
 
-    // Фаза A: видно и слово, и перевод
     expect(await screen.findByText('hello')).toBeInTheDocument();
     expect(screen.getByText('привет')).toBeInTheDocument();
     await user.type(screen.getByLabelText('Слово'), 'hello');
     await user.click(screen.getByRole('button', { name: 'Проверить' }));
     await user.click(await screen.findByRole('button', { name: 'Далее' }));
 
-    // "привет" виден в обеих фазах через разные узлы — гонка с асинхронным
-    // handleAnswer. "hello" виден только в Фазе A, поэтому его исчезновение —
-    // однозначный сигнал, что переход в Фазу B уже произошёл.
     await waitFor(() => expect(screen.queryByText('hello')).not.toBeInTheDocument());
 
-    // Фаза B: виден только перевод
     expect(await screen.findByText('привет')).toBeInTheDocument();
     await user.type(screen.getByLabelText('Слово'), 'hello');
     await user.click(screen.getByRole('button', { name: 'Проверить' }));
@@ -49,7 +44,7 @@ describe('NewWordsSession', () => {
     expect(stored[0].rating).toBe(70);
   });
 
-  it('ошибка в фазе сбрасывает phaseStreak, но не переводит слово дальше', async () => {
+  it('a wrong answer resets phaseStreak but does not advance the word', async () => {
     await db.words.add(createWord('cat', 'кот'));
     const user = userEvent.setup();
     render(<NewWordsSession />);
@@ -59,18 +54,13 @@ describe('NewWordsSession', () => {
     await user.click(screen.getByRole('button', { name: 'Проверить' }));
     await user.click(await screen.findByRole('button', { name: 'Далее' }));
 
-    // 'cat' виден и до, и после ремонта карточки через разные узлы — та же
-    // гонка, что и в тесте на переход A->B. Пустое поле ввода существует
-    // только в свежей (пост-ремонтной) карточке, поэтому это однозначный
-    // сигнал, что состояние осело, прежде чем читать БД.
     expect(await screen.findByLabelText('Слово')).toHaveValue('');
-    // Слово остаётся в пуле (не выучено), фаза всё ещё A
     const stored = await db.words.toArray();
     expect(stored[0].learningPhase).toBe('A');
     expect(stored[0].phaseStreak).toBe(0);
   });
 
-  it('после неверного ответа карточка сбрасывается и снова показывает поле ввода', async () => {
+  it('resets the card and shows a fresh input field after a wrong answer', async () => {
     await db.words.add(createWord('cat', 'кот'));
     const user = userEvent.setup();
     render(<NewWordsSession />);
@@ -83,7 +73,7 @@ describe('NewWordsSession', () => {
     expect(await screen.findByLabelText('Слово')).toHaveValue('');
   });
 
-  it('чередует слова из пула — одно и то же слово не встречается два раза подряд', async () => {
+  it('interleaves words from the pool - the same word never repeats back to back', async () => {
     await db.words.add(createWord('one', 'один'));
     await db.words.add(createWord('two', 'два'));
     const user = userEvent.setup();
@@ -91,11 +81,6 @@ describe('NewWordsSession', () => {
 
     const seenTerms: string[] = [];
     for (let i = 0; i < 4; i++) {
-      // Ждём поле ввода — оно существует только в свежей (пост-ремонтной)
-      // карточке, поэтому его появление однозначно сигнализирует, что DOM
-      // осел и старая карточка точно размонтирована. Только после этого
-      // безопасно синхронно прочитать термин — иначе findByText может
-      // поймать узел ещё не размонтированной предыдущей карточки.
       await screen.findByLabelText('Слово');
       const termNode = screen.getByText(/^(one|two)$/);
       seenTerms.push(termNode.textContent ?? '');
@@ -109,7 +94,7 @@ describe('NewWordsSession', () => {
     }
   });
 
-  it('двойной клик "Далее" на выпускном ответе не удваивает счётчик выученных слов', async () => {
+  it('double-clicking "Next" on the graduating answer does not double-count the learned word', async () => {
     await db.words.add(createWord('sun', 'солнце'));
     const user = userEvent.setup();
     render(<NewWordsSession />);

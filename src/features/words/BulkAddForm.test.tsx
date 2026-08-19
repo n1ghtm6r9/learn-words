@@ -9,7 +9,7 @@ describe('BulkAddForm', () => {
     await db.words.clear();
   });
 
-  it('разбирает строки, показывает превью и сохраняет все валидные пары', async () => {
+  it('parses lines, shows a preview, and saves all valid pairs', async () => {
     const onDone = vi.fn();
     const user = userEvent.setup();
     render(<BulkAddForm onDone={onDone} />);
@@ -32,7 +32,7 @@ describe('BulkAddForm', () => {
     expect(onDone).toHaveBeenCalledOnce();
   });
 
-  it('кнопка сохранения отключена, если нет ни одной валидной пары', async () => {
+  it('disables the save button when there are no valid pairs', async () => {
     const user = userEvent.setup();
     render(<BulkAddForm onDone={vi.fn()} />);
 
@@ -41,7 +41,7 @@ describe('BulkAddForm', () => {
     expect(await screen.findByRole('button', { name: 'Сохранить всё' })).toBeDisabled();
   });
 
-  it('повторный клик во время сохранения не дублирует запись', async () => {
+  it('does not duplicate the entry when clicked again while saving', async () => {
     const onDone = vi.fn();
     const user = userEvent.setup();
     render(<BulkAddForm onDone={onDone} />);
@@ -59,7 +59,7 @@ describe('BulkAddForm', () => {
     expect(onDone).toHaveBeenCalledOnce();
   });
 
-  it('ошибка сохранения показывает сообщение и не блокирует форму', async () => {
+  it('shows a message on save error without blocking the form', async () => {
     const onDone = vi.fn();
     const user = userEvent.setup();
     const bulkAddSpy = vi.spyOn(db.words, 'bulkAdd').mockRejectedValueOnce(new Error('quota'));
