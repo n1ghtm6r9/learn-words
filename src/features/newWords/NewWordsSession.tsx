@@ -143,7 +143,7 @@ export function NewWordsSession() {
   const current = pool.find((w) => w.id === currentId) ?? pool[0];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-1 flex-col justify-center gap-4">
       <p className="text-right font-mono text-xs text-muted-foreground">{t.remainingWords(pool.length)}</p>
       {saveFailed && (
         <p role="alert" className="rounded-md bg-destructive/10 px-2.5 py-1.5 text-sm text-destructive">

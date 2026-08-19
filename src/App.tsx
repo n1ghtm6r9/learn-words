@@ -37,7 +37,7 @@ function App() {
   }, [language, t.appTitle]);
 
   return (
-    <div className="min-h-screen bg-background pb-[calc(5rem+env(safe-area-inset-bottom))] text-foreground">
+    <div className="flex min-h-screen flex-col bg-background pb-[calc(5rem+env(safe-area-inset-bottom))] text-foreground">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/90 px-4 py-3 backdrop-blur">
         <h1 className="font-mono text-base font-semibold tracking-tight">{t.appTitle}</h1>
         <button
@@ -49,7 +49,7 @@ function App() {
           <SettingsIcon className="h-[18px] w-[18px]" aria-hidden="true" />
         </button>
       </header>
-      <main className="mx-auto max-w-md p-4">
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col p-4">
         <AnimatePresence mode="wait">
           <motion.div
             key={screen}
@@ -57,6 +57,7 @@ function App() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.15 }}
+            className="flex flex-1 flex-col"
           >
             {screen === 'newWords' && <NewWordsSession />}
             {screen === 'review' && <ReviewSession />}

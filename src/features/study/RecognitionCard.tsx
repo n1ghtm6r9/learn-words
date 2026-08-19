@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { CARD_CLASS } from '@/lib/cardClass';
 import { matchAccuracy, matchAnswer, type MatchVerdict } from '@/lib/fuzzyMatch';
 import { speedFactor } from '@/lib/responseSpeed';
+import { PhaseProgressDots } from './PhaseProgressDots';
 import { useVisibleElapsedTimer } from '@/lib/useVisibleElapsedTimer';
 import { speak, isSpeechSupported } from '@/lib/tts';
 import { useTranslation } from '@/lib/useTranslation';
@@ -100,27 +101,32 @@ export function RecognitionCard({ term, translation, currentStreak, requiredStre
   const displayedStreak = originalVerdict === 'wrong' ? 0 : (currentStreak ?? 0);
 
   return (
-    <div className={`${CARD_CLASS} flex flex-col gap-5 p-6`}>
-      <div className="flex items-center justify-between gap-3 border-b border-dashed border-border pb-4">
-        <div className="flex flex-col gap-1">
-          <span className="font-mono text-2xl font-semibold tracking-tight">{term}</span>
-          <span className="text-sm text-muted-foreground">{translation}</span>
+    <div className={`${CARD_CLASS} flex flex-col gap-6 p-6`}>
+      <div className="flex flex-col gap-3">
+        {showProgress && <PhaseProgressDots current={displayedStreak} total={requiredStreak ?? 0} />}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="font-mono text-2xl leading-tight font-semibold tracking-tight text-balance">
+              {term}
+            </span>
+            <span className="text-sm text-muted-foreground text-balance">{translation}</span>
+          </div>
+          {isSpeechSupported() && (
+            <button
+              type="button"
+              aria-label={t.speak}
+              onClick={() => speak(term)}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
+            >
+              <Volume2 className="h-[18px] w-[18px]" />
+            </button>
+          )}
         </div>
-        {isSpeechSupported() && (
-          <button
-            type="button"
-            aria-label={t.speak}
-            onClick={() => speak(term)}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
-          >
-            <Volume2 className="h-[18px] w-[18px]" />
-          </button>
-        )}
       </div>
 
-      <div className="flex min-h-36 flex-col">
+      <div className="flex min-h-32 flex-col justify-center">
         {showCorrectFlash ? (
-          <p data-testid="feedback" className={`text-sm font-medium ${FEEDBACK_COLOR.correct}`}>
+          <p data-testid="feedback" className={`text-base font-medium ${FEEDBACK_COLOR.correct}`}>
             {t.feedbackCorrect}
           </p>
         ) : error ? (
@@ -135,11 +141,6 @@ export function RecognitionCard({ term, translation, currentStreak, requiredStre
           </div>
         ) : (
           <form onSubmit={handleCheck} className="flex flex-col gap-3">
-            {showProgress && (
-              <p className="font-mono text-xs text-muted-foreground">
-                {t.phaseProgress(displayedStreak, requiredStreak ?? 0)}
-              </p>
-            )}
             <Input aria-label={t.wordInputLabel} value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="font-mono" />
             <Button type="submit">{t.checkAnswer}</Button>
           </form>

@@ -1,4 +1,3 @@
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/lib/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
@@ -18,14 +17,14 @@ export function SettingsPage() {
   const phaseB = usePhaseRepeatsField(phaseBRepeats, setPhaseBRepeats);
 
   return (
-    <div className="flex flex-col gap-4">
-      <Card className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col divide-y divide-border">
+      <div className="flex flex-col gap-4 pb-5">
         <ThemeSection />
         <AccentColorSection />
         <LanguageSection />
-      </Card>
+      </div>
 
-      <Card className="flex flex-col gap-4 p-4">
+      <div className="flex flex-col gap-4 pt-5">
         <label className="flex flex-col gap-1.5 text-sm">
           {t.phaseARepeatsLabel}
           <Input
@@ -53,7 +52,7 @@ export function SettingsPage() {
             className="font-mono"
           />
         </label>
-      </Card>
+      </div>
     </div>
   );
 }

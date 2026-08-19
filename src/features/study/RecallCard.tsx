@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { CARD_CLASS } from '@/lib/cardClass';
 import { matchAccuracy, matchAnswer, type MatchVerdict } from '@/lib/fuzzyMatch';
 import { speedFactor } from '@/lib/responseSpeed';
+import { PhaseProgressDots } from './PhaseProgressDots';
 import { useVisibleElapsedTimer } from '@/lib/useVisibleElapsedTimer';
 import { speak, isSpeechSupported } from '@/lib/tts';
 import { useTranslation } from '@/lib/useTranslation';
@@ -101,15 +102,18 @@ export function RecallCard({ translation, expectedTerm, currentStreak, requiredS
   const displayedStreak = originalVerdict === 'wrong' ? 0 : (currentStreak ?? 0);
 
   return (
-    <div className={`${CARD_CLASS} flex flex-col gap-5 p-6`}>
-      <div className="border-b border-dashed border-border pb-4">
-        <span className="font-mono text-2xl font-semibold tracking-tight">{translation}</span>
+    <div className={`${CARD_CLASS} flex flex-col gap-6 p-6`}>
+      <div className="flex flex-col gap-3">
+        {showProgress && <PhaseProgressDots current={displayedStreak} total={requiredStreak ?? 0} />}
+        <span className="font-mono text-2xl leading-tight font-semibold tracking-tight text-balance">
+          {translation}
+        </span>
       </div>
 
-      <div className="flex min-h-36 flex-col">
+      <div className="flex min-h-32 flex-col justify-center">
         {showCorrectFlash ? (
           <div className="flex items-center gap-2">
-            <p data-testid="feedback" className={`text-sm font-medium ${FEEDBACK_COLOR.correct}`}>
+            <p data-testid="feedback" className={`text-base font-medium ${FEEDBACK_COLOR.correct}`}>
               {t.feedbackCorrect}
             </p>
             {isSpeechSupported() && (
@@ -125,7 +129,7 @@ export function RecallCard({ translation, expectedTerm, currentStreak, requiredS
           </div>
         ) : error ? (
           <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-start gap-2">
               <p data-testid="feedback" className={`text-sm font-medium ${FEEDBACK_COLOR[error.verdict]}`}>
                 {errorFeedbackText(t, error.verdict, error.correctAnswer)}
               </p>
@@ -147,11 +151,6 @@ export function RecallCard({ translation, expectedTerm, currentStreak, requiredS
           </div>
         ) : (
           <form onSubmit={handleCheck} className="flex flex-col gap-3">
-            {showProgress && (
-              <p className="font-mono text-xs text-muted-foreground">
-                {t.phaseProgress(displayedStreak, requiredStreak ?? 0)}
-              </p>
-            )}
             <Input aria-label={t.wordInputLabel} value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="font-mono" />
             <Button type="submit">{t.checkAnswer}</Button>
           </form>

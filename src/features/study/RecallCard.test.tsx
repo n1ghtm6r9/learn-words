@@ -121,6 +121,19 @@ describe('RecallCard', () => {
     expect(screen.getByText('Прогресс: 1 из 3')).toBeInTheDocument();
   });
 
+  it('keeps the phase progress visible while answering, not only before submitting', async () => {
+    const user = userEvent.setup();
+    render(
+      <RecallCard translation="кот" expectedTerm="cat" currentStreak={1} requiredStreak={3} onAnswer={vi.fn()} />,
+    );
+
+    await user.type(screen.getByLabelText('Слово'), 'dog');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+    await screen.findByTestId('feedback');
+
+    expect(screen.getByText('Прогресс: 0 из 3')).toBeInTheDocument();
+  });
+
   it('hides phase progress when no required streak is provided', () => {
     render(<RecallCard translation="привет" expectedTerm="hello" onAnswer={vi.fn()} />);
 

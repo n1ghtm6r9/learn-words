@@ -26,33 +26,34 @@ function baseWord(overrides: Partial<Word> = {}): Word {
 }
 
 describe('WordItem', () => {
-  it('shows the "Learning" badge for a new word without a phrase tag', () => {
+  it('announces the learning step for a new word and shows no rating', () => {
     render(<WordItem word={baseWord()} onEdit={vi.fn()} onDelete={vi.fn()} onOpenDetails={vi.fn()} />);
 
-    expect(screen.getByText('Учится')).toBeInTheDocument();
+    expect(screen.getByText('Учится, шаг 1 из 2')).toBeInTheDocument();
+    expect(screen.queryByText('Рейтинг')).not.toBeInTheDocument();
     expect(screen.queryByText('Фраза')).not.toBeInTheDocument();
   });
 
   it('shows the "Phrase" tag next to a phrase in the New stage', () => {
     render(<WordItem word={baseWord({ term: 'as soon as possible', kind: 'phrase' })} onEdit={vi.fn()} onDelete={vi.fn()} onOpenDetails={vi.fn()} />);
 
-    expect(screen.getByText('Учится')).toBeInTheDocument();
+    expect(screen.getByText('Учится, шаг 1 из 2')).toBeInTheDocument();
     expect(screen.getByText('Фраза')).toBeInTheDocument();
   });
 
-  it('shows a colored dot and rating number for a word in review', () => {
+  it('shows a whole-number rating for a word in review, keeping the list scannable', () => {
     render(
       <WordItem
-        word={baseWord({ stage: 'review', learningPhase: 'B', rating: 85, lastReviewedAt: Date.now() })}
+        word={baseWord({ stage: 'review', learningPhase: 'B', rating: 85.4, lastReviewedAt: Date.now() })}
         onEdit={vi.fn()}
         onDelete={vi.fn()}
         onOpenDetails={vi.fn()}
       />,
     );
 
-    expect(screen.getByText('85.00')).toBeInTheDocument();
+    expect(screen.getByText('85')).toBeInTheDocument();
     expect(screen.getByText('Рейтинг')).toBeInTheDocument();
-    expect(screen.queryByText('Учится')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Учится/)).not.toBeInTheDocument();
   });
 
   it('shows the "Phrase" tag and rating together for a phrase in review', () => {
@@ -72,7 +73,7 @@ describe('WordItem', () => {
       />,
     );
 
-    expect(screen.getByText('20.00')).toBeInTheDocument();
+    expect(screen.getByText('20')).toBeInTheDocument();
     expect(screen.getByText('Фраза')).toBeInTheDocument();
   });
 

@@ -7,7 +7,9 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { db } from '@/db/db';
 import { isUsableWord } from '@/db/isUsableWord';
 import type { Word } from '@/db/word.type';
+import { CARD_CLASS } from '@/lib/cardClass';
 import { normalizeTerm } from '@/lib/normalizeTerm';
+import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/useTranslation';
 import { ExportDialog } from './ExportDialog';
 import { ImportDialog } from './ImportDialog';
@@ -89,7 +91,7 @@ export function WordList() {
           {sorted.length === 0 ? t.noWordsYet : t.nothingFound}
         </p>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className={cn(CARD_CLASS, 'divide-y divide-border/70 overflow-hidden')}>
           {filtered.map((word) => (
             <WordItem
               key={word.id}

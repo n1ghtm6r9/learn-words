@@ -95,7 +95,7 @@ export function ReviewSession() {
   const current = queue[index];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-1 flex-col justify-center gap-4">
       <p className="text-right font-mono text-xs text-muted-foreground">
         {t.reviewProgress(index + 1, queue.length)}
       </p>
