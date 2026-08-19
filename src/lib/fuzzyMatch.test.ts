@@ -18,12 +18,32 @@ describe('matchAnswer', () => {
     expect(matchAnswer('путешествие', 'путешествия')).toBe('almost');
   });
 
+  it('two typos in one word — wrong', () => {
+    expect(matchAnswer('пцтешествие', 'путешествия')).toBe('wrong');
+  });
+
   it('completely different word — wrong', () => {
     expect(matchAnswer('собака', 'кот')).toBe('wrong');
   });
 
   it('empty input — wrong', () => {
     expect(matchAnswer('', 'привет')).toBe('wrong');
+  });
+
+  it('a one-letter typo in one word of a phrase — almost', () => {
+    expect(matchAnswer('good morming', 'good morning')).toBe('almost');
+  });
+
+  it('typos in two different words of a phrase — wrong', () => {
+    expect(matchAnswer('goad morming', 'good morning')).toBe('wrong');
+  });
+
+  it('a missing word in a phrase — wrong', () => {
+    expect(matchAnswer('good', 'good morning')).toBe('wrong');
+  });
+
+  it('an extra word in a phrase — wrong', () => {
+    expect(matchAnswer('good morning today', 'good morning')).toBe('wrong');
   });
 
   it('an NFD-normalized expected term still matches an NFC-typed answer — correct', () => {

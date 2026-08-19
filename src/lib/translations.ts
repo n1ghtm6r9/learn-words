@@ -33,7 +33,9 @@ const ru: TranslationKeys = {
   recognitionFeedbackAlmost: 'Почти! Проверьте написание ещё раз.',
   recognitionFeedbackWrong: 'Неверно. Посмотрите на слово выше и попробуйте снова.',
   speak: 'Озвучить',
-  next: 'Далее',
+  retryPrompt: 'Введите слово ещё раз, пока не получится без ошибок',
+  retryButton: 'Повторить',
+  phaseProgress: (current, total) => `Прогресс: ${current} из ${total}`,
 
   translationInputLabel: 'Перевод',
   duplicateWarning: 'Такое слово уже есть в словаре — сохранить второй раз?',
@@ -62,6 +64,20 @@ const ru: TranslationKeys = {
   edit: 'Изменить',
   delete: 'Удалить',
   deleteError: 'Не удалось удалить слово. Попробуйте ещё раз.',
+
+  exportButtonLabel: 'Экспорт',
+  importButtonLabel: 'Импорт',
+  exportDialogTitle: 'Экспорт данных',
+  importDialogTitle: 'Импорт данных',
+  exportIncludeWords: 'Слова и прогресс',
+  exportIncludeSettings: 'Настройки',
+  exportConfirmButton: 'Скачать',
+  importConfirmButton: 'Импортировать',
+  importFileLabel: 'Выберите файл',
+  importSummary: (words, hasSettings) =>
+    hasSettings ? `Найдено слов: ${words}, есть настройки` : `Найдено слов: ${words}`,
+  importSuccess: (count) => `Импортировано слов: ${count}`,
+  importError: 'Не удалось прочитать файл. Проверьте формат.',
 
   phaseARepeatsLabel: 'Повторов в фазе узнавания (слово + перевод)',
   phaseBRepeatsLabel: 'Повторов в фазе вспоминания (только перевод)',
@@ -108,7 +124,9 @@ const en: TranslationKeys = {
   recognitionFeedbackAlmost: 'Almost! Check the spelling again.',
   recognitionFeedbackWrong: 'Wrong. Look at the word above and try again.',
   speak: 'Pronounce',
-  next: 'Next',
+  retryPrompt: 'Enter the word again until you get it right',
+  retryButton: 'Retry',
+  phaseProgress: (current, total) => `Progress: ${current} of ${total}`,
 
   translationInputLabel: 'Translation',
   duplicateWarning: 'This word is already in the dictionary — save it again?',
@@ -137,6 +155,20 @@ const en: TranslationKeys = {
   edit: 'Edit',
   delete: 'Delete',
   deleteError: 'Could not delete the word. Please try again.',
+
+  exportButtonLabel: 'Export',
+  importButtonLabel: 'Import',
+  exportDialogTitle: 'Export data',
+  importDialogTitle: 'Import data',
+  exportIncludeWords: 'Words and progress',
+  exportIncludeSettings: 'Settings',
+  exportConfirmButton: 'Download',
+  importConfirmButton: 'Import',
+  importFileLabel: 'Choose a file',
+  importSummary: (words, hasSettings) =>
+    hasSettings ? `Words found: ${words}, settings included` : `Words found: ${words}`,
+  importSuccess: (count) => `Words imported: ${count}`,
+  importError: 'Could not read the file. Check the format.',
 
   phaseARepeatsLabel: 'Repeats in the recognition phase (word + translation)',
   phaseBRepeatsLabel: 'Repeats in the recall phase (translation only)',

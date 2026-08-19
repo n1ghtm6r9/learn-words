@@ -33,9 +33,8 @@ export function ReviewSession() {
       .then((words) => {
         if (cancelled) return;
         const now = Date.now();
-        const sorted = [...words].sort(
-          (a, b) => effectiveRating(a, now) - effectiveRating(b, now),
-        );
+        const due = words.filter((w) => effectiveRating(w, now) < 100);
+        const sorted = due.sort((a, b) => effectiveRating(a, now) - effectiveRating(b, now));
         setQueue(sorted);
       });
     return () => {

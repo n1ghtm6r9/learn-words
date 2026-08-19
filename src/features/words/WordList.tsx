@@ -1,11 +1,14 @@
 import { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Search, TriangleAlert } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { db } from '@/db/db';
 import type { Word } from '@/db/word.type';
 import { useTranslation } from '@/lib/useTranslation';
+import { ExportDialog } from './ExportDialog';
+import { ImportDialog } from './ImportDialog';
 import { WordForm } from './WordForm';
 import { WordItem } from './WordItem';
 
@@ -14,6 +17,8 @@ export function WordList() {
   const [search, setSearch] = useState('');
   const [editingWord, setEditingWord] = useState<Word | null>(null);
   const [deleteError, setDeleteError] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const t = useTranslation();
 
   const sorted = useMemo(
@@ -45,9 +50,17 @@ export function WordList() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-        <Input placeholder={t.searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <Input placeholder={t.searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
+        </div>
+        <Button type="button" variant="outline" size="sm" onClick={() => setExportOpen(true)}>
+          {t.exportButtonLabel}
+        </Button>
+        <Button type="button" variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+          {t.importButtonLabel}
+        </Button>
       </div>
 
       {deleteError && (
@@ -82,6 +95,9 @@ export function WordList() {
           )}
         </DialogContent>
       </Dialog>
+
+      <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
+      <ImportDialog open={importOpen} onOpenChange={setImportOpen} />
     </div>
   );
 }

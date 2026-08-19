@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { motion } from 'motion/react';
+import { useEffect, useState } from 'react';
 import { Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,14 +8,20 @@ import { speak, isSpeechSupported } from '@/lib/tts';
 import { useTranslation } from '@/lib/useTranslation';
 import type { TranslationKeys } from '@/lib/translationKeys.type';
 
+const CORRECT_FLASH_MS = 500;
+
 export interface RecognitionCardProps {
   term: string;
   translation: string;
+  currentStreak?: number;
+  requiredStreak?: number;
   onAnswer: (verdict: MatchVerdict) => void;
 }
 
-interface Feedback {
-  verdict: MatchVerdict;
+type ErrorVerdict = Exclude<MatchVerdict, 'correct'>;
+
+interface ErrorFeedback {
+  verdict: ErrorVerdict;
 }
 
 const FEEDBACK_COLOR: Record<MatchVerdict, string> = {
@@ -25,34 +30,60 @@ const FEEDBACK_COLOR: Record<MatchVerdict, string> = {
   wrong: 'text-destructive',
 };
 
-function feedbackText(t: TranslationKeys, verdict: MatchVerdict): string {
-  if (verdict === 'correct') return t.feedbackCorrect;
-  if (verdict === 'almost') return t.recognitionFeedbackAlmost;
-  return t.recognitionFeedbackWrong;
+function errorFeedbackText(t: TranslationKeys, verdict: ErrorVerdict): string {
+  return verdict === 'almost' ? t.recognitionFeedbackAlmost : t.recognitionFeedbackWrong;
 }
 
-export function RecognitionCard({ term, translation, onAnswer }: RecognitionCardProps) {
+export function RecognitionCard({ term, translation, currentStreak, requiredStreak, onAnswer }: RecognitionCardProps) {
   const [input, setInput] = useState('');
-  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [error, setError] = useState<ErrorFeedback | null>(null);
+  const [showCorrectFlash, setShowCorrectFlash] = useState(false);
+  const [originalVerdict, setOriginalVerdict] = useState<ErrorVerdict | null>(null);
   const t = useTranslation();
+
+  useEffect(() => {
+    if (!showCorrectFlash) return;
+
+    const finish = () => onAnswer(originalVerdict ?? 'correct');
+    const timeout = setTimeout(finish, CORRECT_FLASH_MS);
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Enter') return;
+      clearTimeout(timeout);
+      finish();
+    }
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      clearTimeout(timeout);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showCorrectFlash, originalVerdict, onAnswer]);
 
   function handleCheck(event: React.FormEvent) {
     event.preventDefault();
     const verdict = matchAnswer(input, term);
-    setFeedback({ verdict });
+
+    if (verdict === 'correct') {
+      setError(null);
+      setShowCorrectFlash(true);
+      return;
+    }
+
+    if (originalVerdict === null) setOriginalVerdict(verdict);
+    setError({ verdict });
   }
 
-  function handleNext() {
-    if (!feedback) return;
-    onAnswer(feedback.verdict);
+  function handleRetry() {
+    setError(null);
+    setInput('');
   }
+
+  const showProgress = requiredStreak != null && requiredStreak > 0;
+  const displayedStreak = originalVerdict === 'wrong' ? 0 : (currentStreak ?? 0);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`${CARD_CLASS} flex flex-col gap-5 p-6`}
-    >
+    <div className={`${CARD_CLASS} flex flex-col gap-5 p-6`}>
       <div className="flex items-center justify-between gap-3 border-b border-dashed border-border pb-4">
         <div className="flex flex-col gap-1">
           <span className="font-mono text-2xl font-semibold tracking-tight">{term}</span>
@@ -70,21 +101,33 @@ export function RecognitionCard({ term, translation, onAnswer }: RecognitionCard
         )}
       </div>
 
-      {!feedback ? (
-        <form onSubmit={handleCheck} className="flex flex-col gap-3">
-          <Input aria-label={t.wordInputLabel} value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="font-mono" />
-          <Button type="submit">{t.checkAnswer}</Button>
-        </form>
-      ) : (
-        <div className="flex flex-col gap-3">
-          <p data-testid="feedback" className={`text-sm font-medium ${FEEDBACK_COLOR[feedback.verdict]}`}>
-            {feedbackText(t, feedback.verdict)}
+      <div className="flex min-h-36 flex-col">
+        {showCorrectFlash ? (
+          <p data-testid="feedback" className={`text-sm font-medium ${FEEDBACK_COLOR.correct}`}>
+            {t.feedbackCorrect}
           </p>
-          <Button type="button" onClick={handleNext}>
-            {t.next}
-          </Button>
-        </div>
-      )}
-    </motion.div>
+        ) : error ? (
+          <div className="flex flex-col gap-3">
+            <p data-testid="feedback" className={`text-sm font-medium ${FEEDBACK_COLOR[error.verdict]}`}>
+              {errorFeedbackText(t, error.verdict)}
+            </p>
+            <p className="text-xs text-muted-foreground">{t.retryPrompt}</p>
+            <Button type="button" onClick={handleRetry} autoFocus>
+              {t.retryButton}
+            </Button>
+          </div>
+        ) : (
+          <form onSubmit={handleCheck} className="flex flex-col gap-3">
+            {showProgress && (
+              <p className="font-mono text-xs text-muted-foreground">
+                {t.phaseProgress(displayedStreak, requiredStreak ?? 0)}
+              </p>
+            )}
+            <Input aria-label={t.wordInputLabel} value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="font-mono" />
+            <Button type="submit">{t.checkAnswer}</Button>
+          </form>
+        )}
+      </div>
+    </div>
   );
 }

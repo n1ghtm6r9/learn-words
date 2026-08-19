@@ -28,6 +28,8 @@ function normalize(text: string): string {
   return text.normalize('NFC').trim().toLowerCase().replace(TRAILING_PUNCTUATION, '');
 }
 
+const MINOR_ERROR_DISTANCE = 1;
+
 export function matchAnswer(input: string, expected: string): MatchVerdict {
   const a = normalize(input);
   const b = normalize(expected);
@@ -35,8 +37,20 @@ export function matchAnswer(input: string, expected: string): MatchVerdict {
   if (a === b) return 'correct';
   if (a.length === 0) return 'wrong';
 
-  const distance = levenshtein(a, b);
-  const allowedDistance = b.length <= 4 ? 1 : b.length <= 8 ? 2 : 3;
+  const inputWords = a.split(/\s+/);
+  const expectedWords = b.split(/\s+/);
 
-  return distance <= allowedDistance ? 'almost' : 'wrong';
+  if (inputWords.length !== expectedWords.length) return 'wrong';
+
+  let mismatchedWordCount = 0;
+  let mismatchedWordDistance = 0;
+
+  for (let i = 0; i < expectedWords.length; i++) {
+    if (inputWords[i] === expectedWords[i]) continue;
+    mismatchedWordCount += 1;
+    mismatchedWordDistance = levenshtein(inputWords[i], expectedWords[i]);
+  }
+
+  const isMinorError = mismatchedWordCount === 1 && mismatchedWordDistance === MINOR_ERROR_DISTANCE;
+  return isMinorError ? 'almost' : 'wrong';
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CARD_CLASS } from '@/lib/cardClass';
 import { cn } from '@/lib/utils';
@@ -7,6 +8,7 @@ import { effectiveRating } from '@/lib/effectiveRating';
 import { ratingColor } from '@/lib/ratingColor';
 import { RATING_DOT_CLASS } from '@/lib/ratingDotClass';
 import { RATING_TEXT_CLASS } from '@/lib/ratingTextClass';
+import { isSpeechSupported, speak } from '@/lib/tts';
 import { useTranslation } from '@/lib/useTranslation';
 
 interface WordItemProps {
@@ -54,6 +56,16 @@ export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
               <span className="shrink-0 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                 {t.phraseTag}
               </span>
+            )}
+            {isSpeechSupported() && (
+              <button
+                type="button"
+                aria-label={t.speak}
+                onClick={() => speak(word.term)}
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
+              >
+                <Volume2 className="h-3.5 w-3.5" />
+              </button>
             )}
           </div>
           <p className="truncate text-sm text-muted-foreground">{word.translation}</p>

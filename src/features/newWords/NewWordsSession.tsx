@@ -9,18 +9,16 @@ import { RecognitionCard } from '@/features/study/RecognitionCard';
 import { RecallCard } from '@/features/study/RecallCard';
 import { NewWordsSummary } from './NewWordsSummary';
 
-function shuffle<T>(items: T[]): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
+function pickRandomId(words: Word[], excludeId: number | null): number | null {
+  if (words.length === 0) return null;
+  const candidates = words.length > 1 && excludeId != null ? words.filter((w) => w.id !== excludeId) : words;
+  const pickFrom = candidates.length > 0 ? candidates : words;
+  return pickFrom[Math.floor(Math.random() * pickFrom.length)].id ?? null;
 }
 
 export function NewWordsSession() {
   const [pool, setPool] = useState<Word[] | null>(null);
-  const [cursor, setCursor] = useState(0);
+  const [currentId, setCurrentId] = useState<number | null>(null);
   const [turn, setTurn] = useState(0);
   const [learnedCount, setLearnedCount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,63 +42,76 @@ export function NewWordsSession() {
       .equals('new')
       .toArray()
       .then((words) => {
-        if (!cancelled) setPool(shuffle(words));
+        if (cancelled) return;
+        setPool(words);
+        setCurrentId(pickRandomId(words, null));
       });
     return () => {
       cancelled = true;
     };
   }, [addWordOpen]);
 
+  function advanceTo(nextPool: Word[], justShownId: number) {
+    setPool(nextPool);
+    setCurrentId(pickRandomId(nextPool, justShownId));
+  }
+
   async function handleAnswer(word: Word, verdict: MatchVerdict) {
     const wordId = word.id;
     if (!pool || wordId == null || isSubmitting) return;
     setIsSubmitting(true);
 
-    const advances = verdict === 'correct' || verdict === 'almost';
-    const nextStreak = advances ? word.phaseStreak + 1 : 0;
-
-    let updates: Partial<Word>;
+    let updates: Partial<Word> | null = null;
     let graduated = false;
 
-    if (!advances) {
+    if (verdict === 'correct') {
+      const nextStreak = word.phaseStreak + 1;
+      if (word.learningPhase === 'A' && nextStreak >= phaseARepeats) {
+        updates = { learningPhase: 'B', phaseStreak: 0 };
+      } else if (word.learningPhase === 'B' && nextStreak >= phaseBRepeats) {
+        updates = {
+          stage: 'review',
+          rating: 70,
+          reviewStreak: 0,
+          learningPhase: 'A',
+          phaseStreak: 0,
+          lastReviewedAt: Date.now(),
+        };
+        graduated = true;
+      } else {
+        updates = { phaseStreak: nextStreak };
+      }
+    } else if (verdict === 'wrong' && word.phaseStreak !== 0) {
       updates = { phaseStreak: 0 };
-    } else if (word.learningPhase === 'A' && nextStreak >= phaseARepeats) {
-      updates = { learningPhase: 'B', phaseStreak: 0 };
-    } else if (word.learningPhase === 'B' && nextStreak >= phaseBRepeats) {
-      updates = { stage: 'review', rating: 70, reviewStreak: 0, learningPhase: 'A', phaseStreak: 0, lastReviewedAt: Date.now() };
-      graduated = true;
-    } else {
-      updates = { phaseStreak: nextStreak };
     }
 
-    let updatedCount: number;
-    try {
-      updatedCount = await db.words.update(wordId, updates);
-    } catch {
-      setTurn((t) => t + 1);
-      setIsSubmitting(false);
-      return;
+    let updatedCount = 1;
+    if (updates) {
+      try {
+        updatedCount = await db.words.update(wordId, updates);
+      } catch {
+        setTurn((t) => t + 1);
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     setTurn((t) => t + 1);
     setIsSubmitting(false);
 
     if (updatedCount === 0) {
-      const remaining = pool.filter((w) => w.id !== wordId);
-      setPool(remaining);
-      setCursor((c) => (remaining.length > 0 ? c % remaining.length : 0));
+      advanceTo(pool.filter((w) => w.id !== wordId), wordId);
       return;
     }
 
     if (graduated) {
-      const remaining = pool.filter((w) => w.id !== wordId);
-      setPool(remaining);
-      setCursor((c) => (remaining.length > 0 ? c % remaining.length : 0));
       setLearnedCount((n) => n + 1);
-    } else {
-      setPool(pool.map((w) => (w.id === wordId ? { ...w, ...updates } : w)));
-      setCursor((c) => (c + 1) % pool.length);
+      advanceTo(pool.filter((w) => w.id !== wordId), wordId);
+      return;
     }
+
+    const nextPool = updates ? pool.map((w) => (w.id === wordId ? { ...w, ...updates } : w)) : pool;
+    advanceTo(nextPool, wordId);
   }
 
   if (pool === null) {
@@ -121,7 +132,7 @@ export function NewWordsSession() {
     );
   }
 
-  const current = pool[cursor % pool.length];
+  const current = pool.find((w) => w.id === currentId) ?? pool[0];
 
   return (
     <div className="flex flex-col gap-4">
@@ -131,6 +142,8 @@ export function NewWordsSession() {
           key={`${current.id}-A-${turn}`}
           term={current.term}
           translation={current.translation}
+          currentStreak={current.phaseStreak}
+          requiredStreak={phaseARepeats}
           onAnswer={(verdict) => void handleAnswer(current, verdict)}
         />
       ) : (
@@ -138,6 +151,8 @@ export function NewWordsSession() {
           key={`${current.id}-B-${turn}`}
           translation={current.translation}
           expectedTerm={current.term}
+          currentStreak={current.phaseStreak}
+          requiredStreak={phaseBRepeats}
           onAnswer={(verdict) => void handleAnswer(current, verdict)}
         />
       )}

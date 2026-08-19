@@ -30,7 +30,9 @@ export interface TranslationKeys {
   recognitionFeedbackAlmost: string;
   recognitionFeedbackWrong: string;
   speak: string;
-  next: string;
+  retryPrompt: string;
+  retryButton: string;
+  phaseProgress: (current: number, total: number) => string;
 
   translationInputLabel: string;
   duplicateWarning: string;
@@ -59,6 +61,19 @@ export interface TranslationKeys {
   edit: string;
   delete: string;
   deleteError: string;
+
+  exportButtonLabel: string;
+  importButtonLabel: string;
+  exportDialogTitle: string;
+  importDialogTitle: string;
+  exportIncludeWords: string;
+  exportIncludeSettings: string;
+  exportConfirmButton: string;
+  importConfirmButton: string;
+  importFileLabel: string;
+  importSummary: (words: number, hasSettings: boolean) => string;
+  importSuccess: (count: number) => string;
+  importError: string;
 
   phaseARepeatsLabel: string;
   phaseBRepeatsLabel: string;

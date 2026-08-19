@@ -18,7 +18,7 @@ describe('NewWordsSession', () => {
     expect(await screen.findByText('Нет новых слов — добавьте немного!')).toBeInTheDocument();
   });
 
-  it('takes a word through Phase A and Phase B (1 repeat each) and moves it into review', async () => {
+  it('takes a word through Phase A and Phase B (1 repeat each) and moves it into review, without a manual Next click', async () => {
     await db.words.add(createWord('hello', 'привет'));
     const user = userEvent.setup();
     render(<NewWordsSession />);
@@ -27,14 +27,12 @@ describe('NewWordsSession', () => {
     expect(screen.getByText('привет')).toBeInTheDocument();
     await user.type(screen.getByLabelText('Слово'), 'hello');
     await user.click(screen.getByRole('button', { name: 'Проверить' }));
-    await user.click(await screen.findByRole('button', { name: 'Далее' }));
 
-    await waitFor(() => expect(screen.queryByText('hello')).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText('hello')).not.toBeInTheDocument(), { timeout: 2000 });
 
     expect(await screen.findByText('привет')).toBeInTheDocument();
     await user.type(screen.getByLabelText('Слово'), 'hello');
     await user.click(screen.getByRole('button', { name: 'Проверить' }));
-    await user.click(await screen.findByRole('button', { name: 'Далее' }));
 
     expect(await screen.findByText('Новые слова выучены')).toBeInTheDocument();
     expect(screen.getByText(/Выучено слов: 1/)).toBeInTheDocument();
@@ -42,59 +40,87 @@ describe('NewWordsSession', () => {
     const stored = await db.words.toArray();
     expect(stored[0].stage).toBe('review');
     expect(stored[0].rating).toBe(70);
+    expect(stored[0].lastReviewedAt).toBeDefined();
   });
 
-  it('a wrong answer resets phaseStreak but does not advance the word', async () => {
-    await db.words.add(createWord('cat', 'кот'));
+  it('a wrong answer requires a correction and resets a non-zero phaseStreak', async () => {
+    await db.words.add({ ...createWord('cat', 'кот'), phaseStreak: 2 });
     const user = userEvent.setup();
     render(<NewWordsSession />);
 
     await screen.findByText('cat');
     await user.type(screen.getByLabelText('Слово'), 'dog');
     await user.click(screen.getByRole('button', { name: 'Проверить' }));
-    await user.click(await screen.findByRole('button', { name: 'Далее' }));
 
-    expect(await screen.findByLabelText('Слово')).toHaveValue('');
-    const stored = await db.words.toArray();
+    expect(await screen.findByTestId('feedback')).toBeInTheDocument();
+    let stored = await db.words.toArray();
+    expect(stored[0].phaseStreak).toBe(2);
+
+    await user.click(screen.getByRole('button', { name: 'Повторить' }));
+    expect(screen.getByLabelText('Слово')).toHaveValue('');
+
+    await user.type(screen.getByLabelText('Слово'), 'cat');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+
+    await waitFor(async () => {
+      stored = await db.words.toArray();
+      expect(stored[0].phaseStreak).toBe(0);
+    });
     expect(stored[0].learningPhase).toBe('A');
-    expect(stored[0].phaseStreak).toBe(0);
   });
 
-  it('resets the card and shows a fresh input field after a wrong answer', async () => {
-    await db.words.add(createWord('cat', 'кот'));
+  it('a minor (almost) error does not advance and does not reset the streak', async () => {
+    await db.words.add({ ...createWord('cat', 'кот'), phaseStreak: 1 });
+    useUIStore.setState({ phaseARepeats: 5, phaseBRepeats: 5 });
     const user = userEvent.setup();
     render(<NewWordsSession />);
 
     await screen.findByText('cat');
-    await user.type(screen.getByLabelText('Слово'), 'dog');
+    await user.type(screen.getByLabelText('Слово'), 'cot');
     await user.click(screen.getByRole('button', { name: 'Проверить' }));
-    await user.click(await screen.findByRole('button', { name: 'Далее' }));
 
-    expect(await screen.findByLabelText('Слово')).toHaveValue('');
+    expect(await screen.findByTestId('feedback')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Повторить' }));
+    await user.type(screen.getByLabelText('Слово'), 'cat');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+
+    await waitFor(async () => {
+      const stored = await db.words.toArray();
+      expect(stored[0].phaseStreak).toBe(1);
+    });
   });
 
-  it('interleaves words from the pool - the same word never repeats back to back', async () => {
+  it('shows phase progress on the card', async () => {
+    await db.words.add({ ...createWord('cat', 'кот'), phaseStreak: 1 });
+    useUIStore.setState({ phaseARepeats: 3 });
+    render(<NewWordsSession />);
+
+    expect(await screen.findByText('Прогресс: 1 из 3')).toBeInTheDocument();
+  });
+
+  it('never shows the same word twice in a row', async () => {
+    useUIStore.setState({ phaseARepeats: 10, phaseBRepeats: 10 });
     await db.words.add(createWord('one', 'один'));
     await db.words.add(createWord('two', 'два'));
     const user = userEvent.setup();
     render(<NewWordsSession />);
 
-    const seenTerms: string[] = [];
-    for (let i = 0; i < 4; i++) {
-      await screen.findByLabelText('Слово');
-      const termNode = screen.getByText(/^(one|two)$/);
-      seenTerms.push(termNode.textContent ?? '');
-      await user.type(screen.getByLabelText('Слово'), 'wrong');
+    const seenTranslations: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      await screen.findByLabelText('Слово', {}, { timeout: 2000 });
+      const node = screen.getByText(/^(один|два)$/);
+      const shown = node.textContent ?? '';
+      seenTranslations.push(shown);
+      await user.type(screen.getByLabelText('Слово'), shown === 'один' ? 'one' : 'two');
       await user.click(screen.getByRole('button', { name: 'Проверить' }));
-      await user.click(await screen.findByRole('button', { name: 'Далее' }));
     }
 
-    for (let i = 1; i < seenTerms.length; i++) {
-      expect(seenTerms[i]).not.toBe(seenTerms[i - 1]);
+    for (let i = 1; i < seenTranslations.length; i++) {
+      expect(seenTranslations[i]).not.toBe(seenTranslations[i - 1]);
     }
   });
 
-  it('double-clicking "Next" on the graduating answer does not double-count the learned word', async () => {
+  it('pressing Enter twice on the graduating correct flash does not double-count the learned word', async () => {
     await db.words.add(createWord('sun', 'солнце'));
     const user = userEvent.setup();
     render(<NewWordsSession />);
@@ -102,16 +128,15 @@ describe('NewWordsSession', () => {
     await screen.findByText('sun');
     await user.type(screen.getByLabelText('Слово'), 'sun');
     await user.click(screen.getByRole('button', { name: 'Проверить' }));
-    await user.click(await screen.findByRole('button', { name: 'Далее' }));
 
+    await waitFor(() => expect(screen.queryByLabelText('Слово')).not.toBeInTheDocument(), { timeout: 2000 });
     await screen.findByLabelText('Слово');
-    expect(screen.getByText('солнце')).toBeInTheDocument();
     await user.type(screen.getByLabelText('Слово'), 'sun');
     await user.click(screen.getByRole('button', { name: 'Проверить' }));
 
-    const nextButton = await screen.findByRole('button', { name: 'Далее' });
-    fireEvent.click(nextButton);
-    fireEvent.click(nextButton);
+    await screen.findByTestId('feedback');
+    fireEvent.keyDown(window, { key: 'Enter' });
+    fireEvent.keyDown(window, { key: 'Enter' });
 
     expect(await screen.findByText('Новые слова выучены')).toBeInTheDocument();
     expect(screen.getByText(/Выучено слов: 1/)).toBeInTheDocument();

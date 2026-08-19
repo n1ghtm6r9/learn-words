@@ -64,4 +64,26 @@ describe('WordList', () => {
       expect(await db.words.count()).toBe(0);
     });
   });
+
+  it('opens the export dialog from the Export button', async () => {
+    const user = userEvent.setup();
+    render(<WordList />);
+    await screen.findByPlaceholderText('Поиск...');
+
+    expect(screen.queryByText('Экспорт данных')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Экспорт' }));
+
+    expect(await screen.findByText('Экспорт данных')).toBeInTheDocument();
+  });
+
+  it('opens the import dialog from the Import button', async () => {
+    const user = userEvent.setup();
+    render(<WordList />);
+    await screen.findByPlaceholderText('Поиск...');
+
+    expect(screen.queryByText('Импорт данных')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Импорт' }));
+
+    expect(await screen.findByText('Импорт данных')).toBeInTheDocument();
+  });
 });

@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { WordItem } from './WordItem';
+import { speak } from '@/lib/tts';
 import type { Word } from '@/db/word.type';
+
+vi.mock('@/lib/tts', () => ({
+  isSpeechSupported: () => true,
+  speak: vi.fn(),
+}));
 
 function baseWord(overrides: Partial<Word> = {}): Word {
   return {
@@ -99,5 +105,13 @@ describe('WordItem', () => {
     expect(onDelete).not.toHaveBeenCalled();
     expect(screen.queryByText('Удалить это слово?')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Удалить' })).toBeInTheDocument();
+  });
+
+  it('shows a speak button that pronounces the term when clicked', () => {
+    render(<WordItem word={baseWord({ term: 'apple' })} onEdit={vi.fn()} onDelete={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Озвучить' }));
+
+    expect(speak).toHaveBeenCalledWith('apple');
   });
 });
