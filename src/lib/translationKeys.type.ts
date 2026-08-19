@@ -21,7 +21,6 @@ export interface TranslationKeys {
   reviewCorrectCount: (count: number) => string;
   reviewAlmostCount: (count: number) => string;
   reviewWrongCount: (count: number) => string;
-  goHome: string;
 
   wordInputLabel: string;
   checkAnswer: string;
@@ -36,13 +35,18 @@ export interface TranslationKeys {
   translationInputLabel: string;
   duplicateWarning: string;
   save: string;
+  saveAnyway: string;
+  close: string;
 
   wordListLabel: string;
   parseErrorPrefix: string;
   bulkSaveError: string;
+  bulkDuplicatesSkipped: (count: number) => string;
   saveAll: string;
   singleWordMode: string;
   bulkMode: string;
+  confirmDelete: string;
+  cancel: string;
 
   searchPlaceholder: string;
   noWordsYet: string;
@@ -54,6 +58,7 @@ export interface TranslationKeys {
   phraseTag: string;
   edit: string;
   delete: string;
+  deleteError: string;
 
   phaseARepeatsLabel: string;
   phaseBRepeatsLabel: string;

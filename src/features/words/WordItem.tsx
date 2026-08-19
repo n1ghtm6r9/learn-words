@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CARD_CLASS } from '@/lib/cardClass';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,7 @@ interface WordItemProps {
 }
 
 export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const t = useTranslation();
 
   const badge =
@@ -42,29 +44,43 @@ export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
     );
 
   return (
-    <li className={cn(CARD_CLASS, 'flex items-center justify-between p-3')}>
-      <div className="flex items-center gap-3">
+    <li className={cn(CARD_CLASS, 'flex items-center justify-between gap-3 p-3')}>
+      <div className="flex min-w-0 items-center gap-3">
         {badge}
-        <div>
+        <div className="min-w-0">
           <div className="flex items-center gap-1.5">
-            <p className="font-mono font-medium">{word.term}</p>
+            <p className="min-w-0 truncate font-mono font-medium">{word.term}</p>
             {word.kind === 'phrase' && (
-              <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+              <span className="shrink-0 rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                 {t.phraseTag}
               </span>
             )}
           </div>
-          <p className="text-sm text-muted-foreground">{word.translation}</p>
+          <p className="truncate text-sm text-muted-foreground">{word.translation}</p>
         </div>
       </div>
-      <div className="flex gap-2">
-        <Button type="button" variant="outline" size="sm" onClick={onEdit}>
-          {t.edit}
-        </Button>
-        <Button type="button" variant="destructive" size="sm" onClick={onDelete}>
-          {t.delete}
-        </Button>
-      </div>
+      {confirmingDelete ? (
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <span className="text-xs text-muted-foreground">{t.confirmDelete}</span>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => setConfirmingDelete(false)}>
+              {t.cancel}
+            </Button>
+            <Button type="button" variant="destructive" size="sm" onClick={onDelete}>
+              {t.delete}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex shrink-0 gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={onEdit}>
+            {t.edit}
+          </Button>
+          <Button type="button" variant="destructive" size="sm" onClick={() => setConfirmingDelete(true)}>
+            {t.delete}
+          </Button>
+        </div>
+      )}
     </li>
   );
 }

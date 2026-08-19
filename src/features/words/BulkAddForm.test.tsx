@@ -32,6 +32,52 @@ describe('BulkAddForm', () => {
     expect(onDone).toHaveBeenCalledOnce();
   });
 
+  it('drops duplicate terms pasted within the same batch and reports how many were skipped', async () => {
+    const onDone = vi.fn();
+    const user = userEvent.setup();
+    render(<BulkAddForm onDone={onDone} />);
+
+    await user.type(
+      screen.getByLabelText('Список слов'),
+      'cat - кот{Enter}cat - кот{Enter}CAT - котик{Enter}dog - собака',
+    );
+
+    await screen.findByText('dog');
+    expect(screen.getByText(/Пропущено дубликатов: 2/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Сохранить всё' }));
+
+    const words = await db.words.toArray();
+    expect(words).toHaveLength(2);
+    expect(words.map((w) => w.term).sort()).toEqual(['cat', 'dog']);
+  });
+
+  it('skips terms that already exist in the dictionary when saving', async () => {
+    await db.words.add({
+      term: 'cat',
+      translation: 'кот',
+      createdAt: 0,
+      kind: 'word',
+      stage: 'new',
+      learningPhase: 'A',
+      phaseStreak: 0,
+      rating: 0,
+      reviewStreak: 0,
+    });
+
+    const onDone = vi.fn();
+    const user = userEvent.setup();
+    render(<BulkAddForm onDone={onDone} />);
+
+    await user.type(screen.getByLabelText('Список слов'), 'cat - кот{Enter}dog - собака');
+    await user.click(await screen.findByRole('button', { name: 'Сохранить всё' }));
+
+    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    const words = await db.words.toArray();
+    expect(words).toHaveLength(2);
+    expect(words.map((w) => w.term).sort()).toEqual(['cat', 'dog']);
+  });
+
   it('disables the save button when there are no valid pairs', async () => {
     const user = userEvent.setup();
     render(<BulkAddForm onDone={vi.fn()} />);

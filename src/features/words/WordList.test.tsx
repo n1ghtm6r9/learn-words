@@ -48,12 +48,15 @@ describe('WordList', () => {
     expect(screen.queryByText('hello')).not.toBeInTheDocument();
   });
 
-  it('deletes a word via the button', async () => {
+  it('deletes a word via the button after confirming', async () => {
     await db.words.add(baseWord({ term: 'hello', translation: 'привет' }));
 
     const user = userEvent.setup();
     render(<WordList />);
     await screen.findByText('hello');
+
+    await user.click(screen.getByRole('button', { name: 'Удалить' }));
+    expect(await db.words.count()).toBe(1);
 
     await user.click(screen.getByRole('button', { name: 'Удалить' }));
 

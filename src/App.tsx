@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Plus, Settings as SettingsIcon } from 'lucide-react';
 import { NavBar } from '@/components/layout/NavBar';
@@ -15,12 +15,12 @@ import { useTranslation } from '@/lib/useTranslation';
 function App() {
   const screen = useUIStore((s) => s.screen);
   const theme = useUIStore((s) => s.theme);
+  const language = useUIStore((s) => s.language);
   const accentColor = useUIStore((s) => s.accentColor);
   const addWordOpen = useUIStore((s) => s.addWordOpen);
   const setAddWordOpen = useUIStore((s) => s.setAddWordOpen);
   const settingsOpen = useUIStore((s) => s.settingsOpen);
   const setSettingsOpen = useUIStore((s) => s.setSettingsOpen);
-  const setScreen = useUIStore((s) => s.setScreen);
   const t = useTranslation();
 
   useLayoutEffect(() => {
@@ -31,8 +31,13 @@ function App() {
     applyAccentColor(accentColor, theme);
   }, [accentColor, theme]);
 
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.title = t.appTitle;
+  }, [language, t.appTitle]);
+
   return (
-    <div className="min-h-screen bg-background pb-20 text-foreground">
+    <div className="min-h-screen bg-background pb-[calc(5rem+env(safe-area-inset-bottom))] text-foreground">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/90 px-4 py-3 backdrop-blur">
         <h1 className="font-mono text-base font-semibold tracking-tight">{t.appTitle}</h1>
         <button
@@ -65,7 +70,7 @@ function App() {
         aria-label={t.addWordButtonLabel}
         whileTap={{ scale: 0.92 }}
         onClick={() => setAddWordOpen(true)}
-        className="fixed right-4 bottom-20 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
+        className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
       >
         <Plus className="h-6 w-6" aria-hidden="true" />
       </motion.button>
@@ -76,7 +81,6 @@ function App() {
           <AddWordDialog
             onDone={() => {
               setAddWordOpen(false);
-              setScreen('words');
             }}
           />
         </DialogContent>

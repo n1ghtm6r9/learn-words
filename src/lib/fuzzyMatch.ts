@@ -22,8 +22,10 @@ function levenshtein(a: string, b: string): number {
   return dp[m][n];
 }
 
+const TRAILING_PUNCTUATION = /[.,;:!?]+$/;
+
 function normalize(text: string): string {
-  return text.trim().toLowerCase();
+  return text.normalize('NFC').trim().toLowerCase().replace(TRAILING_PUNCTUATION, '');
 }
 
 export function matchAnswer(input: string, expected: string): MatchVerdict {

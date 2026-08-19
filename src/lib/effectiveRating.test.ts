@@ -30,4 +30,10 @@ describe('effectiveRating', () => {
     const now = 1000 * DAY_MS;
     expect(effectiveRating({ rating: 50, reviewStreak: 0, lastReviewedAt: 0 }, now)).toBe(0);
   });
+
+  it('does not inflate the rating when lastReviewedAt is in the future (clock skew)', () => {
+    const now = 10 * DAY_MS;
+    const lastReviewedAt = now + 5 * DAY_MS;
+    expect(effectiveRating({ rating: 70, reviewStreak: 0, lastReviewedAt }, now)).toBe(70);
+  });
 });

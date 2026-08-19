@@ -40,7 +40,7 @@ export function ReviewSummary({ correct, almost, wrong, onFinish }: ReviewSummar
         </div>
       </div>
       <Button type="button" onClick={onFinish} className="w-full">
-        {t.goHome}
+        {t.goToNewWords}
       </Button>
     </Card>
   );

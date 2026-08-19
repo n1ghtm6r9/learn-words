@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { WordItem } from './WordItem';
 import type { Word } from '@/db/word.type';
 
@@ -68,15 +68,36 @@ describe('WordItem', () => {
     expect(screen.getByText('Фраза')).toBeInTheDocument();
   });
 
-  it('calls onEdit and onDelete when the buttons are clicked', async () => {
+  it('calls onEdit immediately when the edit button is clicked', () => {
     const onEdit = vi.fn();
-    const onDelete = vi.fn();
-    render(<WordItem word={baseWord()} onEdit={onEdit} onDelete={onDelete} />);
+    render(<WordItem word={baseWord()} onEdit={onEdit} onDelete={vi.fn()} />);
 
     screen.getByRole('button', { name: 'Изменить' }).click();
-    screen.getByRole('button', { name: 'Удалить' }).click();
 
     expect(onEdit).toHaveBeenCalledOnce();
+  });
+
+  it('requires a confirming second click before calling onDelete', () => {
+    const onDelete = vi.fn();
+    render(<WordItem word={baseWord()} onEdit={vi.fn()} onDelete={onDelete} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить' }));
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(screen.getByText('Удалить это слово?')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить' }));
     expect(onDelete).toHaveBeenCalledOnce();
+  });
+
+  it('cancels the delete confirmation without calling onDelete', () => {
+    const onDelete = vi.fn();
+    render(<WordItem word={baseWord()} onEdit={vi.fn()} onDelete={onDelete} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Отмена' }));
+
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(screen.queryByText('Удалить это слово?')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Удалить' })).toBeInTheDocument();
   });
 });

@@ -16,7 +16,7 @@ export function NavBar() {
   ];
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 flex justify-around border-t border-border bg-card/95 backdrop-blur px-1 py-1.5">
+    <nav className="fixed inset-x-0 bottom-0 z-30 flex justify-around border-t border-border bg-card/95 backdrop-blur px-1 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))]">
       {items.map((item) => {
         const active = screen === item.screen;
         const Icon = item.icon;

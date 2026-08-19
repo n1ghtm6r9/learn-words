@@ -31,11 +31,13 @@ export class VocabDB extends Dexie {
           .toCollection()
           .modify((word) => {
             const legacyInterval = word.interval ?? 0;
-            word.stage = 'review';
-            word.learningPhase = 'B';
+            const wasStudied = (word.repetitions ?? 0) > 0 || legacyInterval > 0;
+            word.stage = wasStudied ? 'review' : 'new';
+            word.learningPhase = wasStudied ? 'B' : 'A';
             word.phaseStreak = 0;
-            word.rating = legacyInterval >= 21 ? 80 : legacyInterval >= 6 ? 60 : 40;
+            word.rating = wasStudied ? (legacyInterval >= 21 ? 80 : legacyInterval >= 6 ? 60 : 40) : 0;
             word.reviewStreak = 0;
+            delete word.lastReviewedAt;
             delete word.easinessFactor;
             delete word.interval;
             delete word.repetitions;

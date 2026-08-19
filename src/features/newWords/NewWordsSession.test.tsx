@@ -104,7 +104,8 @@ describe('NewWordsSession', () => {
     await user.click(screen.getByRole('button', { name: 'Проверить' }));
     await user.click(await screen.findByRole('button', { name: 'Далее' }));
 
-    await screen.findByText('солнце');
+    await screen.findByLabelText('Слово');
+    expect(screen.getByText('солнце')).toBeInTheDocument();
     await user.type(screen.getByLabelText('Слово'), 'sun');
     await user.click(screen.getByRole('button', { name: 'Проверить' }));
 

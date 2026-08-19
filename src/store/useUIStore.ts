@@ -1,4 +1,8 @@
 import { create } from 'zustand';
+import { ACCENT_PALETTE } from '@/lib/accentPalette';
+import { TRANSLATIONS } from '@/lib/translations';
+import { parsePositiveInt } from '@/lib/parsePositiveInt';
+import { MIN_PHASE_REPEATS, MAX_PHASE_REPEATS } from '@/lib/phaseRepeatsRange';
 import type { Screen } from './screen.type';
 import type { Theme } from './theme.type';
 import type { AccentColor } from './accentColor.type';
@@ -6,9 +10,23 @@ import type { Language } from './language.type';
 
 const DEFAULT_PHASE_REPEATS = 3;
 const DEFAULT_ACCENT_COLOR: AccentColor = 'blue';
-const ACCENT_COLORS: AccentColor[] = ['blue', 'green', 'purple', 'orange'];
+const ACCENT_COLORS = Object.keys(ACCENT_PALETTE) as AccentColor[];
 const DEFAULT_LANGUAGE: Language = 'ru';
-const LANGUAGES: Language[] = ['ru', 'en'];
+const LANGUAGES = Object.keys(TRANSLATIONS) as Language[];
+
+function safeGetItem(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeSetItem(key: string, value: string): void {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {}
+}
 
 interface UIStore {
   screen: Screen;
@@ -38,27 +56,23 @@ interface UIStore {
 }
 
 function readInitialTheme(): Theme {
-  if (typeof window === 'undefined') return 'light';
-  return window.localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
+  return safeGetItem('theme') === 'dark' ? 'dark' : 'light';
 }
 
 function readInitialAccentColor(): AccentColor {
-  if (typeof window === 'undefined') return DEFAULT_ACCENT_COLOR;
-  const stored = window.localStorage.getItem('accentColor');
+  const stored = safeGetItem('accentColor');
   return (ACCENT_COLORS as string[]).includes(stored ?? '') ? (stored as AccentColor) : DEFAULT_ACCENT_COLOR;
 }
 
 function readInitialLanguage(): Language {
-  if (typeof window === 'undefined') return DEFAULT_LANGUAGE;
-  const stored = window.localStorage.getItem('language');
+  const stored = safeGetItem('language');
   return (LANGUAGES as string[]).includes(stored ?? '') ? (stored as Language) : DEFAULT_LANGUAGE;
 }
 
 function readInitialNumber(key: string, fallback: number): number {
-  if (typeof window === 'undefined') return fallback;
-  const stored = window.localStorage.getItem(key);
-  const parsed = stored ? Number(stored) : NaN;
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  const stored = safeGetItem(key);
+  if (stored == null) return fallback;
+  return parsePositiveInt(stored, MIN_PHASE_REPEATS, MAX_PHASE_REPEATS) ?? fallback;
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -75,47 +89,35 @@ export const useUIStore = create<UIStore>((set) => ({
   toggleTheme: () =>
     set((state) => {
       const next: Theme = state.theme === 'light' ? 'dark' : 'light';
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem('theme', next);
-      }
+      safeSetItem('theme', next);
       return { theme: next };
     }),
   setTheme: (theme) => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('theme', theme);
-    }
+    safeSetItem('theme', theme);
     set({ theme });
   },
 
   accentColor: readInitialAccentColor(),
   setAccentColor: (color) => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('accentColor', color);
-    }
+    safeSetItem('accentColor', color);
     set({ accentColor: color });
   },
 
   language: readInitialLanguage(),
   setLanguage: (language) => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('language', language);
-    }
+    safeSetItem('language', language);
     set({ language });
   },
 
   phaseARepeats: readInitialNumber('phaseARepeats', DEFAULT_PHASE_REPEATS),
   setPhaseARepeats: (value) => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('phaseARepeats', String(value));
-    }
+    safeSetItem('phaseARepeats', String(value));
     set({ phaseARepeats: value });
   },
 
   phaseBRepeats: readInitialNumber('phaseBRepeats', DEFAULT_PHASE_REPEATS),
   setPhaseBRepeats: (value) => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('phaseBRepeats', String(value));
-    }
+    safeSetItem('phaseBRepeats', String(value));
     set({ phaseBRepeats: value });
   },
 }));

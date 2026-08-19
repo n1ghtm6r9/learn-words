@@ -47,13 +47,19 @@ export function ReviewSession() {
     if (isSubmitting) return;
     setIsSubmitting(true);
     const wordId = word.id;
+    let persisted = true;
     if (wordId != null) {
       try {
         const next = applyReviewOutcome(word, verdict, Date.now());
-        await db.words.update(wordId, next);
-      } catch {}
+        const updatedCount = await db.words.update(wordId, next);
+        persisted = updatedCount !== 0;
+      } catch {
+        persisted = false;
+      }
     }
-    setCounters((c) => ({ ...c, [verdict]: c[verdict] + 1 }));
+    if (persisted) {
+      setCounters((c) => ({ ...c, [verdict]: c[verdict] + 1 }));
+    }
     setIndex((i) => i + 1);
     setIsSubmitting(false);
   }

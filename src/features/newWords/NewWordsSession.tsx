@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { db } from '@/db/db';
 import type { Word } from '@/db/word.type';
@@ -27,10 +27,17 @@ export function NewWordsSession() {
   const phaseARepeats = useUIStore((s) => s.phaseARepeats);
   const phaseBRepeats = useUIStore((s) => s.phaseBRepeats);
   const setScreen = useUIStore((s) => s.setScreen);
+  const addWordOpen = useUIStore((s) => s.addWordOpen);
   const setAddWordOpen = useUIStore((s) => s.setAddWordOpen);
   const t = useTranslation();
 
+  const poolRef = useRef(pool);
+  poolRef.current = pool;
+
   useEffect(() => {
+    if (addWordOpen) return;
+    if (poolRef.current !== null && poolRef.current.length > 0) return;
+
     let cancelled = false;
     void db.words
       .where('stage')
@@ -42,7 +49,7 @@ export function NewWordsSession() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [addWordOpen]);
 
   async function handleAnswer(word: Word, verdict: MatchVerdict) {
     const wordId = word.id;
@@ -60,14 +67,15 @@ export function NewWordsSession() {
     } else if (word.learningPhase === 'A' && nextStreak >= phaseARepeats) {
       updates = { learningPhase: 'B', phaseStreak: 0 };
     } else if (word.learningPhase === 'B' && nextStreak >= phaseBRepeats) {
-      updates = { stage: 'review', rating: 70, reviewStreak: 0, learningPhase: 'A', phaseStreak: 0 };
+      updates = { stage: 'review', rating: 70, reviewStreak: 0, learningPhase: 'A', phaseStreak: 0, lastReviewedAt: Date.now() };
       graduated = true;
     } else {
       updates = { phaseStreak: nextStreak };
     }
 
+    let updatedCount: number;
     try {
-      await db.words.update(wordId, updates);
+      updatedCount = await db.words.update(wordId, updates);
     } catch {
       setTurn((t) => t + 1);
       setIsSubmitting(false);
@@ -76,6 +84,13 @@ export function NewWordsSession() {
 
     setTurn((t) => t + 1);
     setIsSubmitting(false);
+
+    if (updatedCount === 0) {
+      const remaining = pool.filter((w) => w.id !== wordId);
+      setPool(remaining);
+      setCursor((c) => (remaining.length > 0 ? c % remaining.length : 0));
+      return;
+    }
 
     if (graduated) {
       const remaining = pool.filter((w) => w.id !== wordId);

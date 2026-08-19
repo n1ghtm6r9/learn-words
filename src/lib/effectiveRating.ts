@@ -8,7 +8,7 @@ export function effectiveRating(state: RatingState, now: number): number {
     return clamp(Math.round(state.rating), 0, 100);
   }
 
-  const daysSince = (now - state.lastReviewedAt) / DAY_MS;
+  const daysSince = Math.max(0, (now - state.lastReviewedAt) / DAY_MS);
   const decayed = state.rating * 0.5 ** (daysSince / halfLifeDays(state.reviewStreak));
   return clamp(Math.round(decayed), 0, 100);
 }

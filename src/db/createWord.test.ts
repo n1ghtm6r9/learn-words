@@ -24,4 +24,11 @@ describe('createWord', () => {
 
     expect(word.kind).toBe('word');
   });
+
+  it('normalizes the term and translation before storing them', () => {
+    const word = createWord('  “hello”  ', '  привет  ');
+
+    expect(word.term).toBe('hello');
+    expect(word.translation).toBe('привет');
+  });
 });

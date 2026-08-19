@@ -25,4 +25,13 @@ describe('matchAnswer', () => {
   it('empty input — wrong', () => {
     expect(matchAnswer('', 'привет')).toBe('wrong');
   });
+
+  it('an NFD-normalized expected term still matches an NFC-typed answer — correct', () => {
+    const nfd = 'ёлка'.normalize('NFD');
+    expect(matchAnswer('ёлка', nfd)).toBe('correct');
+  });
+
+  it('a trailing punctuation mark on the stored term does not block a correct answer', () => {
+    expect(matchAnswer('etc', 'etc.')).toBe('correct');
+  });
 });

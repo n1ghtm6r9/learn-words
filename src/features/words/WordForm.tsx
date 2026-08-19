@@ -6,6 +6,7 @@ import { db } from '@/db/db';
 import { createWord } from '@/db/createWord';
 import type { Word } from '@/db/word.type';
 import { detectWordKind } from '@/lib/detectWordKind';
+import { normalizeTerm } from '@/lib/normalizeTerm';
 import { useTranslation } from '@/lib/useTranslation';
 
 const DUPLICATE_CHECK_DEBOUNCE_MS = 300;
@@ -20,6 +21,8 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
   const [term, setTerm] = useState(word?.term ?? '');
   const [translation, setTranslation] = useState(word?.translation ?? '');
   const [duplicate, setDuplicate] = useState(false);
+  const [duplicateConfirmed, setDuplicateConfirmed] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const duplicateRequestId = useRef(0);
   const duplicateTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const t = useTranslation();
@@ -28,9 +31,17 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
     return () => clearTimeout(duplicateTimeout.current);
   }, []);
 
+  async function countExistingCollisions(value: string): Promise<number> {
+    return db.words
+      .where('term')
+      .equalsIgnoreCase(value)
+      .and((w) => w.id !== word?.id)
+      .count();
+  }
+
   async function checkDuplicate(value: string) {
     const requestId = ++duplicateRequestId.current;
-    const count = await db.words.where('term').equalsIgnoreCase(value.trim()).count();
+    const count = await countExistingCollisions(normalizeTerm(value));
     if (requestId === duplicateRequestId.current) {
       setDuplicate(count > 0);
     }
@@ -39,8 +50,9 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
   function scheduleDuplicateCheck(value: string) {
     clearTimeout(duplicateTimeout.current);
     duplicateRequestId.current += 1;
+    setDuplicateConfirmed(false);
 
-    if (mode === 'edit' || value.trim() === '') {
+    if (value.trim() === '') {
       setDuplicate(false);
       return;
     }
@@ -52,21 +64,37 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (isSaving) return;
 
-    if (!term.trim() || !translation.trim()) return;
+    const trimmedTerm = normalizeTerm(term);
+    const trimmedTranslation = normalizeTerm(translation);
+    if (!trimmedTerm || !trimmedTranslation) return;
 
-    if (mode === 'edit' && word?.id != null) {
-      const trimmedTerm = term.trim();
-      await db.words.update(word.id, {
-        term: trimmedTerm,
-        translation: translation.trim(),
-        kind: detectWordKind(trimmedTerm),
-      });
-    } else {
-      await db.words.add(createWord(term.trim(), translation.trim()));
+    setIsSaving(true);
+    try {
+      if (!duplicateConfirmed) {
+        const collisions = await countExistingCollisions(trimmedTerm);
+        if (collisions > 0) {
+          setDuplicate(true);
+          setDuplicateConfirmed(true);
+          return;
+        }
+      }
+
+      if (mode === 'edit' && word?.id != null) {
+        await db.words.update(word.id, {
+          term: trimmedTerm,
+          translation: trimmedTranslation,
+          kind: detectWordKind(trimmedTerm),
+        });
+      } else {
+        await db.words.add(createWord(trimmedTerm, trimmedTranslation));
+      }
+
+      onDone();
+    } finally {
+      setIsSaving(false);
     }
-
-    onDone();
   }
 
   return (
@@ -76,6 +104,7 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
         <Input
           aria-label={t.wordInputLabel}
           value={term}
+          maxLength={200}
           onChange={(e) => {
             setTerm(e.target.value);
             scheduleDuplicateCheck(e.target.value);
@@ -97,13 +126,16 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
         <Input
           aria-label={t.translationInputLabel}
           value={translation}
+          maxLength={200}
           onChange={(e) => setTranslation(e.target.value)}
           required
           className="font-mono"
         />
       </label>
 
-      <Button type="submit">{t.save}</Button>
+      <Button type="submit" disabled={isSaving}>
+        {duplicate ? t.saveAnyway : t.save}
+      </Button>
     </form>
   );
 }

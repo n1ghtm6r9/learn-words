@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Search } from 'lucide-react';
+import { Search, TriangleAlert } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { db } from '@/db/db';
@@ -13,6 +13,7 @@ export function WordList() {
   const words = useLiveQuery(() => db.words.toArray(), []);
   const [search, setSearch] = useState('');
   const [editingWord, setEditingWord] = useState<Word | null>(null);
+  const [deleteError, setDeleteError] = useState(false);
   const t = useTranslation();
 
   const sorted = useMemo(
@@ -30,7 +31,12 @@ export function WordList() {
 
   async function handleDelete(id?: number) {
     if (id == null) return;
-    await db.words.delete(id);
+    try {
+      await db.words.delete(id);
+      setDeleteError(false);
+    } catch {
+      setDeleteError(true);
+    }
   }
 
   if (!words) {
@@ -43,6 +49,13 @@ export function WordList() {
         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <Input placeholder={t.searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
       </div>
+
+      {deleteError && (
+        <p className="flex items-start gap-2 rounded-md bg-destructive/10 px-2.5 py-1.5 text-sm text-destructive">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          {t.deleteError}
+        </p>
+      )}
 
       {filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">

@@ -22,6 +22,33 @@ describe('SettingsPage', () => {
     expect(useUIStore.getState().phaseARepeats).toBe(5);
   });
 
+  it('clamps an out-of-range value on blur and keeps the displayed text in sync with the store', async () => {
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+
+    const phaseAInput = screen.getByLabelText(/Повторов в фазе узнавания/);
+    await user.clear(phaseAInput);
+    await user.type(phaseAInput, '12');
+    expect(phaseAInput).toHaveValue(12);
+
+    await user.tab();
+
+    expect(phaseAInput).toHaveValue(10);
+    expect(useUIStore.getState().phaseARepeats).toBe(10);
+  });
+
+  it('falls back to the last valid value on blur when the field is left empty', async () => {
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+
+    const phaseAInput = screen.getByLabelText(/Повторов в фазе узнавания/);
+    await user.clear(phaseAInput);
+    await user.tab();
+
+    expect(phaseAInput).toHaveValue(3);
+    expect(useUIStore.getState().phaseARepeats).toBe(3);
+  });
+
   it('switches the theme using the buttons', async () => {
     const user = userEvent.setup();
     render(<SettingsPage />);
