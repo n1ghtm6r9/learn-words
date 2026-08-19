@@ -46,7 +46,12 @@ export function WordItem({ word, onEdit, onDelete, onOpenDetails }: WordItemProp
           ) : (
             <>
               <span className="sr-only">{t.ratingSrLabel}</span>
-              <span className={cn('font-mono text-[10px] leading-none', RATING_TEXT_CLASS[color!])}>
+              <span
+                className={cn(
+                  'font-mono text-[12px] leading-none font-semibold tabular-nums',
+                  RATING_TEXT_CLASS[color!],
+                )}
+              >
                 {Math.round(rating)}
               </span>
             </>

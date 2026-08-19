@@ -3,9 +3,8 @@ import confetti from 'canvas-confetti';
 import { PartyPopper } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { confettiColors } from '@/lib/confettiColors';
 import { useTranslation } from '@/lib/useTranslation';
-
-const CONFETTI_COLORS = ['#3f7d70', '#c9a24a', '#f5f1e4', '#2f6b5e'];
 
 interface NewWordsSummaryProps {
   learnedCount: number;
@@ -16,7 +15,7 @@ export function NewWordsSummary({ learnedCount, onFinish }: NewWordsSummaryProps
   const t = useTranslation();
 
   useEffect(() => {
-    void confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 }, colors: CONFETTI_COLORS });
+    void confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 }, colors: confettiColors() });
   }, []);
 
   return (

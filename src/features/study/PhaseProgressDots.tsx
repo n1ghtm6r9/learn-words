@@ -16,7 +16,7 @@ export function PhaseProgressDots({ current, total }: PhaseProgressDotsProps) {
         <span
           key={i}
           aria-hidden="true"
-          className={cn('h-1.5 rounded-full transition-colors', i < current ? 'w-5 bg-primary' : 'w-1.5 bg-border')}
+          className={cn('h-1.5 w-6 rounded-full transition-colors', i < current ? 'bg-primary' : 'bg-border')}
         />
       ))}
     </div>

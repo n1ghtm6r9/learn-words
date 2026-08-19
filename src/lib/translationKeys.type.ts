@@ -21,12 +21,15 @@ export interface TranslationKeys {
   reviewCorrectCount: (count: number) => string;
   reviewAlmostCount: (count: number) => string;
   reviewWrongCount: (count: number) => string;
+  statCorrect: string;
+  statAlmost: string;
+  statWrong: string;
 
   wordInputLabel: string;
   checkAnswer: string;
   feedbackCorrect: string;
-  recallFeedbackAlmost: (correct: string) => string;
-  recallFeedbackWrong: (correct: string) => string;
+  recallFeedbackAlmost: string;
+  recallFeedbackWrong: string;
   recognitionFeedbackAlmost: string;
   recognitionFeedbackWrong: string;
   speak: string;

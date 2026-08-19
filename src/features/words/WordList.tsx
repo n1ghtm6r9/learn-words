@@ -58,17 +58,9 @@ export function WordList() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-          <Input placeholder={t.searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
-        </div>
-        <Button type="button" variant="outline" size="sm" onClick={() => setExportOpen(true)}>
-          {t.exportButtonLabel}
-        </Button>
-        <Button type="button" variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-          {t.importButtonLabel}
-        </Button>
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+        <Input placeholder={t.searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
       </div>
 
       {deleteError && (
@@ -78,13 +70,23 @@ export function WordList() {
         </p>
       )}
 
-      {sorted.length > 0 && (
+      <div className="flex items-center justify-between gap-2">
         <p className="font-mono text-xs text-muted-foreground">
-          {filtered.length === sorted.length
-            ? t.wordsTotal(sorted.length)
-            : t.wordsFiltered(filtered.length, sorted.length)}
+          {sorted.length === 0
+            ? ''
+            : filtered.length === sorted.length
+              ? t.wordsTotal(sorted.length)
+              : t.wordsFiltered(filtered.length, sorted.length)}
         </p>
-      )}
+        <div className="flex shrink-0 items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => setExportOpen(true)}>
+            {t.exportButtonLabel}
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+            {t.importButtonLabel}
+          </Button>
+        </div>
+      </div>
 
       {filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">

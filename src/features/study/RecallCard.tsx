@@ -34,8 +34,8 @@ const FEEDBACK_COLOR: Record<MatchVerdict, string> = {
   wrong: 'text-destructive',
 };
 
-function errorFeedbackText(t: TranslationKeys, verdict: ErrorVerdict, correctAnswer: string): string {
-  return verdict === 'almost' ? t.recallFeedbackAlmost(correctAnswer) : t.recallFeedbackWrong(correctAnswer);
+function errorFeedbackLabel(t: TranslationKeys, verdict: ErrorVerdict): string {
+  return verdict === 'almost' ? t.recallFeedbackAlmost : t.recallFeedbackWrong;
 }
 
 export function RecallCard({ translation, expectedTerm, currentStreak, requiredStreak, onAnswer }: RecallCardProps) {
@@ -105,9 +105,7 @@ export function RecallCard({ translation, expectedTerm, currentStreak, requiredS
     <div className={`${CARD_CLASS} flex flex-col gap-6 p-6`}>
       <div className="flex flex-col gap-3">
         {showProgress && <PhaseProgressDots current={displayedStreak} total={requiredStreak ?? 0} />}
-        <span className="font-mono text-2xl leading-tight font-semibold tracking-tight text-balance">
-          {translation}
-        </span>
+        <span className="text-2xl leading-snug font-semibold text-balance">{translation}</span>
       </div>
 
       <div className="flex min-h-32 flex-col justify-center">
@@ -130,8 +128,9 @@ export function RecallCard({ translation, expectedTerm, currentStreak, requiredS
         ) : error ? (
           <div className="flex flex-col gap-3">
             <div className="flex items-start gap-2">
-              <p data-testid="feedback" className={`text-sm font-medium ${FEEDBACK_COLOR[error.verdict]}`}>
-                {errorFeedbackText(t, error.verdict, error.correctAnswer)}
+              <p data-testid="feedback" className={`text-sm ${FEEDBACK_COLOR[error.verdict]}`}>
+                {errorFeedbackLabel(t, error.verdict)}{' '}
+                <span className="font-mono font-semibold">{error.correctAnswer}</span>
               </p>
               {isSpeechSupported() && (
                 <button
