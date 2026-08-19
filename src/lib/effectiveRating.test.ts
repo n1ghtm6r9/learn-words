@@ -36,4 +36,11 @@ describe('effectiveRating', () => {
     const lastReviewedAt = now + 5 * DAY_MS;
     expect(effectiveRating({ rating: 70, reviewStreak: 0, lastReviewedAt }, now)).toBe(70);
   });
+
+  it('preserves two decimal places of precision instead of rounding to a whole number', () => {
+    const now = 1 * DAY_MS;
+    const lastReviewedAt = 0;
+    const result = effectiveRating({ rating: 73, reviewStreak: 2, lastReviewedAt }, now);
+    expect(Number.isInteger(result)).toBe(false);
+  });
 });

@@ -4,6 +4,7 @@ import { db } from '@/db/db';
 import type { Word } from '@/db/word.type';
 import { effectiveRating } from '@/lib/effectiveRating';
 import { applyReviewOutcome } from '@/lib/applyReviewOutcome';
+import { MASTERED_RATING_THRESHOLD } from '@/lib/masteredRatingThreshold';
 import type { MatchVerdict } from '@/lib/fuzzyMatch';
 import { useTranslation } from '@/lib/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
@@ -21,6 +22,7 @@ export function ReviewSession() {
   const [index, setIndex] = useState(0);
   const [counters, setCounters] = useState<Counters>({ correct: 0, almost: 0, wrong: 0 });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
   const setScreen = useUIStore((s) => s.setScreen);
   const t = useTranslation();
 
@@ -33,7 +35,7 @@ export function ReviewSession() {
       .then((words) => {
         if (cancelled) return;
         const now = Date.now();
-        const due = words.filter((w) => effectiveRating(w, now) < 100);
+        const due = words.filter((w) => effectiveRating(w, now) < MASTERED_RATING_THRESHOLD);
         const sorted = due.sort((a, b) => effectiveRating(a, now) - effectiveRating(b, now));
         setQueue(sorted);
       });
@@ -42,14 +44,14 @@ export function ReviewSession() {
     };
   }, []);
 
-  async function handleAnswer(word: Word, verdict: MatchVerdict) {
+  async function handleAnswer(word: Word, verdict: MatchVerdict, accuracy: number, speedFactor: number) {
     if (isSubmitting) return;
     setIsSubmitting(true);
     const wordId = word.id;
     let persisted = true;
     if (wordId != null) {
       try {
-        const next = applyReviewOutcome(word, verdict, Date.now());
+        const next = applyReviewOutcome(word, verdict, accuracy, speedFactor, Date.now());
         const updatedCount = await db.words.update(wordId, next);
         persisted = updatedCount !== 0;
       } catch {
@@ -59,6 +61,7 @@ export function ReviewSession() {
     if (persisted) {
       setCounters((c) => ({ ...c, [verdict]: c[verdict] + 1 }));
     }
+    setSaveFailed(!persisted);
     setIndex((i) => i + 1);
     setIsSubmitting(false);
   }
@@ -96,11 +99,16 @@ export function ReviewSession() {
       <p className="text-right font-mono text-xs text-muted-foreground">
         {t.reviewProgress(index + 1, queue.length)}
       </p>
+      {saveFailed && (
+        <p role="alert" className="rounded-md bg-destructive/10 px-2.5 py-1.5 text-sm text-destructive">
+          {t.answerSaveError}
+        </p>
+      )}
       <RecallCard
         key={current.id}
         translation={current.translation}
         expectedTerm={current.term}
-        onAnswer={(verdict) => void handleAnswer(current, verdict)}
+        onAnswer={(verdict, accuracy, speedFactor) => void handleAnswer(current, verdict, accuracy, speedFactor)}
       />
     </div>
   );

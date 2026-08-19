@@ -39,7 +39,7 @@ export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
           <span className="flex items-center gap-1.5 text-[11px]">
             <span className={cn('h-2 w-2 rounded-full', RATING_DOT_CLASS[color])} aria-hidden="true" />
             <span className="sr-only">{t.ratingSrLabel}</span>
-            <span className={cn('font-mono font-medium', RATING_TEXT_CLASS[color])}>{rating}</span>
+            <span className={cn('font-mono font-medium', RATING_TEXT_CLASS[color])}>{rating.toFixed(2)}</span>
           </span>
         );
       })()
@@ -73,12 +73,14 @@ export function WordItem({ word, onEdit, onDelete }: WordItemProps) {
       </div>
       {confirmingDelete ? (
         <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <span className="text-xs text-muted-foreground">{t.confirmDelete}</span>
+          <span role="alert" className="text-xs text-muted-foreground">
+            {t.confirmDelete}
+          </span>
           <div className="flex gap-2">
             <Button type="button" variant="outline" size="sm" onClick={() => setConfirmingDelete(false)}>
               {t.cancel}
             </Button>
-            <Button type="button" variant="destructive" size="sm" onClick={onDelete}>
+            <Button type="button" variant="destructive" size="sm" onClick={onDelete} autoFocus>
               {t.delete}
             </Button>
           </div>

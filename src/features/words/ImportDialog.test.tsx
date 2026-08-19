@@ -83,4 +83,76 @@ describe('ImportDialog', () => {
     await screen.findByText('Найдено слов: 0');
     expect(screen.getByRole('button', { name: 'Импортировать' })).toBeDisabled();
   });
+
+  it('reports a failure instead of silently pretending the import worked', async () => {
+    const bulkAddSpy = vi.spyOn(db.words, 'bulkAdd').mockRejectedValueOnce(new Error('quota'));
+    const user = userEvent.setup();
+    render(<ImportDialog open onOpenChange={vi.fn()} />);
+
+    const file = jsonFile({ version: 1, exportedAt: 0, words: [{ term: 'cat', translation: 'кот' }] });
+    await user.upload(screen.getByLabelText('Выберите файл'), file);
+    await screen.findByText('Найдено слов: 1');
+
+    await user.click(screen.getByRole('button', { name: 'Импортировать' }));
+
+    expect(await screen.findByText(/не удалось сохранить импорт/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Импортировано слов/)).not.toBeInTheDocument();
+    bulkAddSpy.mockRestore();
+  });
+
+  it('says how many words were skipped as already present, instead of just reporting zero', async () => {
+    await db.words.add({
+      term: 'cat',
+      translation: 'кот',
+      createdAt: 0,
+      kind: 'word',
+      stage: 'new',
+      learningPhase: 'A',
+      phaseStreak: 0,
+      rating: 0,
+      reviewStreak: 0,
+    });
+
+    const user = userEvent.setup();
+    render(<ImportDialog open onOpenChange={vi.fn()} />);
+
+    const file = jsonFile({ version: 1, exportedAt: 0, words: [{ term: 'cat', translation: 'кот' }] });
+    await user.upload(screen.getByLabelText('Выберите файл'), file);
+    await screen.findByText('Найдено слов: 1');
+
+    await user.click(screen.getByRole('button', { name: 'Импортировать' }));
+
+    expect(await screen.findByText('Импортировано слов: 0')).toBeInTheDocument();
+    expect(screen.getByText('Пропущено (уже в словаре): 1')).toBeInTheDocument();
+  });
+
+  it('confirms that settings were applied even when no words came along', async () => {
+    const user = userEvent.setup();
+    render(<ImportDialog open onOpenChange={vi.fn()} />);
+
+    const file = jsonFile({ version: 1, exportedAt: 0, settings: { phaseARepeats: 7 } });
+    await user.upload(screen.getByLabelText('Выберите файл'), file);
+    await screen.findByText('Найдено слов: 0, есть настройки');
+
+    await user.click(screen.getByRole('button', { name: 'Импортировать' }));
+
+    expect(await screen.findByText('Настройки применены')).toBeInTheDocument();
+  });
+
+  it('forgets the previous file once the dialog is closed', async () => {
+    const onOpenChange = vi.fn();
+    const user = userEvent.setup();
+    const { rerender } = render(<ImportDialog open onOpenChange={onOpenChange} />);
+
+    const file = jsonFile({ version: 1, exportedAt: 0, words: [{ term: 'cat', translation: 'кот' }] });
+    await user.upload(screen.getByLabelText('Выберите файл'), file);
+    await screen.findByText('Найдено слов: 1');
+
+    await user.click(screen.getByRole('button', { name: 'Закрыть' }));
+    rerender(<ImportDialog open={false} onOpenChange={onOpenChange} />);
+    rerender(<ImportDialog open onOpenChange={onOpenChange} />);
+
+    expect(screen.queryByText('Найдено слов: 1')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Импортировать' })).not.toBeInTheDocument();
+  });
 });

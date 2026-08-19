@@ -3,7 +3,16 @@ import { useUIStore } from './useUIStore';
 
 describe('useUIStore', () => {
   beforeEach(() => {
-    useUIStore.setState({ screen: 'newWords', theme: 'light', phaseARepeats: 3, phaseBRepeats: 3 });
+    useUIStore.setState({
+      screen: 'newWords',
+      theme: 'light',
+      accentColor: 'blue',
+      language: 'ru',
+      addWordOpen: false,
+      settingsOpen: false,
+      phaseARepeats: 3,
+      phaseBRepeats: 3,
+    });
     window.localStorage.clear();
   });
 

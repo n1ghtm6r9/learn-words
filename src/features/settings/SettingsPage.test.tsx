@@ -9,7 +9,7 @@ describe('SettingsPage', () => {
     useUIStore.setState({ phaseARepeats: 3, phaseBRepeats: 3, theme: 'light', accentColor: 'blue', language: 'ru' });
   });
 
-  it('shows current values and updates them through the store', async () => {
+  it('shows current values and commits them to the store once editing finishes', async () => {
     const user = userEvent.setup();
     render(<SettingsPage />);
 
@@ -18,8 +18,33 @@ describe('SettingsPage', () => {
 
     await user.clear(phaseAInput);
     await user.type(phaseAInput, '5');
+    await user.tab();
 
     expect(useUIStore.getState().phaseARepeats).toBe(5);
+  });
+
+  it('does not commit half-typed intermediate values while the user is still typing', async () => {
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+
+    const phaseAInput = screen.getByLabelText(/Повторов в фазе узнавания/);
+    await user.clear(phaseAInput);
+    await user.type(phaseAInput, '12');
+
+    expect(useUIStore.getState().phaseARepeats).toBe(3);
+  });
+
+  it('commits the pending value when the settings view closes without a blur', async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<SettingsPage />);
+
+    const phaseAInput = screen.getByLabelText(/Повторов в фазе узнавания/);
+    await user.clear(phaseAInput);
+    await user.type(phaseAInput, '12');
+
+    unmount();
+
+    expect(useUIStore.getState().phaseARepeats).toBe(10);
   });
 
   it('clamps an out-of-range value on blur and keeps the displayed text in sync with the store', async () => {

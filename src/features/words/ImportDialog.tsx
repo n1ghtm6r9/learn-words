@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { applyImportPayload } from '@/lib/applyImportPayload';
+import type { ImportResult } from '@/lib/importResult.type';
 import { parseImportPayload } from '@/lib/parseImportPayload';
 import type { ParsedImportPayload } from '@/lib/parsedImportPayload.type';
 import { useTranslation } from '@/lib/useTranslation';
@@ -16,21 +17,41 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
   const [importWords, setImportWords] = useState(false);
   const [importSettings, setImportSettings] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [importResult, setImportResult] = useState<{ importedCount: number } | null>(null);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [failed, setFailed] = useState(false);
+  const fileRequestId = useRef(0);
   const t = useTranslation();
 
   const hasWords = parsed != null && parsed.valid && parsed.words.length > 0;
   const hasSettings = parsed != null && parsed.valid && parsed.settings !== null;
   const canImport = (hasWords && importWords) || (hasSettings && importSettings);
 
+  function resetState() {
+    fileRequestId.current += 1;
+    setParsed(null);
+    setImportWords(false);
+    setImportSettings(false);
+    setImportResult(null);
+    setFailed(false);
+  }
+
+  function handleOpenChange(next: boolean) {
+    if (!next) resetState();
+    onOpenChange(next);
+  }
+
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    const requestId = ++fileRequestId.current;
     const text = await file.text();
+    if (requestId !== fileRequestId.current) return;
+
     const result = parseImportPayload(text);
     setParsed(result);
     setImportResult(null);
+    setFailed(false);
     setImportWords(result.words.length > 0);
     setImportSettings(result.settings !== null);
   }
@@ -38,19 +59,22 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
   async function handleImport() {
     if (!parsed || isImporting) return;
     setIsImporting(true);
+    setFailed(false);
     try {
       const result = await applyImportPayload(parsed, {
         importWords: importWords && hasWords,
         importSettings: importSettings && hasSettings,
       });
       setImportResult(result);
+    } catch {
+      setFailed(true);
     } finally {
       setIsImporting(false);
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogTitle>{t.importDialogTitle}</DialogTitle>
         <div className="flex flex-col gap-4">
@@ -99,8 +123,19 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
                 </label>
               )}
 
+              {failed && <p className="text-sm text-destructive">{t.importFailed}</p>}
+
               {importResult && (
-                <p className="text-sm text-status-mastered">{t.importSuccess(importResult.importedCount)}</p>
+                <div aria-live="polite" className="flex flex-col gap-1 text-sm text-status-mastered">
+                  <p>{t.importSuccess(importResult.importedCount)}</p>
+                  {importResult.updatedCount > 0 && <p>{t.importUpdated(importResult.updatedCount)}</p>}
+                  {importResult.skippedCount > 0 && (
+                    <p className="text-muted-foreground">{t.importSkipped(importResult.skippedCount)}</p>
+                  )}
+                  {importResult.settingsApplied && (
+                    <p className="text-muted-foreground">{t.importSettingsApplied}</p>
+                  )}
+                </div>
               )}
 
               <Button type="button" onClick={() => void handleImport()} disabled={!canImport || isImporting}>

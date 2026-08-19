@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CARD_CLASS } from '@/lib/cardClass';
-import { matchAnswer, type MatchVerdict } from '@/lib/fuzzyMatch';
+import { matchAccuracy, matchAnswer, type MatchVerdict } from '@/lib/fuzzyMatch';
+import { speedFactor } from '@/lib/responseSpeed';
+import { useVisibleElapsedTimer } from '@/lib/useVisibleElapsedTimer';
 import { speak, isSpeechSupported } from '@/lib/tts';
 import { useTranslation } from '@/lib/useTranslation';
 import type { TranslationKeys } from '@/lib/translationKeys.type';
@@ -15,7 +17,7 @@ export interface RecallCardProps {
   expectedTerm: string;
   currentStreak?: number;
   requiredStreak?: number;
-  onAnswer: (verdict: MatchVerdict) => void;
+  onAnswer: (verdict: MatchVerdict, accuracy: number, speedFactor: number) => void;
 }
 
 type ErrorVerdict = Exclude<MatchVerdict, 'correct'>;
@@ -40,16 +42,24 @@ export function RecallCard({ translation, expectedTerm, currentStreak, requiredS
   const [error, setError] = useState<ErrorFeedback | null>(null);
   const [showCorrectFlash, setShowCorrectFlash] = useState(false);
   const [originalVerdict, setOriginalVerdict] = useState<ErrorVerdict | null>(null);
+  const [originalAccuracy, setOriginalAccuracy] = useState<number | null>(null);
+  const [correctSpeedFactor, setCorrectSpeedFactor] = useState(1);
+  const answeredRef = useRef(false);
+  const timer = useVisibleElapsedTimer();
   const t = useTranslation();
 
   useEffect(() => {
     if (!showCorrectFlash) return;
 
-    const finish = () => onAnswer(originalVerdict ?? 'correct');
+    function finish() {
+      if (answeredRef.current) return;
+      answeredRef.current = true;
+      onAnswer(originalVerdict ?? 'correct', originalAccuracy ?? 1, correctSpeedFactor);
+    }
     const timeout = setTimeout(finish, CORRECT_FLASH_MS);
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Enter') return;
+      if (event.key !== 'Enter' || event.repeat) return;
       clearTimeout(timeout);
       finish();
     }
@@ -59,25 +69,32 @@ export function RecallCard({ translation, expectedTerm, currentStreak, requiredS
       clearTimeout(timeout);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [showCorrectFlash, originalVerdict, onAnswer]);
+  }, [showCorrectFlash, originalVerdict, originalAccuracy, correctSpeedFactor, onAnswer]);
 
   function handleCheck(event: React.FormEvent) {
     event.preventDefault();
+    if (input.trim() === '') return;
+
     const verdict = matchAnswer(input, expectedTerm);
 
     if (verdict === 'correct') {
       setError(null);
+      setCorrectSpeedFactor(speedFactor(timer.elapsedMs(), expectedTerm.length));
       setShowCorrectFlash(true);
       return;
     }
 
-    if (originalVerdict === null) setOriginalVerdict(verdict);
+    if (originalVerdict === null) {
+      setOriginalVerdict(verdict);
+      setOriginalAccuracy(matchAccuracy(input, expectedTerm));
+    }
     setError({ verdict, correctAnswer: expectedTerm });
   }
 
   function handleRetry() {
     setError(null);
     setInput('');
+    timer.restart();
   }
 
   const showProgress = requiredStreak != null && requiredStreak > 0;

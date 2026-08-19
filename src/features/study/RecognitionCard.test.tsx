@@ -27,7 +27,7 @@ describe('RecognitionCard', () => {
     expect(await screen.findByTestId('feedback')).toHaveTextContent('Верно!');
     expect(screen.queryByRole('button', { name: 'Далее' })).not.toBeInTheDocument();
 
-    await waitFor(() => expect(onAnswer).toHaveBeenCalledWith('correct'));
+    await waitFor(() => expect(onAnswer).toHaveBeenCalledWith('correct', 1, 1));
   });
 
   it('a wrong answer requires retyping the same word before onAnswer fires', async () => {
@@ -47,7 +47,7 @@ describe('RecognitionCard', () => {
     await user.type(screen.getByLabelText('Слово'), 'cat');
     await user.click(screen.getByRole('button', { name: 'Проверить' }));
 
-    await waitFor(() => expect(onAnswer).toHaveBeenCalledWith('wrong'));
+    await waitFor(() => expect(onAnswer).toHaveBeenCalledWith('wrong', 0, expect.any(Number)));
     expect(onAnswer).toHaveBeenCalledOnce();
   });
 

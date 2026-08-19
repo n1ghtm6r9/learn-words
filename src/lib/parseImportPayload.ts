@@ -8,6 +8,8 @@ import { MIN_PHASE_REPEATS, MAX_PHASE_REPEATS } from './phaseRepeatsRange';
 import type { ExportPayload } from './exportPayload.type';
 import type { ParsedImportPayload } from './parsedImportPayload.type';
 
+const SUPPORTED_EXPORT_VERSION = 1;
+
 type Settings = NonNullable<ExportPayload['settings']>;
 
 function isNonEmptyString(value: unknown): value is string {
@@ -66,6 +68,10 @@ export function parseImportPayload(jsonText: string): ParsedImportPayload {
   }
 
   const payload = parsedJson as Record<string, unknown>;
+
+  if (typeof payload.version === 'number' && payload.version > SUPPORTED_EXPORT_VERSION) {
+    return { valid: false, words: [], settings: null };
+  }
 
   return {
     valid: true,

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RecallCard } from './RecallCard';
 
@@ -28,10 +28,10 @@ describe('RecallCard', () => {
     expect(await screen.findByTestId('feedback')).toHaveTextContent('Верно!');
     expect(screen.queryByRole('button', { name: 'Далее' })).not.toBeInTheDocument();
 
-    await waitFor(() => expect(onAnswer).toHaveBeenCalledWith('correct'));
+    await waitFor(() => expect(onAnswer).toHaveBeenCalledWith('correct', 1, 1));
   });
 
-  it('pressing Enter on the correct flash skips the delay', async () => {
+  it('pressing Enter on the correct flash reports the answer before the flash delay elapses', async () => {
     const onAnswer = vi.fn();
     const user = userEvent.setup();
     render(<RecallCard translation="привет" expectedTerm="hello" onAnswer={onAnswer} />);
@@ -40,9 +40,23 @@ describe('RecallCard', () => {
     await user.click(screen.getByRole('button', { name: 'Проверить' }));
     await screen.findByTestId('feedback');
 
-    await user.keyboard('{Enter}');
+    expect(onAnswer).not.toHaveBeenCalled();
+    fireEvent.keyDown(window, { key: 'Enter' });
 
-    await waitFor(() => expect(onAnswer).toHaveBeenCalledWith('correct'));
+    expect(onAnswer).toHaveBeenCalledWith('correct', 1, 1);
+  });
+
+  it('without Enter the answer is reported only after the flash delay, not immediately', async () => {
+    const onAnswer = vi.fn();
+    const user = userEvent.setup();
+    render(<RecallCard translation="привет" expectedTerm="hello" onAnswer={onAnswer} />);
+
+    await user.type(screen.getByLabelText('Слово'), 'hello');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+    await screen.findByTestId('feedback');
+
+    expect(onAnswer).not.toHaveBeenCalled();
+    await waitFor(() => expect(onAnswer).toHaveBeenCalledWith('correct', 1, 1));
   });
 
   it('a wrong answer requires retyping the same word and does not call onAnswer until it is corrected', async () => {
@@ -63,7 +77,7 @@ describe('RecallCard', () => {
     await user.click(screen.getByRole('button', { name: 'Проверить' }));
 
     expect(await screen.findByTestId('feedback')).toHaveTextContent('Верно!');
-    await waitFor(() => expect(onAnswer).toHaveBeenCalledWith('wrong'));
+    await waitFor(() => expect(onAnswer).toHaveBeenCalledWith('wrong', 0, expect.any(Number)));
   });
 
   it('reports the original error severity even after multiple retries', async () => {
@@ -84,7 +98,7 @@ describe('RecallCard', () => {
     await user.type(screen.getByLabelText('Слово'), 'cat');
     await user.click(screen.getByRole('button', { name: 'Проверить' }));
 
-    await waitFor(() => expect(onAnswer).toHaveBeenCalledWith('wrong'));
+    await waitFor(() => expect(onAnswer).toHaveBeenCalledWith('wrong', 0, expect.any(Number)));
     expect(onAnswer).toHaveBeenCalledOnce();
   });
 
@@ -127,6 +141,47 @@ describe('RecallCard', () => {
     await user.click(screen.getByRole('button', { name: 'Повторить' }));
 
     expect(screen.getByText('Прогресс: 0 из 3')).toBeInTheDocument();
+  });
+
+  it('a held-down Enter does not advance the card', async () => {
+    const onAnswer = vi.fn();
+    const user = userEvent.setup();
+    render(<RecallCard translation="привет" expectedTerm="hello" onAnswer={onAnswer} />);
+
+    await user.type(screen.getByLabelText('Слово'), 'hello');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+    await screen.findByTestId('feedback');
+
+    fireEvent.keyDown(window, { key: 'Enter', repeat: true });
+    expect(onAnswer).not.toHaveBeenCalled();
+  });
+
+  it('reports the answer only once even if Enter is pressed several times', async () => {
+    const onAnswer = vi.fn();
+    const user = userEvent.setup();
+    render(<RecallCard translation="привет" expectedTerm="hello" onAnswer={onAnswer} />);
+
+    await user.type(screen.getByLabelText('Слово'), 'hello');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+    await screen.findByTestId('feedback');
+
+    fireEvent.keyDown(window, { key: 'Enter' });
+    fireEvent.keyDown(window, { key: 'Enter' });
+    fireEvent.keyDown(window, { key: 'Enter' });
+
+    await waitFor(() => expect(onAnswer).toHaveBeenCalledTimes(1));
+  });
+
+  it('an empty submission is ignored rather than recorded as a wrong answer', async () => {
+    const onAnswer = vi.fn();
+    const user = userEvent.setup();
+    render(<RecallCard translation="привет" expectedTerm="hello" onAnswer={onAnswer} />);
+
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+
+    expect(screen.queryByTestId('feedback')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Слово')).toBeInTheDocument();
+    expect(onAnswer).not.toHaveBeenCalled();
   });
 
   it('does not reset the displayed progress after a minor error', async () => {

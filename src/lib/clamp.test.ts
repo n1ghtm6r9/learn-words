@@ -18,8 +18,8 @@ describe('clamp', () => {
     expect(clamp(NaN, 0, 10)).toBe(0);
   });
 
-  it('returns the minimum for infinite values', () => {
-    expect(clamp(Infinity, 0, 10)).toBe(0);
+  it('clamps infinite values to the nearer bound rather than flipping them', () => {
+    expect(clamp(Infinity, 0, 10)).toBe(10);
     expect(clamp(-Infinity, 0, 10)).toBe(0);
   });
 });

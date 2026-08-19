@@ -32,6 +32,7 @@ export interface TranslationKeys {
   speak: string;
   retryPrompt: string;
   retryButton: string;
+  answerSaveError: string;
   phaseProgress: (current: number, total: number) => string;
 
   translationInputLabel: string;
@@ -73,6 +74,11 @@ export interface TranslationKeys {
   importFileLabel: string;
   importSummary: (words: number, hasSettings: boolean) => string;
   importSuccess: (count: number) => string;
+  importUpdated: (count: number) => string;
+  importSkipped: (count: number) => string;
+  importSettingsApplied: string;
+  importFailed: string;
+  exportFailed: string;
   importError: string;
 
   phaseARepeatsLabel: string;

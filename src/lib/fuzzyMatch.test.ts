@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { matchAnswer } from './fuzzyMatch';
+import { matchAccuracy, matchAnswer } from './fuzzyMatch';
 
 describe('matchAnswer', () => {
   it('exact match — correct', () => {
@@ -46,6 +46,18 @@ describe('matchAnswer', () => {
     expect(matchAnswer('good morning today', 'good morning')).toBe('wrong');
   });
 
+  it('a single missing space counts as one character wrong, not a gross error', () => {
+    expect(matchAnswer('giveup', 'give up')).toBe('almost');
+  });
+
+  it('a single extra space counts as one character wrong', () => {
+    expect(matchAnswer('give  up', 'give up')).toBe('almost');
+  });
+
+  it('a missing space plus a typo is still a gross error', () => {
+    expect(matchAnswer('giveap', 'give up')).toBe('wrong');
+  });
+
   it('an NFD-normalized expected term still matches an NFC-typed answer — correct', () => {
     const nfd = 'ёлка'.normalize('NFD');
     expect(matchAnswer('ёлка', nfd)).toBe('correct');
@@ -53,5 +65,37 @@ describe('matchAnswer', () => {
 
   it('a trailing punctuation mark on the stored term does not block a correct answer', () => {
     expect(matchAnswer('etc', 'etc.')).toBe('correct');
+  });
+});
+
+describe('matchAccuracy', () => {
+  it('exact match — 1', () => {
+    expect(matchAccuracy('cat', 'cat')).toBe(1);
+  });
+
+  it('one-letter typo — scaled by word length', () => {
+    expect(matchAccuracy('cot', 'cat')).toBeCloseTo(2 / 3, 5);
+  });
+
+  it('completely different word of the same length — 0', () => {
+    expect(matchAccuracy('dog', 'cat')).toBe(0);
+  });
+
+  it('empty input — 0', () => {
+    expect(matchAccuracy('', 'cat')).toBe(0);
+  });
+
+  it('never goes negative for input much longer than expected', () => {
+    expect(matchAccuracy('catcatcatcat', 'cat')).toBe(0);
+  });
+
+  it('a one-letter typo in a long phrase costs proportionally less than in a short word', () => {
+    const shortWord = matchAccuracy('cot', 'cat');
+    const longPhrase = matchAccuracy('good morming', 'good morning');
+    expect(longPhrase).toBeGreaterThan(shortWord);
+  });
+
+  it('case and whitespace normalization do not affect accuracy', () => {
+    expect(matchAccuracy('  CAT  ', 'cat')).toBe(1);
   });
 });

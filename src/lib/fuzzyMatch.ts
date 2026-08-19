@@ -37,20 +37,16 @@ export function matchAnswer(input: string, expected: string): MatchVerdict {
   if (a === b) return 'correct';
   if (a.length === 0) return 'wrong';
 
-  const inputWords = a.split(/\s+/);
-  const expectedWords = b.split(/\s+/);
+  return levenshtein(a, b) === MINOR_ERROR_DISTANCE ? 'almost' : 'wrong';
+}
 
-  if (inputWords.length !== expectedWords.length) return 'wrong';
+export function matchAccuracy(input: string, expected: string): number {
+  const a = normalize(input);
+  const b = normalize(expected);
 
-  let mismatchedWordCount = 0;
-  let mismatchedWordDistance = 0;
+  if (a === b) return 1;
+  if (b.length === 0) return a.length === 0 ? 1 : 0;
 
-  for (let i = 0; i < expectedWords.length; i++) {
-    if (inputWords[i] === expectedWords[i]) continue;
-    mismatchedWordCount += 1;
-    mismatchedWordDistance = levenshtein(inputWords[i], expectedWords[i]);
-  }
-
-  const isMinorError = mismatchedWordCount === 1 && mismatchedWordDistance === MINOR_ERROR_DISTANCE;
-  return isMinorError ? 'almost' : 'wrong';
+  const distance = levenshtein(a, b);
+  return Math.max(0, 1 - distance / b.length);
 }

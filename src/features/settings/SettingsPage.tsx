@@ -1,14 +1,11 @@
-import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { clamp } from '@/lib/clamp';
-import { parsePositiveInt } from '@/lib/parsePositiveInt';
-import { MIN_PHASE_REPEATS, MAX_PHASE_REPEATS } from '@/lib/phaseRepeatsRange';
 import { useTranslation } from '@/lib/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 import { ThemeSection } from './ThemeSection';
 import { AccentColorSection } from './AccentColorSection';
 import { LanguageSection } from './LanguageSection';
+import { usePhaseRepeatsField } from './usePhaseRepeatsField';
 
 export function SettingsPage() {
   const phaseARepeats = useUIStore((s) => s.phaseARepeats);
@@ -17,28 +14,8 @@ export function SettingsPage() {
   const setPhaseBRepeats = useUIStore((s) => s.setPhaseBRepeats);
   const t = useTranslation();
 
-  const [phaseAInput, setPhaseAInput] = useState(String(phaseARepeats));
-  const [phaseBInput, setPhaseBInput] = useState(String(phaseBRepeats));
-
-  function commitPhaseA() {
-    const trimmed = phaseAInput.trim();
-    const parsed = Number(trimmed);
-    const value = trimmed !== '' && Number.isFinite(parsed)
-      ? clamp(Math.round(parsed), MIN_PHASE_REPEATS, MAX_PHASE_REPEATS)
-      : phaseARepeats;
-    setPhaseARepeats(value);
-    setPhaseAInput(String(value));
-  }
-
-  function commitPhaseB() {
-    const trimmed = phaseBInput.trim();
-    const parsed = Number(trimmed);
-    const value = trimmed !== '' && Number.isFinite(parsed)
-      ? clamp(Math.round(parsed), MIN_PHASE_REPEATS, MAX_PHASE_REPEATS)
-      : phaseBRepeats;
-    setPhaseBRepeats(value);
-    setPhaseBInput(String(value));
-  }
+  const phaseA = usePhaseRepeatsField(phaseARepeats, setPhaseARepeats);
+  const phaseB = usePhaseRepeatsField(phaseBRepeats, setPhaseBRepeats);
 
   return (
     <div className="flex flex-col gap-4">
@@ -56,13 +33,9 @@ export function SettingsPage() {
             type="number"
             min={1}
             max={10}
-            value={phaseAInput}
-            onChange={(e) => {
-              setPhaseAInput(e.target.value);
-              const value = parsePositiveInt(e.target.value, MIN_PHASE_REPEATS, MAX_PHASE_REPEATS);
-              if (value != null) setPhaseARepeats(value);
-            }}
-            onBlur={commitPhaseA}
+            value={phaseA.draft}
+            onChange={(e) => phaseA.setDraft(e.target.value)}
+            onBlur={phaseA.commit}
             className="font-mono"
           />
         </label>
@@ -74,13 +47,9 @@ export function SettingsPage() {
             type="number"
             min={1}
             max={10}
-            value={phaseBInput}
-            onChange={(e) => {
-              setPhaseBInput(e.target.value);
-              const value = parsePositiveInt(e.target.value, MIN_PHASE_REPEATS, MAX_PHASE_REPEATS);
-              if (value != null) setPhaseBRepeats(value);
-            }}
-            onBlur={commitPhaseB}
+            value={phaseB.draft}
+            onChange={(e) => phaseB.setDraft(e.target.value)}
+            onBlur={phaseB.commit}
             className="font-mono"
           />
         </label>

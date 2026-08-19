@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { db } from '@/db/db';
 import type { Word } from '@/db/word.type';
@@ -22,6 +22,7 @@ export function NewWordsSession() {
   const [turn, setTurn] = useState(0);
   const [learnedCount, setLearnedCount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
   const phaseARepeats = useUIStore((s) => s.phaseARepeats);
   const phaseBRepeats = useUIStore((s) => s.phaseBRepeats);
   const setScreen = useUIStore((s) => s.setScreen);
@@ -29,12 +30,8 @@ export function NewWordsSession() {
   const setAddWordOpen = useUIStore((s) => s.setAddWordOpen);
   const t = useTranslation();
 
-  const poolRef = useRef(pool);
-  poolRef.current = pool;
-
   useEffect(() => {
     if (addWordOpen) return;
-    if (poolRef.current !== null && poolRef.current.length > 0) return;
 
     let cancelled = false;
     void db.words
@@ -43,8 +40,17 @@ export function NewWordsSession() {
       .toArray()
       .then((words) => {
         if (cancelled) return;
-        setPool(words);
-        setCurrentId(pickRandomId(words, null));
+        setPool((previous) => {
+          if (previous === null) return words;
+          const alreadyInSession = new Set(previous.map((w) => w.id));
+          const added = words.filter((w) => !alreadyInSession.has(w.id));
+          return added.length > 0 ? [...previous, ...added] : previous;
+        });
+        setCurrentId((previousId) =>
+          previousId != null && words.some((w) => w.id === previousId)
+            ? previousId
+            : pickRandomId(words, null),
+        );
       });
     return () => {
       cancelled = true;
@@ -89,7 +95,9 @@ export function NewWordsSession() {
     if (updates) {
       try {
         updatedCount = await db.words.update(wordId, updates);
+        setSaveFailed(false);
       } catch {
+        setSaveFailed(true);
         setTurn((t) => t + 1);
         setIsSubmitting(false);
         return;
@@ -137,6 +145,11 @@ export function NewWordsSession() {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-right font-mono text-xs text-muted-foreground">{t.remainingWords(pool.length)}</p>
+      {saveFailed && (
+        <p role="alert" className="rounded-md bg-destructive/10 px-2.5 py-1.5 text-sm text-destructive">
+          {t.answerSaveError}
+        </p>
+      )}
       {current.learningPhase === 'A' ? (
         <RecognitionCard
           key={`${current.id}-A-${turn}`}

@@ -45,7 +45,7 @@ describe('ReviewSession', () => {
     expect(screen.getByText('Верно: 1')).toBeInTheDocument();
 
     const stored = await db.words.toArray();
-    expect(stored[0].rating).toBe(85);
+    expect(stored[0].rating).toBe(80);
     expect(stored[0].reviewStreak).toBe(1);
   });
 
@@ -97,6 +97,44 @@ describe('ReviewSession', () => {
     expect(await screen.findByText('Повторение завершено')).toBeInTheDocument();
     expect(screen.getByText('Верно: 1')).toBeInTheDocument();
     expect(screen.getByText('Неверно: 1')).toBeInTheDocument();
+  });
+
+  it('keeps a mastered word out of the queue after it has decayed slightly below a perfect score', async () => {
+    await db.words.add({
+      term: 'mastered',
+      translation: 'освоено',
+      createdAt: 0,
+      kind: 'word',
+      stage: 'review',
+      learningPhase: 'B',
+      phaseStreak: 0,
+      rating: 100,
+      reviewStreak: 10,
+      lastReviewedAt: Date.now() - 60 * 60 * 1000,
+    });
+
+    render(<ReviewSession />);
+
+    expect(await screen.findByText(/нечего повторять/i)).toBeInTheDocument();
+  });
+
+  it('brings a mastered word back once it has decayed meaningfully', async () => {
+    await db.words.add({
+      term: 'faded',
+      translation: 'подзабытое',
+      createdAt: 0,
+      kind: 'word',
+      stage: 'review',
+      learningPhase: 'B',
+      phaseStreak: 0,
+      rating: 100,
+      reviewStreak: 10,
+      lastReviewedAt: Date.now() - 5 * 24 * 60 * 60 * 1000,
+    });
+
+    render(<ReviewSession />);
+
+    expect(await screen.findByText('подзабытое')).toBeInTheDocument();
   });
 
   it('excludes a word with a perfect (100) rating from the review queue', async () => {

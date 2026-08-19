@@ -49,7 +49,7 @@ describe('WordItem', () => {
       />,
     );
 
-    expect(screen.getByText('85')).toBeInTheDocument();
+    expect(screen.getByText('85.00')).toBeInTheDocument();
     expect(screen.getByText('Рейтинг')).toBeInTheDocument();
     expect(screen.queryByText('Учится')).not.toBeInTheDocument();
   });
@@ -70,7 +70,7 @@ describe('WordItem', () => {
       />,
     );
 
-    expect(screen.getByText('20')).toBeInTheDocument();
+    expect(screen.getByText('20.00')).toBeInTheDocument();
     expect(screen.getByText('Фраза')).toBeInTheDocument();
   });
 

@@ -35,6 +35,7 @@ const ru: TranslationKeys = {
   speak: 'Озвучить',
   retryPrompt: 'Введите слово ещё раз, пока не получится без ошибок',
   retryButton: 'Повторить',
+  answerSaveError: 'Не удалось сохранить прошлый ответ — прогресс по нему не засчитан.',
   phaseProgress: (current, total) => `Прогресс: ${current} из ${total}`,
 
   translationInputLabel: 'Перевод',
@@ -77,6 +78,11 @@ const ru: TranslationKeys = {
   importSummary: (words, hasSettings) =>
     hasSettings ? `Найдено слов: ${words}, есть настройки` : `Найдено слов: ${words}`,
   importSuccess: (count) => `Импортировано слов: ${count}`,
+  importUpdated: (count) => `Обновлён прогресс: ${count}`,
+  importSkipped: (count) => `Пропущено (уже в словаре): ${count}`,
+  importSettingsApplied: 'Настройки применены',
+  importFailed: 'Не удалось сохранить импорт. Попробуйте ещё раз.',
+  exportFailed: 'Не удалось выгрузить данные. Попробуйте ещё раз.',
   importError: 'Не удалось прочитать файл. Проверьте формат.',
 
   phaseARepeatsLabel: 'Повторов в фазе узнавания (слово + перевод)',
@@ -126,6 +132,7 @@ const en: TranslationKeys = {
   speak: 'Pronounce',
   retryPrompt: 'Enter the word again until you get it right',
   retryButton: 'Retry',
+  answerSaveError: 'Could not save the previous answer — its progress was not counted.',
   phaseProgress: (current, total) => `Progress: ${current} of ${total}`,
 
   translationInputLabel: 'Translation',
@@ -168,6 +175,11 @@ const en: TranslationKeys = {
   importSummary: (words, hasSettings) =>
     hasSettings ? `Words found: ${words}, settings included` : `Words found: ${words}`,
   importSuccess: (count) => `Words imported: ${count}`,
+  importUpdated: (count) => `Progress updated: ${count}`,
+  importSkipped: (count) => `Skipped (already in the dictionary): ${count}`,
+  importSettingsApplied: 'Settings applied',
+  importFailed: 'Could not save the import. Please try again.',
+  exportFailed: 'Could not export the data. Please try again.',
   importError: 'Could not read the file. Check the format.',
 
   phaseARepeatsLabel: 'Repeats in the recognition phase (word + translation)',

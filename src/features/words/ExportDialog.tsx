@@ -21,27 +21,40 @@ function currentSettingsSnapshot() {
   return { theme, accentColor, language, phaseARepeats, phaseBRepeats };
 }
 
+const OBJECT_URL_RELEASE_MS = 60_000;
+
 export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   const [includeWords, setIncludeWords] = useState(true);
   const [includeSettings, setIncludeSettings] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+  const [failed, setFailed] = useState(false);
   const t = useTranslation();
 
   async function handleExport() {
-    const words = includeWords ? await db.words.toArray() : undefined;
-    const settings = includeSettings ? currentSettingsSnapshot() : undefined;
-    const payload = buildExportPayload({ words, settings });
+    if (isExporting) return;
+    setIsExporting(true);
+    setFailed(false);
+    try {
+      const words = includeWords ? await db.words.toArray() : undefined;
+      const settings = includeSettings ? currentSettingsSnapshot() : undefined;
+      const payload = buildExportPayload({ words, settings });
 
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = exportFileName();
-    document.body.appendChild(anchor);
-    anchor.click();
-    document.body.removeChild(anchor);
-    URL.revokeObjectURL(url);
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = exportFileName();
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      setTimeout(() => URL.revokeObjectURL(url), OBJECT_URL_RELEASE_MS);
 
-    onOpenChange(false);
+      onOpenChange(false);
+    } catch {
+      setFailed(true);
+    } finally {
+      setIsExporting(false);
+    }
   }
 
   return (
@@ -69,7 +82,12 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             />
             {t.exportIncludeSettings}
           </label>
-          <Button type="button" onClick={() => void handleExport()} disabled={!includeWords && !includeSettings}>
+          {failed && <p className="text-sm text-destructive">{t.exportFailed}</p>}
+          <Button
+            type="button"
+            onClick={() => void handleExport()}
+            disabled={(!includeWords && !includeSettings) || isExporting}
+          >
             {t.exportConfirmButton}
           </Button>
         </div>
