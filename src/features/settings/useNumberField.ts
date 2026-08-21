@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { clamp } from '@/lib/clamp';
-import { MIN_PHASE_REPEATS, MAX_PHASE_REPEATS } from '@/lib/phaseRepeatsRange';
 
-export function usePhaseRepeatsField(storedValue: number, store: (value: number) => void) {
+export function useNumberField(
+  storedValue: number,
+  store: (value: number) => void,
+  min: number,
+  max: number,
+) {
   const [draft, setDraft] = useState(String(storedValue));
 
   function resolve(): number {
     const trimmed = draft.trim();
     const parsed = Number(trimmed);
-    return trimmed !== '' && Number.isFinite(parsed)
-      ? clamp(Math.round(parsed), MIN_PHASE_REPEATS, MAX_PHASE_REPEATS)
-      : storedValue;
+    return trimmed !== '' && Number.isFinite(parsed) ? clamp(Math.round(parsed), min, max) : storedValue;
   }
 
   const flushRef = useRef<() => void>(() => {});

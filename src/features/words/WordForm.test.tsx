@@ -36,7 +36,8 @@ describe('WordForm', () => {
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
-      rating: 0,
+      stability: 1,
+      difficulty: 5,
       reviewStreak: 0,
     });
 
@@ -82,7 +83,8 @@ describe('WordForm', () => {
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
-      rating: 0,
+      stability: 1,
+      difficulty: 5,
       reviewStreak: 0,
     });
     const catId = await db.words.add({
@@ -93,7 +95,8 @@ describe('WordForm', () => {
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
-      rating: 0,
+      stability: 1,
+      difficulty: 5,
       reviewStreak: 0,
     });
     const existing = (await db.words.get(catId))!;
@@ -128,7 +131,8 @@ describe('WordForm', () => {
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
-      rating: 0,
+      stability: 1,
+      difficulty: 5,
       reviewStreak: 0,
     });
     const existing = (await db.words.get(id))!;
@@ -195,7 +199,8 @@ describe('WordForm', () => {
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
-      rating: 0,
+      stability: 1,
+      difficulty: 5,
       reviewStreak: 0,
     });
     const existing = (await db.words.get(id))!;
@@ -223,7 +228,8 @@ describe('WordForm', () => {
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
-      rating: 0,
+      stability: 1,
+      difficulty: 5,
       reviewStreak: 0,
     });
 
@@ -283,7 +289,8 @@ describe('WordForm', () => {
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
-      rating: 0,
+      stability: 1,
+      difficulty: 5,
       reviewStreak: 0,
     });
     const existing = (await db.words.get(id))!;
@@ -312,7 +319,8 @@ describe('WordForm', () => {
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
-      rating: 0,
+      stability: 1,
+      difficulty: 5,
       reviewStreak: 0,
     });
     const existing = (await db.words.get(id))!;
@@ -340,7 +348,8 @@ describe('WordForm', () => {
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
-      rating: 0,
+      stability: 1,
+      difficulty: 5,
       reviewStreak: 0,
     });
     const existing = (await db.words.get(id))!;

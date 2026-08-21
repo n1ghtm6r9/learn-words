@@ -46,6 +46,8 @@ export function RecallCard({ translation, expectedTerm, currentStreak, requiredS
   const [originalAccuracy, setOriginalAccuracy] = useState<number | null>(null);
   const [correctSpeedFactor, setCorrectSpeedFactor] = useState(1);
   const answeredRef = useRef(false);
+  const onAnswerRef = useRef(onAnswer);
+  onAnswerRef.current = onAnswer;
   const timer = useVisibleElapsedTimer();
   const t = useTranslation();
 
@@ -55,7 +57,7 @@ export function RecallCard({ translation, expectedTerm, currentStreak, requiredS
     function finish() {
       if (answeredRef.current) return;
       answeredRef.current = true;
-      onAnswer(originalVerdict ?? 'correct', originalAccuracy ?? 1, correctSpeedFactor);
+      onAnswerRef.current(originalVerdict ?? 'correct', originalAccuracy ?? 1, correctSpeedFactor);
     }
     const timeout = setTimeout(finish, CORRECT_FLASH_MS);
 
@@ -70,7 +72,7 @@ export function RecallCard({ translation, expectedTerm, currentStreak, requiredS
       clearTimeout(timeout);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [showCorrectFlash, originalVerdict, originalAccuracy, correctSpeedFactor, onAnswer]);
+  }, [showCorrectFlash, originalVerdict, originalAccuracy, correctSpeedFactor]);
 
   function handleCheck(event: React.FormEvent) {
     event.preventDefault();
@@ -111,7 +113,7 @@ export function RecallCard({ translation, expectedTerm, currentStreak, requiredS
       <div className="flex min-h-32 flex-col justify-center">
         {showCorrectFlash ? (
           <div className="flex items-center gap-2">
-            <p data-testid="feedback" className={`text-base font-medium ${FEEDBACK_COLOR.correct}`}>
+            <p role="status" data-testid="feedback" className={`text-base font-medium ${FEEDBACK_COLOR.correct}`}>
               {t.feedbackCorrect}
             </p>
             {isSpeechSupported() && (
@@ -128,7 +130,7 @@ export function RecallCard({ translation, expectedTerm, currentStreak, requiredS
         ) : error ? (
           <div className="flex flex-col gap-3">
             <div className="flex items-start gap-2">
-              <p data-testid="feedback" className={`text-sm ${FEEDBACK_COLOR[error.verdict]}`}>
+              <p role="status" data-testid="feedback" className={`text-sm ${FEEDBACK_COLOR[error.verdict]}`}>
                 {errorFeedbackLabel(t, error.verdict)}{' '}
                 <span className="font-mono font-semibold">{error.correctAnswer}</span>
               </p>

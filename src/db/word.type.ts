@@ -14,7 +14,8 @@ export interface Word {
   learningPhase: LearningPhase;
   phaseStreak: number;
 
-  rating: number;
+  stability: number;
+  difficulty: number;
   reviewStreak: number;
 
   lastReviewedAt?: number;

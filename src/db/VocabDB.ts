@@ -1,12 +1,19 @@
 import Dexie, { type Table } from 'dexie';
 import { detectWordKind } from '@/lib/detectWordKind';
+import { DEFAULT_DIFFICULTY, INITIAL_STABILITY_DAYS } from '@/lib/memoryParams';
+import { seedStabilityFromLegacyRating } from '@/lib/seedStabilityFromLegacyRating';
 import type { Word } from './word.type';
 
 interface LegacyWordV1 {
+  rating?: number;
   interval?: number;
   easinessFactor?: number;
   repetitions?: number;
   dueDate?: number;
+}
+
+interface LegacyWordV3 {
+  rating?: number;
 }
 
 export class VocabDB extends Dexie {
@@ -59,6 +66,34 @@ export class VocabDB extends Dexie {
               return;
             }
             word.kind = detectWordKind(word.term);
+          });
+      });
+
+    this.version(4)
+      .stores({
+        words: '++id, term, stage, kind',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table<Word & LegacyWordV3, number>('words')
+          .toCollection()
+          .modify((word, ref: { value?: Word }) => {
+            if (typeof word.term !== 'string' || typeof word.translation !== 'string') {
+              delete ref.value;
+              return;
+            }
+            const legacyRating = word.rating ?? 0;
+            const streak = word.reviewStreak ?? 0;
+
+            word.difficulty = DEFAULT_DIFFICULTY;
+            if (word.stage === 'review') {
+              word.lastReviewedAt ??= Date.now();
+              word.stability = seedStabilityFromLegacyRating(legacyRating, streak, word.term);
+            } else {
+              word.stability = INITIAL_STABILITY_DAYS;
+            }
+
+            delete word.rating;
           });
       });
   }

@@ -3,6 +3,7 @@ import { db } from '@/db/db';
 import { useUIStore } from '@/store/useUIStore';
 import { applyImportPayload } from './applyImportPayload';
 import type { ParsedImportPayload } from './parsedImportPayload.type';
+import { DEFAULT_DIFFICULTY, INITIAL_STABILITY_DAYS, MAX_STABILITY_DAYS, MIN_STABILITY_DAYS } from '@/lib/memoryParams';
 
 function payload(overrides: Partial<ParsedImportPayload> = {}): ParsedImportPayload {
   return { valid: true, words: [], settings: null, ...overrides };
@@ -81,7 +82,8 @@ describe('applyImportPayload', () => {
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
-      rating: 0,
+      stability: 1,
+      difficulty: 5,
       reviewStreak: 0,
     });
 
@@ -111,12 +113,13 @@ describe('applyImportPayload', () => {
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
-      rating: 50,
+      stability: 1,
+      difficulty: 5,
       reviewStreak: 0,
     });
 
     const result = await applyImportPayload(
-      payload({ words: [{ term: 'hello', translation: 'привет', rating: 90 }] }) as ParsedImportPayload,
+      payload({ words: [{ term: 'hello', translation: 'привет', stage: 'review', rating: 90 }] }) as ParsedImportPayload,
       { importWords: true, importSettings: false, replaceExisting: true },
     );
 
@@ -124,7 +127,7 @@ describe('applyImportPayload', () => {
     expect(result.updatedCount).toBe(1);
     const words = await db.words.toArray();
     expect(words).toHaveLength(1);
-    expect(words[0].rating).toBe(90);
+    expect(words[0].stability).toBeGreaterThan(1);
   });
 
   it('rolls the whole import back when a write fails, leaving nothing half-applied', async () => {
@@ -136,7 +139,8 @@ describe('applyImportPayload', () => {
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
-      rating: 10,
+      stability: 1,
+      difficulty: 5,
       reviewStreak: 0,
     });
 
@@ -156,7 +160,7 @@ describe('applyImportPayload', () => {
 
     const words = await db.words.toArray();
     expect(words.map((w) => w.term)).toEqual(['existing']);
-    expect(words[0].rating).toBe(10);
+    expect(words[0].stability).toBe(1);
 
     bulkPutSpy.mockRestore();
   });
@@ -198,7 +202,8 @@ describe('applyImportPayload', () => {
             stage: 'review',
             learningPhase: 'B',
             phaseStreak: 2,
-            rating: 75,
+            stability: 12,
+            difficulty: 7,
             reviewStreak: 4,
             lastReviewedAt: 12345,
             createdAt: 999,
@@ -213,7 +218,8 @@ describe('applyImportPayload', () => {
     expect(word.stage).toBe('review');
     expect(word.learningPhase).toBe('B');
     expect(word.phaseStreak).toBe(2);
-    expect(word.rating).toBe(75);
+    expect(word.stability).toBe(12);
+    expect(word.difficulty).toBe(7);
     expect(word.reviewStreak).toBe(4);
     expect(word.lastReviewedAt).toBe(12345);
     expect(word.createdAt).toBe(999);
@@ -230,7 +236,8 @@ describe('applyImportPayload', () => {
             stage: 'bogus',
             learningPhase: 'C',
             phaseStreak: 'lots',
-            rating: Infinity,
+            stability: Infinity,
+            difficulty: 'hard',
             kind: 'sentence',
           },
         ] as unknown as ParsedImportPayload['words'],
@@ -242,7 +249,8 @@ describe('applyImportPayload', () => {
     expect(word.stage).toBe('new');
     expect(word.learningPhase).toBe('A');
     expect(word.phaseStreak).toBe(0);
-    expect(word.rating).toBe(0);
+    expect(word.stability).toBe(INITIAL_STABILITY_DAYS);
+    expect(word.difficulty).toBe(DEFAULT_DIFFICULTY);
     expect(word.kind).toBe('phrase');
     expect(word.lastReviewedAt).toBeUndefined();
   });
@@ -260,20 +268,38 @@ describe('applyImportPayload', () => {
     expect(word.phaseStreak).toBe(0);
   });
 
-  it('clamps an out-of-range rating into the 0..100 scale', async () => {
+  it('clamps an out-of-range stability so a corrupt file cannot freeze a word out of review', async () => {
     await applyImportPayload(
       payload({
         words: [
-          { term: 'toohigh', translation: 'много', rating: 5000 },
-          { term: 'toolow', translation: 'мало', rating: -42 },
+          { term: 'toohigh', translation: 'много', stability: 10_000_000 },
+          { term: 'toolow', translation: 'мало', stability: -42 },
         ],
       }) as ParsedImportPayload,
       { importWords: true, importSettings: false, replaceExisting: false },
     );
 
     const words = await db.words.toArray();
-    expect(words.find((w) => w.term === 'toohigh')?.rating).toBe(100);
-    expect(words.find((w) => w.term === 'toolow')?.rating).toBe(0);
+    expect(words.find((w) => w.term === 'toohigh')?.stability).toBe(MAX_STABILITY_DAYS);
+    expect(words.find((w) => w.term === 'toolow')?.stability).toBe(MIN_STABILITY_DAYS);
+  });
+
+  it('seeds stability from a legacy rating so old export files still schedule sensibly', async () => {
+    await applyImportPayload(
+      payload({
+        words: [
+          { term: 'known', translation: 'известное', stage: 'review', rating: 100 },
+          { term: 'shaky', translation: 'шаткое', stage: 'review', rating: 10 },
+        ],
+      }) as ParsedImportPayload,
+      { importWords: true, importSettings: false, replaceExisting: false },
+    );
+
+    const words = await db.words.toArray();
+    const known = words.find((w) => w.term === 'known');
+    const shaky = words.find((w) => w.term === 'shaky');
+    expect(known!.stability).toBeGreaterThan(shaky!.stability);
+    expect(known!.lastReviewedAt).toBeDefined();
   });
 
   it('restores progress onto an existing word when replacing is requested', async () => {
@@ -285,7 +311,8 @@ describe('applyImportPayload', () => {
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
-      rating: 0,
+      stability: 1,
+      difficulty: 5,
       reviewStreak: 0,
     });
 
@@ -297,7 +324,8 @@ describe('applyImportPayload', () => {
             translation: 'кот',
             stage: 'review',
             learningPhase: 'B',
-            rating: 88,
+            stability: 88,
+            difficulty: 4,
             reviewStreak: 9,
             lastReviewedAt: 1000,
           },
@@ -311,7 +339,7 @@ describe('applyImportPayload', () => {
 
     const words = await db.words.toArray();
     expect(words).toHaveLength(1);
-    expect(words[0]).toMatchObject({ term: 'cat', stage: 'review', rating: 88, reviewStreak: 9 });
+    expect(words[0]).toMatchObject({ term: 'cat', stage: 'review', stability: 88, reviewStreak: 9 });
   });
 
   it('restores learning-phase progress too, not just words that reached review', async () => {
@@ -323,7 +351,8 @@ describe('applyImportPayload', () => {
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
-      rating: 0,
+      stability: 1,
+      difficulty: 5,
       reviewStreak: 0,
     });
 
@@ -349,7 +378,8 @@ describe('applyImportPayload', () => {
       stage: 'review',
       learningPhase: 'B',
       phaseStreak: 0,
-      rating: 95,
+      stability: 95,
+      difficulty: 3,
       reviewStreak: 12,
       lastReviewedAt: 5000,
     });
@@ -365,7 +395,7 @@ describe('applyImportPayload', () => {
     expect(result.skippedCount).toBe(1);
 
     const [word] = await db.words.toArray();
-    expect(word.rating).toBe(95);
+    expect(word.stability).toBe(95);
     expect(word.reviewStreak).toBe(12);
   });
 

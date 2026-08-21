@@ -1,61 +1,48 @@
-import { clamp } from './clamp';
-import { effectiveRating } from './effectiveRating';
-import { roundRating } from './roundRating';
-import type { RatingState } from './ratingState.type';
+import { elapsedDays } from './elapsedDays';
+import { isDue } from './isDue';
+import { lapsedStability } from './lapsedStability';
+import { nextDifficulty } from './nextDifficulty';
+import { nextStability } from './nextStability';
+import { retrievability } from './retrievability';
+import { INITIAL_STABILITY_DAYS, RELEARN_DIFFICULTY, RELEARN_STABILITY_DAYS, TARGET_RETENTION } from './memoryParams';
+import type { MemoryState } from './memoryState.type';
 import type { MatchVerdict } from './fuzzyMatch';
 import type { ReviewOutcome } from './reviewOutcome.type';
 
-const BASE_REWARD = 10;
-const STREAK_BONUS_PER_STEP = 2;
-const MAX_STREAK_BONUS_STEPS = 10;
-
-const MINOR_PENALTY = 3;
-const MIN_PENALTY = 4;
-const MAX_PENALTY = 30;
-
-const MAX_RESILIENCE_STEPS = 10;
-const MAX_PENALTY_REDUCTION = 0.4;
-
-function penaltyResilience(reviewStreak: number): number {
-  const provenKnowledge = Math.min(reviewStreak, MAX_RESILIENCE_STEPS) / MAX_RESILIENCE_STEPS;
-  return 1 - provenKnowledge * MAX_PENALTY_REDUCTION;
-}
-
-function ratingDelta(
-  verdict: MatchVerdict,
-  accuracy: number,
-  reviewStreak: number,
-  speedFactor: number,
-): number {
-  if (verdict === 'correct') {
-    const streakBonus = Math.min(reviewStreak, MAX_STREAK_BONUS_STEPS) * STREAK_BONUS_PER_STEP;
-    return (BASE_REWARD + streakBonus) * speedFactor;
-  }
-
-  if (verdict === 'almost') {
-    return -(MINOR_PENALTY * penaltyResilience(reviewStreak));
-  }
-
-  const severity = clamp(1 - accuracy, 0, 1);
-  const penalty = MIN_PENALTY + severity * (MAX_PENALTY - MIN_PENALTY);
-  return -(penalty * penaltyResilience(reviewStreak));
-}
-
 export function applyReviewOutcome(
-  state: RatingState,
+  state: MemoryState,
   verdict: MatchVerdict,
   accuracy: number,
   speedFactor: number,
   now: number,
 ): ReviewOutcome {
-  const current = effectiveRating(state, now);
-  const delta = ratingDelta(verdict, accuracy, state.reviewStreak, speedFactor);
-  const rating = clamp(roundRating(current + delta), 0, 100);
-  const reviewStreak = verdict === 'correct' ? state.reviewStreak + 1 : verdict === 'wrong' ? 0 : state.reviewStreak;
+  const recallChance =
+    state.lastReviewedAt == null
+      ? TARGET_RETENTION
+      : retrievability(elapsedDays(state.lastReviewedAt, now), state.stability);
 
-  if (rating <= 0) {
+  if (verdict !== 'wrong' && !isDue(state, now)) {
     return {
-      rating: 0,
+      stability: state.stability,
+      difficulty: state.difficulty,
+      reviewStreak: state.reviewStreak,
+      lastReviewedAt: state.lastReviewedAt!,
+    };
+  }
+
+  const stability =
+    verdict === 'wrong'
+      ? lapsedStability(state.stability, state.difficulty, recallChance)
+      : nextStability(state.stability, state.difficulty, recallChance, verdict === 'almost', speedFactor);
+
+  const difficulty = nextDifficulty(state.difficulty, verdict, accuracy, speedFactor);
+  const reviewStreak =
+    verdict === 'correct' ? state.reviewStreak + 1 : verdict === 'wrong' ? 0 : state.reviewStreak;
+
+  if (verdict === 'wrong' && stability <= RELEARN_STABILITY_DAYS && difficulty >= RELEARN_DIFFICULTY) {
+    return {
+      stability: INITIAL_STABILITY_DAYS,
+      difficulty,
       reviewStreak: 0,
       lastReviewedAt: now,
       stage: 'new',
@@ -64,5 +51,5 @@ export function applyReviewOutcome(
     };
   }
 
-  return { rating, reviewStreak, lastReviewedAt: now };
+  return { stability, difficulty, reviewStreak, lastReviewedAt: now };
 }

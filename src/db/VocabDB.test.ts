@@ -1,6 +1,7 @@
 import Dexie from 'dexie';
 import { afterEach, describe, expect, it } from 'vitest';
 import { VocabDB } from './VocabDB';
+import { DEFAULT_DIFFICULTY, INITIAL_STABILITY_DAYS } from '@/lib/memoryParams';
 
 const TEST_DB_NAME = 'vocab-db-migration-test';
 
@@ -31,9 +32,11 @@ describe('VocabDB migration v1 -> v2', () => {
 
     expect(word.stage).toBe('review');
     expect(word.learningPhase).toBe('B');
-    expect(word.rating).toBe(80);
     expect(word.reviewStreak).toBe(0);
-    expect(word.lastReviewedAt).toBeUndefined();
+    expect(word).not.toHaveProperty('rating');
+    expect(word.difficulty).toBe(DEFAULT_DIFFICULTY);
+    expect(word.stability).toBeGreaterThan(INITIAL_STABILITY_DAYS);
+    expect(word.lastReviewedAt).toBeDefined();
     expect(word).not.toHaveProperty('easinessFactor');
     expect(word).not.toHaveProperty('interval');
     expect(word).not.toHaveProperty('repetitions');
@@ -62,8 +65,10 @@ describe('VocabDB migration v1 -> v2', () => {
 
     expect(word.stage).toBe('new');
     expect(word.learningPhase).toBe('A');
-    expect(word.rating).toBe(0);
     expect(word.reviewStreak).toBe(0);
+    expect(word).not.toHaveProperty('rating');
+    expect(word.stability).toBe(INITIAL_STABILITY_DAYS);
+    expect(word.difficulty).toBe(DEFAULT_DIFFICULTY);
     expect(word.lastReviewedAt).toBeUndefined();
     upgraded.close();
   });
@@ -125,7 +130,6 @@ describe('VocabDB migration v2 -> v3', () => {
       stage: 'review',
       learningPhase: 'B',
       phaseStreak: 2,
-      rating: 85,
       reviewStreak: 4,
       lastReviewedAt: 456,
     });
@@ -141,7 +145,6 @@ describe('VocabDB migration v2 -> v3', () => {
       stage: 'review',
       learningPhase: 'B',
       phaseStreak: 2,
-      rating: 85,
       reviewStreak: 4,
       lastReviewedAt: 456,
       kind: 'word',

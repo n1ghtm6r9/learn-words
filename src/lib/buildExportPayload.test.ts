@@ -12,7 +12,8 @@ function baseWord(overrides: Partial<Word> = {}): Word {
     stage: 'new',
     learningPhase: 'A',
     phaseStreak: 0,
-    rating: 0,
+    stability: 1,
+    difficulty: 5,
     reviewStreak: 0,
     ...overrides,
   };
@@ -23,13 +24,13 @@ describe('buildExportPayload', () => {
     vi.useRealTimers();
   });
 
-  it('stamps version 1 and the current timestamp', () => {
+  it('stamps the payload version and the current timestamp', () => {
     vi.useFakeTimers();
     vi.setSystemTime(1700000000000);
 
     const payload = buildExportPayload({});
 
-    expect(payload.version).toBe(1);
+    expect(payload.version).toBe(2);
     expect(payload.exportedAt).toBe(1700000000000);
   });
 
@@ -45,7 +46,8 @@ describe('buildExportPayload', () => {
         stage: 'new',
         learningPhase: 'A',
         phaseStreak: 0,
-        rating: 0,
+        stability: 1,
+        difficulty: 5,
         reviewStreak: 0,
       },
     ]);
@@ -71,6 +73,7 @@ describe('buildExportPayload', () => {
       language: 'en' as const,
       phaseARepeats: 3,
       phaseBRepeats: 4,
+      reviewLimit: 40,
     };
 
     const payload = buildExportPayload({ settings });

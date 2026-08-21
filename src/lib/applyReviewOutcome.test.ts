@@ -1,135 +1,201 @@
 import { describe, expect, it } from 'vitest';
 import { applyReviewOutcome } from './applyReviewOutcome';
+import { INITIAL_STABILITY_DAYS, MAX_STABILITY_DAYS, MIN_STABILITY_DAYS } from './memoryParams';
 import { DAY_MS } from './time';
+import type { MemoryState } from './memoryState.type';
+
+const NOW = 1_700_000_000_000;
+
+function state(overrides: Partial<MemoryState> = {}): MemoryState {
+  return { stability: 10, difficulty: 5, reviewStreak: 0, lastReviewedAt: NOW, ...overrides };
+}
+
+function reviewedOnTime(current: MemoryState, verdict: 'correct' | 'almost' | 'wrong', accuracy = 1, speed = 1) {
+  return applyReviewOutcome(current, verdict, accuracy, speed, NOW + current.stability * DAY_MS);
+}
 
 describe('applyReviewOutcome', () => {
-  const now = 5 * DAY_MS;
+  it('lengthens the interval after a correct answer', () => {
+    const next = reviewedOnTime(state({ stability: 10 }), 'correct');
 
-  it('correct: rewards a base amount and increases the streak', () => {
-    const next = applyReviewOutcome({ rating: 50, reviewStreak: 2 }, 'correct', 1, 1, now);
-    expect(next.rating).toBe(64);
+    expect(next.stability).toBeGreaterThan(10);
+    expect(next.reviewStreak).toBe(1);
+    expect(next.lastReviewedAt).toBe(NOW + 10 * DAY_MS);
+  });
+
+  it('keeps stretching the interval review after review, so a known word stops coming up', () => {
+    let current = state({ stability: INITIAL_STABILITY_DAYS });
+    const intervals: number[] = [];
+
+    for (let i = 0; i < 10; i++) {
+      const dueAt = current.lastReviewedAt! + current.stability * DAY_MS;
+      const next = applyReviewOutcome(current, 'correct', 1, 1, dueAt);
+      intervals.push(next.stability);
+      current = { ...current, ...next };
+    }
+
+    expect(intervals).toEqual([...intervals].sort((a, b) => a - b));
+    expect(intervals.at(-1)).toBeGreaterThan(60);
+  });
+
+  it('rewards recalling a word you nearly forgot more than one caught right on time', () => {
+    const base = state({ stability: 20 });
+    const onTime = applyReviewOutcome(base, 'correct', 1, 1, NOW + 20 * DAY_MS);
+    const longOverdue = applyReviewOutcome(base, 'correct', 1, 1, NOW + 60 * DAY_MS);
+
+    expect(onTime.stability).toBeGreaterThan(20);
+    expect(longOverdue.stability).toBeGreaterThan(onTime.stability * 1.3);
+  });
+
+  it('holds the growth curve down as a word gets strong, instead of running away', () => {
+    let current = state({ stability: INITIAL_STABILITY_DAYS });
+
+    for (let i = 0; i < 10; i++) {
+      const dueAt = current.lastReviewedAt! + current.stability * DAY_MS;
+      current = { ...current, ...applyReviewOutcome(current, 'correct', 1, 1, dueAt) };
+    }
+
+    expect(current.stability).toBeGreaterThan(60);
+    expect(current.stability).toBeLessThan(150);
+  });
+
+  it('never lets a mistake lengthen the interval, at any stability or difficulty', () => {
+    for (const stability of [0.25, 0.3, 1, 5, 60]) {
+      for (const difficulty of [1, 2.7, 5, 10]) {
+        const before = state({ stability, difficulty });
+        const after = applyReviewOutcome(before, 'wrong', 0, 1, NOW + stability * DAY_MS);
+        if (after.stage === 'new') continue;
+        expect(after.stability).toBeLessThanOrEqual(stability);
+      }
+    }
+  });
+
+  it('keeps a merely shaky word in review instead of demoting it on one mistake', () => {
+    const shaky = applyReviewOutcome(state({ stability: 0.3, difficulty: 5 }), 'wrong', 0, 1, NOW + DAY_MS);
+
+    expect(shaky.stage).toBeUndefined();
+  });
+
+  it('grows a hard-won word less than an effortless one', () => {
+    const slow = reviewedOnTime(state(), 'correct', 1, 0.5);
+    const fast = reviewedOnTime(state(), 'correct', 1, 1);
+
+    expect(fast.stability).toBeGreaterThan(slow.stability);
+  });
+
+  it('grows far less after a one-letter slip than after a clean answer', () => {
+    const almost = reviewedOnTime(state(), 'almost');
+    const correct = reviewedOnTime(state(), 'correct');
+
+    expect(almost.stability).toBeGreaterThan(10);
+    expect(almost.stability).toBeLessThan(correct.stability);
+  });
+
+  it('keeps the streak on a minor slip but breaks it on a real mistake', () => {
+    expect(reviewedOnTime(state({ reviewStreak: 4 }), 'almost').reviewStreak).toBe(4);
+    expect(reviewedOnTime(state({ reviewStreak: 4 }), 'wrong', 0.2).reviewStreak).toBe(0);
+  });
+
+  it('collapses the interval after a real mistake', () => {
+    const next = reviewedOnTime(state({ stability: 60 }), 'wrong', 0.2);
+
+    expect(next.stability).toBeLessThan(10);
+    expect(next.stability).toBeGreaterThanOrEqual(MIN_STABILITY_DAYS);
+  });
+
+  it('does not throw away everything a long-known word had earned when it lapses', () => {
+    const seasoned = reviewedOnTime(state({ stability: 200 }), 'wrong', 0.2);
+    const fresh = reviewedOnTime(state({ stability: 1 }), 'wrong', 0.2);
+
+    expect(seasoned.stability).toBeGreaterThan(fresh.stability);
+  });
+
+  it('makes an easy word easier and a missed word harder', () => {
+    expect(reviewedOnTime(state({ difficulty: 5 }), 'correct').difficulty).toBeLessThan(5);
+    expect(reviewedOnTime(state({ difficulty: 5 }), 'wrong', 0.1).difficulty).toBeGreaterThan(5);
+  });
+
+  it('punishes a wild guess harder than a near miss', () => {
+    const nearMiss = reviewedOnTime(state(), 'wrong', 0.8);
+    const wildGuess = reviewedOnTime(state(), 'wrong', 0);
+
+    expect(wildGuess.difficulty).toBeGreaterThan(nearMiss.difficulty);
+  });
+
+  it('holds a difficult word to shorter intervals than an easy one', () => {
+    const easy = reviewedOnTime(state({ difficulty: 2 }), 'correct');
+    const hard = reviewedOnTime(state({ difficulty: 9 }), 'correct');
+
+    expect(easy.stability).toBeGreaterThan(hard.stability);
+  });
+
+  it('sends a word nobody can hold on to back to learning from scratch', () => {
+    let current = state({ stability: 1, difficulty: 9.5 });
+    let outcome = reviewedOnTime(current, 'wrong', 0);
+
+    for (let i = 0; i < 5 && outcome.stage !== 'new'; i++) {
+      current = { ...current, ...outcome };
+      outcome = applyReviewOutcome(current, 'wrong', 0, 1, NOW + (i + 2) * DAY_MS);
+    }
+
+    expect(outcome.stage).toBe('new');
+    expect(outcome.learningPhase).toBe('A');
+    expect(outcome.phaseStreak).toBe(0);
+    expect(outcome.stability).toBe(INITIAL_STABILITY_DAYS);
+  });
+
+  it('keeps a well-known word in review rather than demoting it on a single slip', () => {
+    const next = reviewedOnTime(state({ stability: 120, difficulty: 3 }), 'wrong', 0.2);
+
+    expect(next.stage).toBeUndefined();
+  });
+
+  it('never lets the interval run past the ceiling or under the floor', () => {
+    const huge = reviewedOnTime(state({ stability: MAX_STABILITY_DAYS, difficulty: 1 }), 'correct');
+    const tiny = reviewedOnTime(state({ stability: MIN_STABILITY_DAYS, difficulty: 10 }), 'wrong', 0);
+
+    expect(huge.stability).toBeLessThanOrEqual(MAX_STABILITY_DAYS);
+    expect(tiny.stability).toBeGreaterThanOrEqual(MIN_STABILITY_DAYS);
+  });
+
+  it('gives no credit for a correct answer before the word was due, so practice cannot inflate the schedule', () => {
+    const before = state({ stability: 30, difficulty: 4, reviewStreak: 3 });
+    const next = applyReviewOutcome(before, 'correct', 1, 1, NOW + 5 * DAY_MS);
+
+    expect(next.stability).toBe(30);
+    expect(next.difficulty).toBe(4);
     expect(next.reviewStreak).toBe(3);
-    expect(next.lastReviewedAt).toBe(now);
-    expect(next.stage).toBeUndefined();
+    expect(next.lastReviewedAt).toBe(NOW);
   });
 
-  it('correct: a longer streak earns a bigger reward', () => {
-    const freshStreak = applyReviewOutcome({ rating: 50, reviewStreak: 0 }, 'correct', 1, 1, now);
-    const longStreak = applyReviewOutcome({ rating: 50, reviewStreak: 8 }, 'correct', 1, 1, now);
-    expect(longStreak.rating).toBeGreaterThan(freshStreak.rating);
+  it('does not let repeated early practice drift the schedule at all', () => {
+    let current = state({ stability: 30 });
+
+    for (let day = 1; day <= 20; day++) {
+      current = { ...current, ...applyReviewOutcome(current, 'correct', 1, 1, NOW + day * DAY_MS) };
+    }
+
+    expect(current.stability).toBe(30);
+    expect(current.lastReviewedAt).toBe(NOW);
   });
 
-  it('correct: the streak bonus caps out instead of growing forever', () => {
-    const cappedStreak = applyReviewOutcome({ rating: 50, reviewStreak: 10 }, 'correct', 1, 1, now);
-    const beyondCap = applyReviewOutcome({ rating: 50, reviewStreak: 25 }, 'correct', 1, 1, now);
-    expect(beyondCap.rating).toBe(cappedStreak.rating);
+  it('still counts a mistake made before the word was due', () => {
+    const next = applyReviewOutcome(state({ stability: 30 }), 'wrong', 0.2, 1, NOW + 5 * DAY_MS);
+
+    expect(next.stability).toBeLessThan(30);
+    expect(next.lastReviewedAt).toBe(NOW + 5 * DAY_MS);
   });
 
-  it('correct: does not exceed 100', () => {
-    const next = applyReviewOutcome({ rating: 95, reviewStreak: 0 }, 'correct', 1, 1, now);
-    expect(next.rating).toBe(100);
-  });
+  it('treats a word with no review history as due now, so the first answer actually counts', () => {
+    const next = applyReviewOutcome(
+      { stability: INITIAL_STABILITY_DAYS, difficulty: 5, reviewStreak: 0 },
+      'correct',
+      1,
+      1,
+      NOW,
+    );
 
-  it('correct: a slow answer earns less reward than a fast one', () => {
-    const fast = applyReviewOutcome({ rating: 50, reviewStreak: 2 }, 'correct', 1, 1, now);
-    const slow = applyReviewOutcome({ rating: 50, reviewStreak: 2 }, 'correct', 1, 0.5, now);
-    expect(slow.rating).toBeLessThan(fast.rating);
-    expect(slow.rating).toBeGreaterThan(50);
-  });
-
-  it('correct: even a very slow answer still rewards something, since it was still correct', () => {
-    const next = applyReviewOutcome({ rating: 50, reviewStreak: 0 }, 'correct', 1, 0.5, now);
-    expect(next.rating).toBeGreaterThan(50);
-  });
-
-  it('almost (minor error): still costs rating, but far less than a bad miss, and does not reset the streak', () => {
-    const minor = applyReviewOutcome({ rating: 50, reviewStreak: 3 }, 'almost', 2 / 3, 1, now);
-    const gross = applyReviewOutcome({ rating: 50, reviewStreak: 3 }, 'wrong', 2 / 3, 1, now);
-    expect(minor.rating).toBeLessThan(50);
-    expect(minor.rating).toBeGreaterThan(gross.rating);
-    expect(minor.reviewStreak).toBe(3);
-  });
-
-  it('a single typo on a short word never costs more than one perfect answer earns', () => {
-    const shortWordAccuracy = 2 / 3;
-    const typo = applyReviewOutcome({ rating: 50, reviewStreak: 0 }, 'almost', shortWordAccuracy, 1, now);
-    const perfect = applyReviewOutcome({ rating: 50, reviewStreak: 0 }, 'correct', 1, 1, now);
-    expect(50 - typo.rating).toBeLessThan(perfect.rating - 50);
-  });
-
-  it('a single typo cannot wipe a word that still has a real rating', () => {
-    const next = applyReviewOutcome({ rating: 8, reviewStreak: 6 }, 'almost', 2 / 3, 1, now);
-    expect(next.rating).toBeGreaterThan(0);
-    expect(next.stage).toBeUndefined();
-    expect(next.reviewStreak).toBe(6);
-  });
-
-  it('a correct verdict rewards even if the accuracy argument is unusable', () => {
-    const next = applyReviewOutcome({ rating: 95, reviewStreak: 9 }, 'correct', NaN, 1, now);
-    expect(next.rating).toBeGreaterThan(95);
-    expect(next.stage).toBeUndefined();
-  });
-
-  it('a well-known word (long streak) loses less to the same mistake than a shaky one', () => {
-    const shaky = applyReviewOutcome({ rating: 50, reviewStreak: 0 }, 'wrong', 0, 1, now);
-    const wellKnown = applyReviewOutcome({ rating: 50, reviewStreak: 10 }, 'wrong', 0, 1, now);
-    expect(wellKnown.rating).toBeGreaterThan(shaky.rating);
-  });
-
-  it('penalty resilience caps out instead of making mistakes free', () => {
-    const atCap = applyReviewOutcome({ rating: 50, reviewStreak: 10 }, 'wrong', 0, 1, now);
-    const beyondCap = applyReviewOutcome({ rating: 50, reviewStreak: 50 }, 'wrong', 0, 1, now);
-    expect(beyondCap.rating).toBe(atCap.rating);
-    expect(atCap.rating).toBeLessThan(50);
-  });
-
-  it('wrong: a near-miss costs less than a wildly wrong guess', () => {
-    const nearMiss = applyReviewOutcome({ rating: 50, reviewStreak: 0 }, 'wrong', 0.6, 1, now);
-    const wildGuess = applyReviewOutcome({ rating: 50, reviewStreak: 0 }, 'wrong', 0, 1, now);
-    expect(nearMiss.rating).toBeGreaterThan(wildGuess.rating);
-  });
-
-  it('wrong: resets the streak even when the rating stays above 0', () => {
-    const next = applyReviewOutcome({ rating: 50, reviewStreak: 3 }, 'wrong', 0.5, 1, now);
-    expect(next.reviewStreak).toBe(0);
-    expect(next.stage).toBeUndefined();
-  });
-
-  it('wrong: a rating that reaches 0 sends the word back to relearning from scratch', () => {
-    const next = applyReviewOutcome({ rating: 10, reviewStreak: 4 }, 'wrong', 0, 1, now);
-    expect(next.rating).toBe(0);
-    expect(next.stage).toBe('new');
-    expect(next.learningPhase).toBe('A');
-    expect(next.phaseStreak).toBe(0);
-    expect(next.reviewStreak).toBe(0);
-  });
-
-  it('almost: a rating that reaches 0 also sends the word back to relearning, not just a wrong verdict', () => {
-    const next = applyReviewOutcome({ rating: 3, reviewStreak: 0 }, 'almost', 0.9, 1, now);
-    expect(next.rating).toBe(0);
-    expect(next.stage).toBe('new');
-  });
-
-  it('wrong: a rating that stays above 0 does not trigger relearning', () => {
-    const next = applyReviewOutcome({ rating: 50, reviewStreak: 0 }, 'wrong', 0.5, 1, now);
-    expect(next.rating).toBeGreaterThan(0);
-    expect(next.stage).toBeUndefined();
-    expect(next.learningPhase).toBeUndefined();
-  });
-
-  it('ratings can carry two decimal places instead of being rounded to a whole number', () => {
-    const next = applyReviewOutcome({ rating: 50, reviewStreak: 2 }, 'correct', 1, 0.73, now);
-    expect(Number.isInteger(next.rating)).toBe(false);
-  });
-
-  it('ratings never carry more than two decimal places', () => {
-    const next = applyReviewOutcome({ rating: 50, reviewStreak: 2 }, 'correct', 1, 0.7337, now);
-    expect(next.rating).toBe(60.27);
-  });
-
-  it('computes from the effective (decayed) rating, not the stale stored one', () => {
-    const lastReviewedAt = now - 10 * DAY_MS;
-    const next = applyReviewOutcome({ rating: 80, reviewStreak: 0, lastReviewedAt }, 'correct', 1, 1, now);
-    expect(next.rating).toBeLessThan(90);
+    expect(next.stability).toBeCloseTo(1.96, 2);
+    expect(next.lastReviewedAt).toBe(NOW);
   });
 });

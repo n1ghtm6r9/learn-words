@@ -3,6 +3,7 @@ import { ACCENT_PALETTE } from '@/lib/accentPalette';
 import { TRANSLATIONS } from '@/lib/translations';
 import { parsePositiveInt } from '@/lib/parsePositiveInt';
 import { MIN_PHASE_REPEATS, MAX_PHASE_REPEATS } from '@/lib/phaseRepeatsRange';
+import { DEFAULT_REVIEW_LIMIT, MIN_REVIEW_LIMIT, MAX_REVIEW_LIMIT } from '@/lib/reviewLimitRange';
 import type { Screen } from './screen.type';
 import type { Theme } from './theme.type';
 import type { AccentColor } from './accentColor.type';
@@ -53,6 +54,9 @@ interface UIStore {
 
   phaseBRepeats: number;
   setPhaseBRepeats: (value: number) => void;
+
+  reviewLimit: number;
+  setReviewLimit: (value: number) => void;
 }
 
 function readInitialTheme(): Theme {
@@ -69,10 +73,10 @@ function readInitialLanguage(): Language {
   return (LANGUAGES as string[]).includes(stored ?? '') ? (stored as Language) : DEFAULT_LANGUAGE;
 }
 
-function readInitialNumber(key: string, fallback: number): number {
+function readInitialNumber(key: string, fallback: number, min: number, max: number): number {
   const stored = safeGetItem(key);
   if (stored == null) return fallback;
-  return parsePositiveInt(stored, MIN_PHASE_REPEATS, MAX_PHASE_REPEATS) ?? fallback;
+  return parsePositiveInt(stored, min, max) ?? fallback;
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -109,15 +113,21 @@ export const useUIStore = create<UIStore>((set) => ({
     set({ language });
   },
 
-  phaseARepeats: readInitialNumber('phaseARepeats', DEFAULT_PHASE_REPEATS),
+  phaseARepeats: readInitialNumber('phaseARepeats', DEFAULT_PHASE_REPEATS, MIN_PHASE_REPEATS, MAX_PHASE_REPEATS),
   setPhaseARepeats: (value) => {
     safeSetItem('phaseARepeats', String(value));
     set({ phaseARepeats: value });
   },
 
-  phaseBRepeats: readInitialNumber('phaseBRepeats', DEFAULT_PHASE_REPEATS),
+  phaseBRepeats: readInitialNumber('phaseBRepeats', DEFAULT_PHASE_REPEATS, MIN_PHASE_REPEATS, MAX_PHASE_REPEATS),
   setPhaseBRepeats: (value) => {
     safeSetItem('phaseBRepeats', String(value));
     set({ phaseBRepeats: value });
+  },
+
+  reviewLimit: readInitialNumber('reviewLimit', DEFAULT_REVIEW_LIMIT, MIN_REVIEW_LIMIT, MAX_REVIEW_LIMIT),
+  setReviewLimit: (value) => {
+    safeSetItem('reviewLimit', String(value));
+    set({ reviewLimit: value });
   },
 }));

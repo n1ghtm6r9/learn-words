@@ -1,8 +1,8 @@
-import type { Word } from '@/db/word.type';
 import type { ExportPayload } from './exportPayload.type';
+import type { ImportedWord } from './importedWord.type';
 
 export interface ParsedImportPayload {
   valid: boolean;
-  words: Array<Pick<Word, 'term' | 'translation'> & Partial<Word>>;
+  words: ImportedWord[];
   settings: Partial<NonNullable<ExportPayload['settings']>> | null;
 }

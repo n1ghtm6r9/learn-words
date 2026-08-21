@@ -61,7 +61,8 @@ describe('BulkAddForm', () => {
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
-      rating: 0,
+      stability: 1,
+      difficulty: 5,
       reviewStreak: 0,
     });
 
@@ -87,7 +88,8 @@ describe('BulkAddForm', () => {
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
-      rating: 0,
+      stability: 1,
+      difficulty: 5,
       reviewStreak: 0,
     });
 

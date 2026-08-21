@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { db } from '@/db/db';
+import { isUsableWord } from '@/db/isUsableWord';
 import type { Word } from '@/db/word.type';
 import type { MatchVerdict } from '@/lib/fuzzyMatch';
+import { DEFAULT_DIFFICULTY, INITIAL_STABILITY_DAYS } from '@/lib/memoryParams';
 import { useTranslation } from '@/lib/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 import { RecognitionCard } from '@/features/study/RecognitionCard';
@@ -38,8 +40,9 @@ export function NewWordsSession() {
       .where('stage')
       .equals('new')
       .toArray()
-      .then((words) => {
+      .then((rows) => {
         if (cancelled) return;
+        const words = rows.filter(isUsableWord);
         setPool((previous) => {
           if (previous === null) return words;
           const alreadyInSession = new Set(previous.map((w) => w.id));
@@ -77,7 +80,8 @@ export function NewWordsSession() {
       } else if (word.learningPhase === 'B' && nextStreak >= phaseBRepeats) {
         updates = {
           stage: 'review',
-          rating: 70,
+          stability: INITIAL_STABILITY_DAYS,
+          difficulty: DEFAULT_DIFFICULTY,
           reviewStreak: 0,
           learningPhase: 'A',
           phaseStreak: 0,
@@ -92,10 +96,10 @@ export function NewWordsSession() {
     }
 
     let updatedCount = 1;
+    setSaveFailed(false);
     if (updates) {
       try {
         updatedCount = await db.words.update(wordId, updates);
-        setSaveFailed(false);
       } catch {
         setSaveFailed(true);
         setTurn((t) => t + 1);

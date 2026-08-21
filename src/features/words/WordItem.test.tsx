@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { WordItem } from './WordItem';
 import { speak } from '@/lib/tts';
 import type { Word } from '@/db/word.type';
+import { DAY_MS } from '@/lib/time';
 
 vi.mock('@/lib/tts', () => ({
   isSpeechSupported: () => true,
@@ -19,7 +20,8 @@ function baseWord(overrides: Partial<Word> = {}): Word {
     stage: 'new',
     learningPhase: 'A',
     phaseStreak: 0,
-    rating: 0,
+    stability: 1,
+    difficulty: 5,
     reviewStreak: 0,
     ...overrides,
   };
@@ -44,14 +46,19 @@ describe('WordItem', () => {
   it('shows a whole-number rating for a word in review, keeping the list scannable', () => {
     render(
       <WordItem
-        word={baseWord({ stage: 'review', learningPhase: 'B', rating: 85.4, lastReviewedAt: Date.now() })}
+        word={baseWord({
+          stage: 'review',
+          learningPhase: 'B',
+          stability: 10,
+          lastReviewedAt: Date.now() - 10 * DAY_MS,
+        })}
         onEdit={vi.fn()}
         onDelete={vi.fn()}
         onOpenDetails={vi.fn()}
       />,
     );
 
-    expect(screen.getByText('85')).toBeInTheDocument();
+    expect(screen.getByText('90')).toBeInTheDocument();
     expect(screen.getByText('Рейтинг')).toBeInTheDocument();
     expect(screen.queryByText(/Учится/)).not.toBeInTheDocument();
   });
@@ -64,8 +71,9 @@ describe('WordItem', () => {
           kind: 'phrase',
           stage: 'review',
           learningPhase: 'B',
-          rating: 20,
-          lastReviewedAt: Date.now(),
+          stability: 4,
+          difficulty: 5,
+          lastReviewedAt: Date.now() - 4 * DAY_MS,
         })}
         onEdit={vi.fn()}
         onDelete={vi.fn()}
@@ -73,7 +81,7 @@ describe('WordItem', () => {
       />,
     );
 
-    expect(screen.getByText('20')).toBeInTheDocument();
+    expect(screen.getByText('90')).toBeInTheDocument();
     expect(screen.getByText('Фраза')).toBeInTheDocument();
   });
 

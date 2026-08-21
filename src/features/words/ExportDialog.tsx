@@ -17,8 +17,8 @@ function exportFileName(): string {
 }
 
 function currentSettingsSnapshot() {
-  const { theme, accentColor, language, phaseARepeats, phaseBRepeats } = useUIStore.getState();
-  return { theme, accentColor, language, phaseARepeats, phaseBRepeats };
+  const { theme, accentColor, language, phaseARepeats, phaseBRepeats, reviewLimit } = useUIStore.getState();
+  return { theme, accentColor, language, phaseARepeats, phaseBRepeats, reviewLimit };
 }
 
 const OBJECT_URL_RELEASE_MS = 60_000;

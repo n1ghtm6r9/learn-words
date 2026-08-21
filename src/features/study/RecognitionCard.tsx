@@ -45,6 +45,8 @@ export function RecognitionCard({ term, translation, currentStreak, requiredStre
   const [originalAccuracy, setOriginalAccuracy] = useState<number | null>(null);
   const [correctSpeedFactor, setCorrectSpeedFactor] = useState(1);
   const answeredRef = useRef(false);
+  const onAnswerRef = useRef(onAnswer);
+  onAnswerRef.current = onAnswer;
   const timer = useVisibleElapsedTimer();
   const t = useTranslation();
 
@@ -54,7 +56,7 @@ export function RecognitionCard({ term, translation, currentStreak, requiredStre
     function finish() {
       if (answeredRef.current) return;
       answeredRef.current = true;
-      onAnswer(originalVerdict ?? 'correct', originalAccuracy ?? 1, correctSpeedFactor);
+      onAnswerRef.current(originalVerdict ?? 'correct', originalAccuracy ?? 1, correctSpeedFactor);
     }
     const timeout = setTimeout(finish, CORRECT_FLASH_MS);
 
@@ -69,7 +71,7 @@ export function RecognitionCard({ term, translation, currentStreak, requiredStre
       clearTimeout(timeout);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [showCorrectFlash, originalVerdict, originalAccuracy, correctSpeedFactor, onAnswer]);
+  }, [showCorrectFlash, originalVerdict, originalAccuracy, correctSpeedFactor]);
 
   function handleCheck(event: React.FormEvent) {
     event.preventDefault();
@@ -126,12 +128,12 @@ export function RecognitionCard({ term, translation, currentStreak, requiredStre
 
       <div className="flex min-h-32 flex-col justify-center">
         {showCorrectFlash ? (
-          <p data-testid="feedback" className={`text-base font-medium ${FEEDBACK_COLOR.correct}`}>
+          <p role="status" data-testid="feedback" className={`text-base font-medium ${FEEDBACK_COLOR.correct}`}>
             {t.feedbackCorrect}
           </p>
         ) : error ? (
           <div className="flex flex-col gap-3">
-            <p data-testid="feedback" className={`text-sm font-medium ${FEEDBACK_COLOR[error.verdict]}`}>
+            <p role="status" data-testid="feedback" className={`text-sm font-medium ${FEEDBACK_COLOR[error.verdict]}`}>
               {errorFeedbackText(t, error.verdict)}
             </p>
             <p className="text-xs text-muted-foreground">{t.retryPrompt}</p>

@@ -18,7 +18,7 @@ describe('VocabDB', () => {
 
   it('filters words by stage using the stage index', async () => {
     await db.words.add(createWord('cat', 'кот'));
-    await db.words.add({ ...createWord('dog', 'собака'), stage: 'review', rating: 70 });
+    await db.words.add({ ...createWord('dog', 'собака'), stage: 'review', stability: 5 });
 
     const newWords = await db.words.where('stage').equals('new').toArray();
     const reviewWords = await db.words.where('stage').equals('review').toArray();

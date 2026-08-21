@@ -4,15 +4,22 @@ import type { Word } from '@/db/word.type';
 import { clamp } from '@/lib/clamp';
 import { detectWordKind } from '@/lib/detectWordKind';
 import { normalizeTerm } from '@/lib/normalizeTerm';
-import { roundRating } from '@/lib/roundRating';
+import {
+  DEFAULT_DIFFICULTY,
+  INITIAL_STABILITY_DAYS,
+  MAX_DIFFICULTY,
+  MAX_STABILITY_DAYS,
+  MIN_DIFFICULTY,
+  MIN_STABILITY_DAYS,
+} from '@/lib/memoryParams';
+import { seedStabilityFromLegacyRating } from '@/lib/seedStabilityFromLegacyRating';
 import { useUIStore } from '@/store/useUIStore';
 import type { ImportResult } from './importResult.type';
+import type { ImportedWord } from './importedWord.type';
 import type { ParsedImportPayload } from './parsedImportPayload.type';
 
 const MAX_IMPORTED_STREAK = 1000;
 const HAS_MEANINGFUL_CHARACTER = /[\p{L}\p{N}]/u;
-
-type ImportedWord = ParsedImportPayload['words'][number];
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
@@ -23,14 +30,35 @@ function importedStreak(value: unknown): number {
 }
 
 function importedTimestamp(value: unknown, now: number): number | null {
-  if (!isFiniteNumber(value) || value < 0) return null;
+  if (!isFiniteNumber(value) || value <= 0) return null;
   return Math.min(value, now);
+}
+
+function importedStability(
+  entry: ImportedWord,
+  term: string,
+  reviewStreak: number,
+  stage: Word['stage'],
+): number {
+  if (isFiniteNumber(entry.stability)) {
+    return clamp(entry.stability, MIN_STABILITY_DAYS, MAX_STABILITY_DAYS);
+  }
+  if (stage === 'review' && isFiniteNumber(entry.rating)) {
+    return seedStabilityFromLegacyRating(entry.rating, reviewStreak, term);
+  }
+  return INITIAL_STABILITY_DAYS;
+}
+
+function importedDifficulty(value: unknown): number {
+  return isFiniteNumber(value) ? clamp(value, MIN_DIFFICULTY, MAX_DIFFICULTY) : DEFAULT_DIFFICULTY;
 }
 
 function buildWord(entry: ImportedWord, term: string, translation: string, now: number): Word {
   const stage = entry.stage === 'new' || entry.stage === 'review' ? entry.stage : 'new';
   const learningPhase = entry.learningPhase === 'A' || entry.learningPhase === 'B' ? entry.learningPhase : 'A';
   const kind = entry.kind === 'word' || entry.kind === 'phrase' ? entry.kind : detectWordKind(term);
+
+  const reviewStreak = importedStreak(entry.reviewStreak);
 
   const word: Word = {
     term,
@@ -40,13 +68,16 @@ function buildWord(entry: ImportedWord, term: string, translation: string, now: 
     stage,
     learningPhase,
     phaseStreak: importedStreak(entry.phaseStreak),
-    rating: isFiniteNumber(entry.rating) ? clamp(roundRating(entry.rating), 0, 100) : 0,
-    reviewStreak: importedStreak(entry.reviewStreak),
+    stability: importedStability(entry, term, reviewStreak, stage),
+    difficulty: importedDifficulty(entry.difficulty),
+    reviewStreak,
   };
 
   const lastReviewedAt = importedTimestamp(entry.lastReviewedAt, now);
   if (lastReviewedAt !== null) {
     word.lastReviewedAt = lastReviewedAt;
+  } else if (stage === 'review') {
+    word.lastReviewedAt = now;
   }
 
   return word;
@@ -116,13 +147,14 @@ export async function applyImportPayload(
   }
 
   if (options.importSettings && parsed.settings) {
-    const { theme, accentColor, language, phaseARepeats, phaseBRepeats } = parsed.settings;
+    const { theme, accentColor, language, phaseARepeats, phaseBRepeats, reviewLimit } = parsed.settings;
     const store = useUIStore.getState();
     if (theme !== undefined) store.setTheme(theme);
     if (accentColor !== undefined) store.setAccentColor(accentColor);
     if (language !== undefined) store.setLanguage(language);
     if (phaseARepeats !== undefined) store.setPhaseARepeats(phaseARepeats);
     if (phaseBRepeats !== undefined) store.setPhaseBRepeats(phaseBRepeats);
+    if (reviewLimit !== undefined) store.setReviewLimit(reviewLimit);
     settingsApplied = true;
   }
 

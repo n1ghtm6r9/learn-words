@@ -3,7 +3,7 @@ import type { ExportPayload } from './exportPayload.type';
 
 export function buildExportPayload(options: { words?: Word[]; settings?: ExportPayload['settings'] }): ExportPayload {
   const payload: ExportPayload = {
-    version: 1,
+    version: 2,
     exportedAt: Date.now(),
   };
 

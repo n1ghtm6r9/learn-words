@@ -3,6 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { WordList } from './WordList';
 import { db } from '@/db/db';
+import { DAY_MS } from '@/lib/time';
 
 function baseWord(overrides: Partial<Parameters<typeof db.words.add>[0]>) {
   return {
@@ -13,7 +14,8 @@ function baseWord(overrides: Partial<Parameters<typeof db.words.add>[0]>) {
     stage: 'new' as const,
     learningPhase: 'A' as const,
     phaseStreak: 0,
-    rating: 0,
+    stability: 1,
+    difficulty: 5,
     reviewStreak: 0,
     ...overrides,
   };
@@ -128,9 +130,10 @@ describe('WordList', () => {
         translation: 'быть на пределе терпения',
         kind: 'phrase',
         stage: 'review',
-        rating: 90,
+        stability: 6,
+        difficulty: 5,
         reviewStreak: 5,
-        lastReviewedAt: Date.now(),
+        lastReviewedAt: Date.now() - 6 * DAY_MS,
       }),
     );
 

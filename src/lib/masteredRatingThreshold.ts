@@ -1,1 +1,0 @@
-export const MASTERED_RATING_THRESHOLD = 99;

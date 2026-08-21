@@ -6,6 +6,7 @@ import { NewWordsSession } from './NewWordsSession';
 import { db } from '@/db/db';
 import { createWord } from '@/db/createWord';
 import { useUIStore } from '@/store/useUIStore';
+import { DEFAULT_DIFFICULTY, INITIAL_STABILITY_DAYS } from '@/lib/memoryParams';
 
 describe('NewWordsSession', () => {
   beforeEach(async () => {
@@ -39,7 +40,8 @@ describe('NewWordsSession', () => {
 
     const stored = await db.words.toArray();
     expect(stored[0].stage).toBe('review');
-    expect(stored[0].rating).toBe(70);
+    expect(stored[0].stability).toBe(INITIAL_STABILITY_DAYS);
+    expect(stored[0].difficulty).toBe(DEFAULT_DIFFICULTY);
     expect(stored[0].lastReviewedAt).toBeDefined();
   });
 

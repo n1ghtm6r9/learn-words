@@ -18,7 +18,7 @@ describe('ImportDialog', () => {
     render(<ImportDialog open onOpenChange={vi.fn()} />);
 
     const file = jsonFile({
-      version: 1,
+      version: 2,
       exportedAt: 0,
       words: [{ term: 'cat', translation: 'кот' }],
       settings: { theme: 'dark' },
@@ -43,7 +43,7 @@ describe('ImportDialog', () => {
     const user = userEvent.setup();
     render(<ImportDialog open onOpenChange={vi.fn()} />);
 
-    const file = jsonFile({ version: 1, exportedAt: 0, words: [{ term: 'cat', translation: 'кот' }] });
+    const file = jsonFile({ version: 2, exportedAt: 0, words: [{ term: 'cat', translation: 'кот' }] });
     await user.upload(screen.getByLabelText('Выберите файл'), file);
 
     await screen.findByText('Найдено слов: 1');
@@ -56,7 +56,7 @@ describe('ImportDialog', () => {
     render(<ImportDialog open onOpenChange={vi.fn()} />);
 
     const file = jsonFile({
-      version: 1,
+      version: 2,
       exportedAt: 0,
       words: [
         { term: 'cat', translation: 'кот' },
@@ -77,7 +77,7 @@ describe('ImportDialog', () => {
     const user = userEvent.setup();
     render(<ImportDialog open onOpenChange={vi.fn()} />);
 
-    const file = jsonFile({ version: 1, exportedAt: 0 });
+    const file = jsonFile({ version: 2, exportedAt: 0 });
     await user.upload(screen.getByLabelText('Выберите файл'), file);
 
     await screen.findByText('Найдено слов: 0');
@@ -89,7 +89,7 @@ describe('ImportDialog', () => {
     const user = userEvent.setup();
     render(<ImportDialog open onOpenChange={vi.fn()} />);
 
-    const file = jsonFile({ version: 1, exportedAt: 0, words: [{ term: 'cat', translation: 'кот' }] });
+    const file = jsonFile({ version: 2, exportedAt: 0, words: [{ term: 'cat', translation: 'кот' }] });
     await user.upload(screen.getByLabelText('Выберите файл'), file);
     await screen.findByText('Найдено слов: 1');
 
@@ -109,14 +109,15 @@ describe('ImportDialog', () => {
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
-      rating: 0,
+      stability: 1,
+      difficulty: 5,
       reviewStreak: 0,
     });
 
     const user = userEvent.setup();
     render(<ImportDialog open onOpenChange={vi.fn()} />);
 
-    const file = jsonFile({ version: 1, exportedAt: 0, words: [{ term: 'cat', translation: 'кот' }] });
+    const file = jsonFile({ version: 2, exportedAt: 0, words: [{ term: 'cat', translation: 'кот' }] });
     await user.upload(screen.getByLabelText('Выберите файл'), file);
     await screen.findByText('Найдено слов: 1');
 
@@ -130,7 +131,7 @@ describe('ImportDialog', () => {
     const user = userEvent.setup();
     render(<ImportDialog open onOpenChange={vi.fn()} />);
 
-    const file = jsonFile({ version: 1, exportedAt: 0, settings: { phaseARepeats: 7 } });
+    const file = jsonFile({ version: 2, exportedAt: 0, settings: { phaseARepeats: 7 } });
     await user.upload(screen.getByLabelText('Выберите файл'), file);
     await screen.findByText('Найдено слов: 0, есть настройки');
 
@@ -148,7 +149,8 @@ describe('ImportDialog', () => {
       stage: 'new',
       learningPhase: 'A',
       phaseStreak: 0,
-      rating: 0,
+      stability: 1,
+      difficulty: 5,
       reviewStreak: 0,
     });
 
@@ -156,9 +158,9 @@ describe('ImportDialog', () => {
     render(<ImportDialog open onOpenChange={vi.fn()} />);
 
     const file = jsonFile({
-      version: 1,
+      version: 2,
       exportedAt: 0,
-      words: [{ term: 'cat', translation: 'кот', stage: 'review', rating: 88, reviewStreak: 9 }],
+      words: [{ term: 'cat', translation: 'кот', stage: 'review', stability: 42, difficulty: 4, reviewStreak: 9 }],
     });
     await user.upload(screen.getByLabelText('Выберите файл'), file);
     await screen.findByText('Найдено слов: 1');
@@ -168,7 +170,7 @@ describe('ImportDialog', () => {
 
     expect(await screen.findByText('Обновлён прогресс: 1')).toBeInTheDocument();
     const [word] = await db.words.toArray();
-    expect(word.rating).toBe(88);
+    expect(word.stability).toBe(42);
     expect(word.stage).toBe('review');
   });
 
@@ -177,7 +179,7 @@ describe('ImportDialog', () => {
     const user = userEvent.setup();
     render(<ImportDialog open onOpenChange={onOpenChange} />);
 
-    const file = jsonFile({ version: 1, exportedAt: 0, words: [{ term: 'cat', translation: 'кот' }] });
+    const file = jsonFile({ version: 2, exportedAt: 0, words: [{ term: 'cat', translation: 'кот' }] });
     await user.upload(screen.getByLabelText('Выберите файл'), file);
     await screen.findByText('Найдено слов: 1');
 
@@ -195,7 +197,7 @@ describe('ImportDialog', () => {
     const user = userEvent.setup();
     const { rerender } = render(<ImportDialog open onOpenChange={onOpenChange} />);
 
-    const file = jsonFile({ version: 1, exportedAt: 0, words: [{ term: 'cat', translation: 'кот' }] });
+    const file = jsonFile({ version: 2, exportedAt: 0, words: [{ term: 'cat', translation: 'кот' }] });
     await user.upload(screen.getByLabelText('Выберите файл'), file);
     await screen.findByText('Найдено слов: 1');
 

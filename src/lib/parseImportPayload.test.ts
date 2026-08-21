@@ -24,11 +24,11 @@ describe('parseImportPayload', () => {
   });
 
   it('rejects a newer export format instead of mis-parsing it as the current one', () => {
-    expect(parseImportPayload('{"version":2,"words":[{"term":"cat","translation":"кот"}]}').valid).toBe(false);
+    expect(parseImportPayload('{"version":3,"words":[{"term":"cat","translation":"кот"}]}').valid).toBe(false);
   });
 
   it('rejects a version field that is not a number', () => {
-    expect(parseImportPayload('{"version":"2","words":[{"term":"cat","translation":"кот"}]}').valid).toBe(false);
+    expect(parseImportPayload('{"version":"3","words":[{"term":"cat","translation":"кот"}]}').valid).toBe(false);
     expect(parseImportPayload('{"version":null,"words":[]}').valid).toBe(false);
   });
 

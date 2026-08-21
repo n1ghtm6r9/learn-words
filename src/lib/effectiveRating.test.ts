@@ -1,46 +1,51 @@
 import { describe, expect, it } from 'vitest';
 import { effectiveRating } from './effectiveRating';
 import { DAY_MS } from './time';
+import type { MemoryState } from './memoryState.type';
+
+const NOW = 1_700_000_000_000;
+
+function state(overrides: Partial<MemoryState> = {}): MemoryState {
+  return { stability: 10, difficulty: 5, reviewStreak: 0, lastReviewedAt: NOW, ...overrides };
+}
 
 describe('effectiveRating', () => {
-  it('returns the original rating with no decay when lastReviewedAt is not set', () => {
-    expect(effectiveRating({ rating: 70, reviewStreak: 0 }, 1000)).toBe(70);
+  it('is 100 right after a review, when recall is certain', () => {
+    expect(effectiveRating(state(), NOW)).toBe(100);
   });
 
-  it('returns the original rating with no decay right after a review (elapsed=0)', () => {
-    const now = 1000;
-    expect(effectiveRating({ rating: 70, reviewStreak: 0, lastReviewedAt: now }, now)).toBe(70);
+  it('is exactly 90 once a word reaches its scheduled interval', () => {
+    expect(effectiveRating(state({ stability: 10 }), NOW + 10 * DAY_MS)).toBe(90);
+    expect(effectiveRating(state({ stability: 200 }), NOW + 200 * DAY_MS)).toBe(90);
   });
 
-  it('decays by half after exactly one half-life period', () => {
-    const now = 10 * DAY_MS;
-    const lastReviewedAt = now - 2 * DAY_MS;
-    expect(effectiveRating({ rating: 80, reviewStreak: 0, lastReviewedAt }, now)).toBe(40);
+  it('keeps falling past the scheduled interval', () => {
+    const atInterval = effectiveRating(state({ stability: 10 }), NOW + 10 * DAY_MS);
+    const wellPast = effectiveRating(state({ stability: 10 }), NOW + 100 * DAY_MS);
+
+    expect(wellPast).toBeLessThan(atInterval);
+    expect(wellPast).toBeGreaterThan(0);
   });
 
-  it('decays slower with a higher reviewStreak', () => {
-    const now = 10 * DAY_MS;
-    const lastReviewedAt = now - 2 * DAY_MS;
-    const slow = effectiveRating({ rating: 80, reviewStreak: 5, lastReviewedAt }, now);
-    const fast = effectiveRating({ rating: 80, reviewStreak: 0, lastReviewedAt }, now);
-    expect(slow).toBeGreaterThan(fast);
+  it('decays more slowly for a word with higher stability, which is the whole point of earning it', () => {
+    const after30Days = NOW + 30 * DAY_MS;
+    const fragile = effectiveRating(state({ stability: 2 }), after30Days);
+    const solid = effectiveRating(state({ stability: 60 }), after30Days);
+
+    expect(solid).toBeGreaterThan(fragile);
+    expect(fragile).toBeLessThan(50);
+    expect(solid).toBeGreaterThan(90);
   });
 
-  it('does not go below 0 for a very old review', () => {
-    const now = 1000 * DAY_MS;
-    expect(effectiveRating({ rating: 50, reviewStreak: 0, lastReviewedAt: 0 }, now)).toBe(0);
+  it('reports 0 for a word that has never been reviewed', () => {
+    expect(effectiveRating(state({ lastReviewedAt: undefined }), NOW)).toBe(0);
   });
 
-  it('does not inflate the rating when lastReviewedAt is in the future (clock skew)', () => {
-    const now = 10 * DAY_MS;
-    const lastReviewedAt = now + 5 * DAY_MS;
-    expect(effectiveRating({ rating: 70, reviewStreak: 0, lastReviewedAt }, now)).toBe(70);
+  it('never reads above 100 when the clock jumps backwards', () => {
+    expect(effectiveRating(state(), NOW - 5 * DAY_MS)).toBe(100);
   });
 
-  it('preserves two decimal places of precision instead of rounding to a whole number', () => {
-    const now = 1 * DAY_MS;
-    const lastReviewedAt = 0;
-    const result = effectiveRating({ rating: 73, reviewStreak: 2, lastReviewedAt }, now);
-    expect(Number.isInteger(result)).toBe(false);
+  it('reports the rating to two decimals', () => {
+    expect(effectiveRating(state({ stability: 7 }), NOW + 3 * DAY_MS)).toBe(95.32);
   });
 });

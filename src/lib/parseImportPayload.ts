@@ -1,14 +1,15 @@
-import type { Word } from '@/db/word.type';
 import type { AccentColor } from '@/store/accentColor.type';
 import type { Language } from '@/store/language.type';
 import { ACCENT_PALETTE } from './accentPalette';
 import { TRANSLATIONS } from './translations';
 import { parsePositiveInt } from './parsePositiveInt';
 import { MIN_PHASE_REPEATS, MAX_PHASE_REPEATS } from './phaseRepeatsRange';
+import { MIN_REVIEW_LIMIT, MAX_REVIEW_LIMIT } from './reviewLimitRange';
 import type { ExportPayload } from './exportPayload.type';
 import type { ParsedImportPayload } from './parsedImportPayload.type';
+import type { ImportedWord } from './importedWord.type';
 
-const SUPPORTED_EXPORT_VERSION = 1;
+const SUPPORTED_EXPORT_VERSION = 2;
 
 type Settings = NonNullable<ExportPayload['settings']>;
 
@@ -24,7 +25,7 @@ function parseWords(rawWords: unknown): ParsedImportPayload['words'] {
     if (typeof entry !== 'object' || entry === null) continue;
     const candidate = entry as Record<string, unknown>;
     if (!isNonEmptyString(candidate.term) || !isNonEmptyString(candidate.translation)) continue;
-    words.push(candidate as Pick<Word, 'term' | 'translation'> & Partial<Word>);
+    words.push(candidate as unknown as ImportedWord);
   }
   return words;
 }
@@ -51,6 +52,9 @@ function parseSettings(rawSettings: unknown): Partial<Settings> | null {
 
   const phaseBRepeats = parsePositiveInt(String(candidate.phaseBRepeats), MIN_PHASE_REPEATS, MAX_PHASE_REPEATS);
   if (phaseBRepeats !== null) settings.phaseBRepeats = phaseBRepeats;
+
+  const reviewLimit = parsePositiveInt(String(candidate.reviewLimit), MIN_REVIEW_LIMIT, MAX_REVIEW_LIMIT);
+  if (reviewLimit !== null) settings.reviewLimit = reviewLimit;
 
   return Object.keys(settings).length > 0 ? settings : null;
 }

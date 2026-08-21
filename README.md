@@ -1,8 +1,10 @@
 # Мой словарь
 
 A single-page vocabulary trainer. Add words with translations, then review
-them using a spaced-repetition schedule (SM-2 style) that spaces out reviews
-based on how well you remember each word. Includes a flashcard study session,
+them on a spaced-repetition schedule built on a memory-stability model: each
+word carries a stability (how many days until recall drops to 90%) and a
+difficulty that both adapt to how you answer, so well-known words come back
+far less often. Includes a flashcard study session,
 a word list with search/edit/delete, and a stats page with accuracy and
 activity tracking.
 

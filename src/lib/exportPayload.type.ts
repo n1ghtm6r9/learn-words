@@ -4,7 +4,7 @@ import type { AccentColor } from '@/store/accentColor.type';
 import type { Language } from '@/store/language.type';
 
 export interface ExportPayload {
-  version: 1;
+  version: 2;
   exportedAt: number;
   words?: Array<Omit<Word, 'id'>>;
   settings?: {
@@ -13,5 +13,6 @@ export interface ExportPayload {
     language: Language;
     phaseARepeats: number;
     phaseBRepeats: number;
+    reviewLimit: number;
   };
 }

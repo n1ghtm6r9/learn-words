@@ -15,6 +15,12 @@ export interface TranslationKeys {
   done: string;
 
   noReviewsYet: string;
+  aheadOfSchedule: string;
+  reviewLimitLabel: string;
+  detailsInterval: string;
+  detailsNextReview: string;
+  detailsDifficulty: string;
+  intervalDays: (days: number) => string;
   goToNewWords: string;
   reviewProgress: (current: number, total: number) => string;
   reviewComplete: string;
@@ -77,7 +83,6 @@ export interface TranslationKeys {
   detailsNeverReviewed: string;
   detailsAdded: string;
   editWordDialogTitle: string;
-  learningBadge: string;
   newWordStepStatus: (step: number) => string;
   ratingSrLabel: string;
   phraseTag: string;

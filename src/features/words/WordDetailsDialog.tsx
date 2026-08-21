@@ -2,10 +2,17 @@ import { Volume2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import type { Word } from '@/db/word.type';
 import { effectiveRating } from '@/lib/effectiveRating';
+import { dueAt } from '@/lib/dueAt';
 import { formatDateTime } from '@/lib/formatDateTime';
 import { isSpeechSupported, speak } from '@/lib/tts';
 import { useTranslation } from '@/lib/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
+import type { Language } from '@/store/language.type';
+
+function nextReviewText(word: Word, fallback: string, language: Language): string {
+  const due = dueAt(word);
+  return due == null ? fallback : formatDateTime(due, language);
+}
 
 interface WordDetailsDialogProps {
   word: Word | null;
@@ -59,10 +66,27 @@ export function WordDetailsDialog({ word, onOpenChange }: WordDetailsDialogProps
             </div>
 
             {word.stage === 'review' && (
-              <div className="flex flex-col gap-1">
-                <dt className="text-xs text-muted-foreground">{t.detailsRating}</dt>
-                <dd className="font-mono">{effectiveRating(word, Date.now()).toFixed(2)}</dd>
-              </div>
+              <>
+                <div className="flex flex-col gap-1">
+                  <dt className="text-xs text-muted-foreground">{t.detailsRating}</dt>
+                  <dd className="font-mono">{effectiveRating(word, Date.now()).toFixed(2)}</dd>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <dt className="text-xs text-muted-foreground">{t.detailsInterval}</dt>
+                  <dd className="font-mono">{t.intervalDays(Math.round(word.stability))}</dd>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <dt className="text-xs text-muted-foreground">{t.detailsNextReview}</dt>
+                  <dd>{nextReviewText(word, t.detailsNeverReviewed, language)}</dd>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <dt className="text-xs text-muted-foreground">{t.detailsDifficulty}</dt>
+                  <dd className="font-mono">{word.difficulty.toFixed(1)}</dd>
+                </div>
+              </>
             )}
 
             <div className="flex flex-col gap-1">

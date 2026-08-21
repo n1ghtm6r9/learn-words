@@ -1,4 +1,5 @@
 import { detectWordKind } from '@/lib/detectWordKind';
+import { DEFAULT_DIFFICULTY, INITIAL_STABILITY_DAYS } from '@/lib/memoryParams';
 import { normalizeTerm } from '@/lib/normalizeTerm';
 import type { Word } from './word.type';
 
@@ -14,7 +15,8 @@ export function createWord(rawTerm: string, rawTranslation: string): Word {
     stage: 'new',
     learningPhase: 'A',
     phaseStreak: 0,
-    rating: 0,
+    stability: INITIAL_STABILITY_DAYS,
+    difficulty: DEFAULT_DIFFICULTY,
     reviewStreak: 0,
   };
 }
