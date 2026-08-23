@@ -148,4 +148,40 @@ describe('BulkAddForm', () => {
 
     bulkAddSpy.mockRestore();
   });
+
+  it('skips a pasted verb that is already saved with the infinitive marker', async () => {
+    await db.words.add({
+      term: 'to laugh',
+      translation: 'смеяться',
+      createdAt: 0,
+      kind: 'word',
+      stage: 'new',
+      learningPhase: 'A',
+      phaseStreak: 0,
+      stability: 1,
+      difficulty: 5,
+      reviewStreak: 0,
+    });
+
+    const user = userEvent.setup();
+    render(<BulkAddForm onDone={vi.fn()} />);
+
+    await user.type(screen.getByLabelText('Список слов'), 'laugh - смеяться{Enter}cry - плакать');
+    await user.click(screen.getByRole('button', { name: 'Сохранить всё' }));
+
+    await waitFor(async () => expect(await db.words.count()).toBe(2));
+    const terms = (await db.words.toArray()).map((w) => w.term).sort();
+    expect(terms).toEqual(['cry', 'to laugh']);
+  });
+
+  it('keeps only one of two pasted lines that differ solely by the infinitive marker', async () => {
+    const user = userEvent.setup();
+    render(<BulkAddForm onDone={vi.fn()} />);
+
+    await user.type(screen.getByLabelText('Список слов'), 'to laugh - смеяться{Enter}laugh - смеяться');
+    await user.click(screen.getByRole('button', { name: 'Сохранить всё' }));
+
+    await waitFor(async () => expect(await db.words.count()).toBe(1));
+    expect((await db.words.toArray())[0].term).toBe('to laugh');
+  });
 });

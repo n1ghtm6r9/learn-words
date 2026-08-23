@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { db } from '@/db/db';
 import { createWord } from '@/db/createWord';
 import { isUsableWord } from '@/db/isUsableWord';
-import { normalizeTerm } from '@/lib/normalizeTerm';
+import { duplicateKey } from '@/lib/duplicateKey';
 import { parseWordLines } from '@/lib/parseWordLines';
 import type { ParsedWordLine } from '@/lib/parsedWordLine.type';
 import { useTranslation } from '@/lib/useTranslation';
@@ -19,7 +19,7 @@ function dedupeByTerm(lines: ParsedWordLine[]): { unique: ParsedWordLine[]; dupl
   let duplicateCount = 0;
 
   for (const line of lines) {
-    const key = line.term.toLowerCase();
+    const key = duplicateKey(line.term);
     if (seen.has(key)) {
       duplicateCount += 1;
       continue;
@@ -49,11 +49,11 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
     setSaveError(false);
     try {
       const existing = new Set(
-        (await db.words.toArray()).filter(isUsableWord).map((w) => normalizeTerm(w.term).toLowerCase()),
+        (await db.words.toArray()).filter(isUsableWord).map((w) => duplicateKey(w.term)),
       );
       const toSave = valid
         .map((line) => createWord(line.term, line.translation))
-        .filter((word) => !existing.has(word.term.toLowerCase()));
+        .filter((word) => !existing.has(duplicateKey(word.term)));
       if (toSave.length > 0) {
         await db.words.bulkAdd(toSave);
       }

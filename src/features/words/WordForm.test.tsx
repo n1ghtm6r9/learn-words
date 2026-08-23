@@ -61,6 +61,52 @@ describe('WordForm', () => {
     expect(onDone).toHaveBeenCalledOnce();
   });
 
+  it('warns that a verb without the infinitive marker is the word already saved with it', async () => {
+    await db.words.add({
+      term: 'to laugh',
+      translation: 'смеяться',
+      createdAt: 0,
+      kind: 'word',
+      stage: 'new',
+      learningPhase: 'A',
+      phaseStreak: 0,
+      stability: 1,
+      difficulty: 5,
+      reviewStreak: 0,
+    });
+
+    const user = userEvent.setup();
+    render(<WordForm mode="create" onDone={vi.fn()} />);
+
+    await user.type(screen.getByLabelText('Слово'), 'laugh');
+    await user.type(screen.getByLabelText('Перевод'), 'смеяться');
+
+    expect(await screen.findByText(/уже есть в словаре/i)).toBeInTheDocument();
+  });
+
+  it('warns the other way round too, when the marker is the new part', async () => {
+    await db.words.add({
+      term: 'give up',
+      translation: 'сдаваться',
+      createdAt: 0,
+      kind: 'word',
+      stage: 'new',
+      learningPhase: 'A',
+      phaseStreak: 0,
+      stability: 1,
+      difficulty: 5,
+      reviewStreak: 0,
+    });
+
+    const user = userEvent.setup();
+    render(<WordForm mode="create" onDone={vi.fn()} />);
+
+    await user.type(screen.getByLabelText('Слово'), 'to give up');
+    await user.type(screen.getByLabelText('Перевод'), 'сдаваться');
+
+    expect(await screen.findByText(/уже есть в словаре/i)).toBeInTheDocument();
+  });
+
   it('does not block saving a genuinely new word (no duplicate)', async () => {
     const onDone = vi.fn();
     const user = userEvent.setup();

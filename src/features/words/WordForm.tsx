@@ -7,6 +7,7 @@ import { createWord } from '@/db/createWord';
 import { isUsableWord } from '@/db/isUsableWord';
 import type { Word } from '@/db/word.type';
 import { detectWordKind } from '@/lib/detectWordKind';
+import { duplicateKey } from '@/lib/duplicateKey';
 import { normalizeTerm } from '@/lib/normalizeTerm';
 import { useTranslation } from '@/lib/useTranslation';
 
@@ -36,9 +37,9 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
   }, []);
 
   async function countExistingCollisions(value: string): Promise<number> {
-    const needle = value.toLowerCase();
+    const needle = duplicateKey(value);
     return db.words
-      .filter((w) => w.id !== word?.id && isUsableWord(w) && w.term.toLowerCase() === needle)
+      .filter((w) => w.id !== word?.id && isUsableWord(w) && duplicateKey(w.term) === needle)
       .count();
   }
 

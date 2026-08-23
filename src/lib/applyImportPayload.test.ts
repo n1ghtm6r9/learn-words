@@ -472,4 +472,44 @@ describe('applyImportPayload', () => {
 
     expect(useUIStore.getState().theme).toBe('light');
   });
+
+  it('does not import a verb again just because the infinitive marker differs', async () => {
+    await db.words.add({
+      term: 'to laugh',
+      translation: 'смеяться',
+      createdAt: 0,
+      kind: 'word',
+      stage: 'new',
+      learningPhase: 'A',
+      phaseStreak: 0,
+      stability: 1,
+      difficulty: 5,
+      reviewStreak: 0,
+    });
+
+    const result = await applyImportPayload(
+      payload({ words: [{ term: 'laugh', translation: 'смеяться' }] }) as ParsedImportPayload,
+      { importWords: true, importSettings: false, replaceExisting: false },
+    );
+
+    expect(result.importedCount).toBe(0);
+    expect(result.skippedCount).toBe(1);
+    expect(await db.words.count()).toBe(1);
+  });
+
+  it('collapses two entries in one file that differ only by the infinitive marker', async () => {
+    await applyImportPayload(
+      payload({
+        words: [
+          { term: 'to laugh', translation: 'смеяться' },
+          { term: 'laugh', translation: 'смеяться' },
+        ],
+      }) as ParsedImportPayload,
+      { importWords: true, importSettings: false, replaceExisting: false },
+    );
+
+    const words = await db.words.toArray();
+    expect(words).toHaveLength(1);
+    expect(words[0].term).toBe('to laugh');
+  });
 });

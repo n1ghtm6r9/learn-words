@@ -3,6 +3,7 @@ import { isUsableWord } from '@/db/isUsableWord';
 import type { Word } from '@/db/word.type';
 import { clamp } from '@/lib/clamp';
 import { detectWordKind } from '@/lib/detectWordKind';
+import { duplicateKey } from '@/lib/duplicateKey';
 import { normalizeTerm } from '@/lib/normalizeTerm';
 import {
   DEFAULT_DIFFICULTY,
@@ -93,7 +94,7 @@ function dedupeByNormalizedTerm(
     const term = normalizeTerm(entry.term);
     const translation = normalizeTerm(entry.translation);
     if (!HAS_MEANINGFUL_CHARACTER.test(term) || translation === '') continue;
-    const key = term.toLowerCase();
+    const key = duplicateKey(term);
     if (seen.has(key)) continue;
     seen.add(key);
     unique.push({ entry, term, translation });
@@ -117,7 +118,7 @@ export async function applyImportPayload(
 
     await db.transaction('rw', db.words, async () => {
       const existingByTerm = new Map(
-        (await db.words.toArray()).filter(isUsableWord).map((w) => [w.term.toLowerCase(), w]),
+        (await db.words.toArray()).filter(isUsableWord).map((w) => [duplicateKey(w.term), w]),
       );
 
       const toAdd: Word[] = [];
@@ -125,7 +126,7 @@ export async function applyImportPayload(
 
       for (const { entry, term, translation } of unique) {
         const candidate = buildWord(entry, term, translation, now);
-        const existing = existingByTerm.get(term.toLowerCase());
+        const existing = existingByTerm.get(duplicateKey(term));
 
         if (!existing) {
           toAdd.push(candidate);
