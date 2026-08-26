@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { db } from '@/db/db';
+import { getDb } from '@/db/getDb';
 import { useUIStore } from '@/store/useUIStore';
 import { applyImportPayload } from './applyImportPayload';
 import type { ParsedImportPayload } from './parsedImportPayload.type';
 import { DEFAULT_DIFFICULTY, INITIAL_STABILITY_DAYS, MAX_STABILITY_DAYS, MIN_STABILITY_DAYS } from '@/lib/memoryParams';
+
+const db = getDb('en');
 
 function payload(overrides: Partial<ParsedImportPayload> = {}): ParsedImportPayload {
   return { valid: true, words: [], settings: null, ...overrides };
@@ -12,7 +14,14 @@ function payload(overrides: Partial<ParsedImportPayload> = {}): ParsedImportPayl
 describe('applyImportPayload', () => {
   beforeEach(async () => {
     await db.words.clear();
-    useUIStore.setState({ theme: 'light', accentColor: 'blue', language: 'ru', phaseARepeats: 3, phaseBRepeats: 3 });
+    useUIStore.setState({
+      theme: 'light',
+      accentColor: 'blue',
+      language: 'ru',
+      studyLanguage: 'en',
+      phaseARepeats: 3,
+      phaseBRepeats: 3,
+    });
     window.localStorage.clear();
   });
 
@@ -511,5 +520,86 @@ describe('applyImportPayload', () => {
     const words = await db.words.toArray();
     expect(words).toHaveLength(1);
     expect(words[0].term).toBe('to laugh');
+  });
+
+  it('restores the study language from the imported settings', async () => {
+    await applyImportPayload(payload({ settings: { studyLanguage: 'es' } }), {
+      importWords: false,
+      importSettings: true,
+      replaceExisting: false,
+    });
+
+    expect(useUIStore.getState().studyLanguage).toBe('es');
+  });
+
+  it('imports the words into the dictionary of the restored study language', async () => {
+    const spanish = getDb('es');
+    await spanish.words.clear();
+
+    await applyImportPayload(
+      payload({
+        words: [{ term: 'gato', translation: 'кот' }],
+        settings: { studyLanguage: 'es' },
+      }),
+      { importWords: true, importSettings: true, replaceExisting: false },
+    );
+
+    expect((await spanish.words.toArray()).map((w) => w.term)).toEqual(['gato']);
+    expect(await db.words.count()).toBe(0);
+  });
+
+  it('leaves every setting untouched when the word write fails', async () => {
+    const spanish = getDb('es');
+    await spanish.words.clear();
+    const bulkAddSpy = vi.spyOn(spanish.words, 'bulkAdd').mockRejectedValueOnce(new Error('quota'));
+
+    await expect(
+      applyImportPayload(
+        payload({
+          words: [{ term: 'gato', translation: 'кот' }],
+          settings: { theme: 'dark', studyLanguage: 'es' },
+        }),
+        { importWords: true, importSettings: true, replaceExisting: false },
+      ),
+    ).rejects.toThrow();
+
+    expect(useUIStore.getState().theme).toBe('light');
+    expect(useUIStore.getState().studyLanguage).toBe('en');
+    expect(window.localStorage.getItem('studyLanguage')).toBeNull();
+
+    bulkAddSpy.mockRestore();
+  });
+
+  it('routes the words by the payload, not by whichever dictionary is open', async () => {
+    const spanish = getDb('es');
+    await spanish.words.clear();
+    useUIStore.setState({ studyLanguage: 'en' });
+
+    await applyImportPayload(
+      payload({
+        words: [{ term: 'gato', translation: 'кот' }],
+        settings: { studyLanguage: 'es' },
+      }),
+      { importWords: true, importSettings: true, replaceExisting: false },
+    );
+
+    expect((await spanish.words.toArray()).map((w) => w.term)).toEqual(['gato']);
+    expect(await db.words.count()).toBe(0);
+  });
+
+  it('applies the rules of the imported language when deciding what is a phrase', async () => {
+    const spanish = getDb('es');
+    await spanish.words.clear();
+
+    await applyImportPayload(
+      payload({
+        words: [{ term: 'la casa', translation: 'дом' }],
+        settings: { studyLanguage: 'es' },
+      }),
+      { importWords: true, importSettings: true, replaceExisting: false },
+    );
+
+    const [word] = await spanish.words.toArray();
+    expect(word.kind).toBe('word');
   });
 });

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { db } from '@/db/db';
+import { useDb } from '@/db/useDb';
 import { buildExportPayload } from '@/lib/buildExportPayload';
 import { useTranslation } from '@/lib/useTranslation';
+import type { StudyLanguage } from '@/store/studyLanguage.type';
 import { useUIStore } from '@/store/useUIStore';
 
 interface ExportDialogProps {
@@ -11,19 +12,22 @@ interface ExportDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function exportFileName(): string {
+function exportFileName(studyLanguage: StudyLanguage): string {
   const date = new Date().toISOString().slice(0, 10);
-  return `learn-words-export-${date}.json`;
+  return `learn-words-${studyLanguage}-export-${date}.json`;
 }
 
 function currentSettingsSnapshot() {
-  const { theme, accentColor, language, phaseARepeats, phaseBRepeats, reviewLimit } = useUIStore.getState();
-  return { theme, accentColor, language, phaseARepeats, phaseBRepeats, reviewLimit };
+  const { theme, accentColor, language, studyLanguage, phaseARepeats, phaseBRepeats, reviewLimit } =
+    useUIStore.getState();
+  return { theme, accentColor, language, studyLanguage, phaseARepeats, phaseBRepeats, reviewLimit };
 }
 
 const OBJECT_URL_RELEASE_MS = 60_000;
 
 export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
+  const db = useDb();
+  const studyLanguage = useUIStore((s) => s.studyLanguage);
   const [includeWords, setIncludeWords] = useState(true);
   const [includeSettings, setIncludeSettings] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
@@ -43,7 +47,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = exportFileName();
+      anchor.download = exportFileName(studyLanguage);
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);

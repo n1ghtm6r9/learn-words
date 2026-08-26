@@ -1,3 +1,5 @@
+import type { StudyLanguage } from '@/store/studyLanguage.type';
+
 export interface TranslationKeys {
   appTitle: string;
   navNewWords: string;
@@ -53,7 +55,7 @@ export interface TranslationKeys {
   close: string;
 
   wordListLabel: string;
-  wordListPlaceholder: string;
+  wordListPlaceholder: (language: StudyLanguage) => string;
   parseErrorPrefix: string;
   bulkSaveError: string;
   bulkDuplicatesSkipped: (count: number) => string;
@@ -120,4 +122,6 @@ export interface TranslationKeys {
   accentPurple: string;
   accentOrange: string;
   languageLabel: string;
+  studyLanguageLabel: string;
+  studyLanguageHint: string;
 }

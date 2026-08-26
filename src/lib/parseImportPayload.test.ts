@@ -17,6 +17,7 @@ describe('parseImportPayload', () => {
 
   it('accepts the supported export version', () => {
     expect(parseImportPayload('{"version":1,"words":[]}').valid).toBe(true);
+    expect(parseImportPayload('{"version":3,"words":[]}').valid).toBe(true);
   });
 
   it('accepts a legacy file that carries no version at all', () => {
@@ -24,11 +25,11 @@ describe('parseImportPayload', () => {
   });
 
   it('rejects a newer export format instead of mis-parsing it as the current one', () => {
-    expect(parseImportPayload('{"version":3,"words":[{"term":"cat","translation":"кот"}]}').valid).toBe(false);
+    expect(parseImportPayload('{"version":4,"words":[{"term":"cat","translation":"кот"}]}').valid).toBe(false);
   });
 
   it('rejects a version field that is not a number', () => {
-    expect(parseImportPayload('{"version":"3","words":[{"term":"cat","translation":"кот"}]}').valid).toBe(false);
+    expect(parseImportPayload('{"version":"4","words":[{"term":"cat","translation":"кот"}]}').valid).toBe(false);
     expect(parseImportPayload('{"version":null,"words":[]}').valid).toBe(false);
   });
 
@@ -111,5 +112,12 @@ describe('parseImportPayload', () => {
 
   it('treats a non-object settings field as null', () => {
     expect(parseImportPayload('{"settings": "nope"}').settings).toBeNull();
+  });
+
+  it('keeps a known study language and drops an unknown one', () => {
+    expect(parseImportPayload(JSON.stringify({ settings: { studyLanguage: 'es' } })).settings).toEqual({
+      studyLanguage: 'es',
+    });
+    expect(parseImportPayload(JSON.stringify({ settings: { studyLanguage: 'fr' } })).settings).toBeNull();
   });
 });

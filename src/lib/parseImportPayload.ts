@@ -1,6 +1,8 @@
 import type { AccentColor } from '@/store/accentColor.type';
 import type { Language } from '@/store/language.type';
+import type { StudyLanguage } from '@/store/studyLanguage.type';
 import { ACCENT_PALETTE } from './accentPalette';
+import { STUDY_LANGUAGE_NAMES } from './studyLanguageNames';
 import { TRANSLATIONS } from './translations';
 import { parsePositiveInt } from './parsePositiveInt';
 import { MIN_PHASE_REPEATS, MAX_PHASE_REPEATS } from './phaseRepeatsRange';
@@ -9,7 +11,7 @@ import type { ExportPayload } from './exportPayload.type';
 import type { ParsedImportPayload } from './parsedImportPayload.type';
 import type { ImportedWord } from './importedWord.type';
 
-const SUPPORTED_EXPORT_VERSION = 2;
+const SUPPORTED_EXPORT_VERSION = 3;
 
 type Settings = NonNullable<ExportPayload['settings']>;
 
@@ -45,6 +47,13 @@ function parseSettings(rawSettings: unknown): Partial<Settings> | null {
 
   if (typeof candidate.language === 'string' && Object.keys(TRANSLATIONS).includes(candidate.language)) {
     settings.language = candidate.language as Language;
+  }
+
+  if (
+    typeof candidate.studyLanguage === 'string' &&
+    Object.keys(STUDY_LANGUAGE_NAMES).includes(candidate.studyLanguage)
+  ) {
+    settings.studyLanguage = candidate.studyLanguage as StudyLanguage;
   }
 
   const phaseARepeats = parsePositiveInt(String(candidate.phaseARepeats), MIN_PHASE_REPEATS, MAX_PHASE_REPEATS);

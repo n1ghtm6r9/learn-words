@@ -4,13 +4,14 @@ import { Search, TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { db } from '@/db/db';
+import { useDb } from '@/db/useDb';
 import { isUsableWord } from '@/db/isUsableWord';
 import type { Word } from '@/db/word.type';
 import { CARD_CLASS } from '@/lib/cardClass';
 import { normalizeTerm } from '@/lib/normalizeTerm';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/lib/useTranslation';
+import { useUIStore } from '@/store/useUIStore';
 import { ExportDialog } from './ExportDialog';
 import { ImportDialog } from './ImportDialog';
 import { WordDetailsDialog } from './WordDetailsDialog';
@@ -18,7 +19,10 @@ import { WordForm } from './WordForm';
 import { WordItem } from './WordItem';
 
 export function WordList() {
-  const words = useLiveQuery(() => db.words.toArray(), []);
+  const db = useDb();
+  const studyLanguage = useUIStore((s) => s.studyLanguage);
+  const snapshot = useLiveQuery(async () => ({ db, words: await db.words.toArray() }), [db]);
+  const words = snapshot?.db === db ? snapshot.words : undefined;
   const [search, setSearch] = useState('');
   const [editingWord, setEditingWord] = useState<Word | null>(null);
   const [detailsWord, setDetailsWord] = useState<Word | null>(null);
@@ -28,8 +32,9 @@ export function WordList() {
   const t = useTranslation();
 
   const sorted = useMemo(
-    () => (words ?? []).filter(isUsableWord).sort((a, b) => a.term.localeCompare(b.term)),
-    [words],
+    () =>
+      (words ?? []).filter(isUsableWord).sort((a, b) => a.term.localeCompare(b.term, studyLanguage)),
+    [words, studyLanguage],
   );
 
   const filtered = useMemo(() => {

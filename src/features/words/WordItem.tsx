@@ -7,7 +7,8 @@ import { effectiveRating } from '@/lib/effectiveRating';
 import { ratingColor } from '@/lib/ratingColor';
 import { RATING_DOT_CLASS } from '@/lib/ratingDotClass';
 import { RATING_TEXT_CLASS } from '@/lib/ratingTextClass';
-import { isSpeechSupported, speak } from '@/lib/tts';
+import { isSpeechSupported } from '@/lib/tts';
+import { useSpeak } from '@/lib/useSpeak';
 import { useTranslation } from '@/lib/useTranslation';
 
 interface WordItemProps {
@@ -20,6 +21,7 @@ interface WordItemProps {
 export function WordItem({ word, onEdit, onDelete, onOpenDetails }: WordItemProps) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const t = useTranslation();
+  const speak = useSpeak();
 
   const isLearning = word.stage === 'new';
   const rating = isLearning ? null : effectiveRating(word, Date.now());

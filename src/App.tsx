@@ -10,12 +10,14 @@ import { WordList } from '@/features/words/WordList';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { useUIStore } from '@/store/useUIStore';
 import { applyAccentColor } from '@/lib/applyAccentColor';
+import { STUDY_LANGUAGE_NAMES } from '@/lib/studyLanguageNames';
 import { useTranslation } from '@/lib/useTranslation';
 
 function App() {
   const screen = useUIStore((s) => s.screen);
   const theme = useUIStore((s) => s.theme);
   const language = useUIStore((s) => s.language);
+  const studyLanguage = useUIStore((s) => s.studyLanguage);
   const accentColor = useUIStore((s) => s.accentColor);
   const addWordOpen = useUIStore((s) => s.addWordOpen);
   const setAddWordOpen = useUIStore((s) => s.setAddWordOpen);
@@ -39,7 +41,16 @@ function App() {
   return (
     <div className="flex min-h-screen flex-col bg-background pb-[calc(5rem+env(safe-area-inset-bottom))] text-foreground">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/90 px-4 py-3 backdrop-blur">
-        <h1 className="font-mono text-base font-semibold tracking-tight">{t.appTitle}</h1>
+        <div className="flex min-w-0 items-center gap-2">
+          <h1 className="font-mono text-base font-semibold tracking-tight">{t.appTitle}</h1>
+          <span
+            role="img"
+            aria-label={`${t.studyLanguageLabel}: ${STUDY_LANGUAGE_NAMES[studyLanguage]}`}
+            className="rounded-full bg-secondary px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-wide text-muted-foreground uppercase"
+          >
+            {studyLanguage}
+          </span>
+        </div>
         <button
           type="button"
           aria-label={t.settingsButtonLabel}
@@ -59,8 +70,8 @@ function App() {
             transition={{ duration: 0.15 }}
             className="flex flex-1 flex-col"
           >
-            {screen === 'newWords' && <NewWordsSession />}
-            {screen === 'review' && <ReviewSession />}
+            {screen === 'newWords' && <NewWordsSession key={studyLanguage} />}
+            {screen === 'review' && <ReviewSession key={studyLanguage} />}
             {screen === 'words' && <WordList />}
           </motion.div>
         </AnimatePresence>

@@ -8,6 +8,7 @@ describe('useUIStore', () => {
       theme: 'light',
       accentColor: 'blue',
       language: 'ru',
+      studyLanguage: 'en',
       addWordOpen: false,
       settingsOpen: false,
       phaseARepeats: 3,
@@ -60,5 +61,12 @@ describe('useUIStore', () => {
     useUIStore.getState().setPhaseBRepeats(7);
     expect(useUIStore.getState().phaseBRepeats).toBe(7);
     expect(window.localStorage.getItem('phaseBRepeats')).toBe('7');
+  });
+
+  it('setStudyLanguage switches the studied language and persists it to localStorage', () => {
+    useUIStore.getState().setStudyLanguage('es');
+
+    expect(useUIStore.getState().studyLanguage).toBe('es');
+    expect(window.localStorage.getItem('studyLanguage')).toBe('es');
   });
 });

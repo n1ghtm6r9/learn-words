@@ -30,7 +30,7 @@ describe('buildExportPayload', () => {
 
     const payload = buildExportPayload({});
 
-    expect(payload.version).toBe(2);
+    expect(payload.version).toBe(3);
     expect(payload.exportedAt).toBe(1700000000000);
   });
 
@@ -71,6 +71,7 @@ describe('buildExportPayload', () => {
       theme: 'dark' as const,
       accentColor: 'blue' as const,
       language: 'en' as const,
+      studyLanguage: 'es' as const,
       phaseARepeats: 3,
       phaseBRepeats: 4,
       reviewLimit: 40,

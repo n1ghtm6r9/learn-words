@@ -4,6 +4,7 @@ import { useUIStore } from '@/store/useUIStore';
 import { ThemeSection } from './ThemeSection';
 import { AccentColorSection } from './AccentColorSection';
 import { LanguageSection } from './LanguageSection';
+import { StudyLanguageSection } from './StudyLanguageSection';
 import { MIN_PHASE_REPEATS, MAX_PHASE_REPEATS } from '@/lib/phaseRepeatsRange';
 import { MIN_REVIEW_LIMIT, MAX_REVIEW_LIMIT } from '@/lib/reviewLimitRange';
 import { useNumberField } from './useNumberField';
@@ -27,6 +28,7 @@ export function SettingsPage() {
         <ThemeSection />
         <AccentColorSection />
         <LanguageSection />
+        <StudyLanguageSection />
       </div>
 
       <div className="flex flex-col gap-4 pt-5">

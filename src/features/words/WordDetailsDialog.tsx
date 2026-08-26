@@ -4,7 +4,8 @@ import type { Word } from '@/db/word.type';
 import { effectiveRating } from '@/lib/effectiveRating';
 import { dueAt } from '@/lib/dueAt';
 import { formatDateTime } from '@/lib/formatDateTime';
-import { isSpeechSupported, speak } from '@/lib/tts';
+import { isSpeechSupported } from '@/lib/tts';
+import { useSpeak } from '@/lib/useSpeak';
 import { useTranslation } from '@/lib/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 import type { Language } from '@/store/language.type';
@@ -22,6 +23,7 @@ interface WordDetailsDialogProps {
 export function WordDetailsDialog({ word, onOpenChange }: WordDetailsDialogProps) {
   const language = useUIStore((s) => s.language);
   const t = useTranslation();
+  const speak = useSpeak();
 
   return (
     <Dialog open={word != null} onOpenChange={onOpenChange}>

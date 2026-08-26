@@ -7,7 +7,8 @@ import { matchAccuracy, matchAnswer, type MatchVerdict } from '@/lib/fuzzyMatch'
 import { speedFactor } from '@/lib/responseSpeed';
 import { PhaseProgressDots } from './PhaseProgressDots';
 import { useVisibleElapsedTimer } from '@/lib/useVisibleElapsedTimer';
-import { speak, isSpeechSupported } from '@/lib/tts';
+import { isSpeechSupported } from '@/lib/tts';
+import { useSpeak } from '@/lib/useSpeak';
 import { useTranslation } from '@/lib/useTranslation';
 import type { TranslationKeys } from '@/lib/translationKeys.type';
 
@@ -49,6 +50,7 @@ export function RecognitionCard({ term, translation, currentStreak, requiredStre
   onAnswerRef.current = onAnswer;
   const timer = useVisibleElapsedTimer();
   const t = useTranslation();
+  const speak = useSpeak();
 
   useEffect(() => {
     if (!showCorrectFlash) return;

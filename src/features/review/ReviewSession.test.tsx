@@ -2,11 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ReviewSession } from './ReviewSession';
-import { db } from '@/db/db';
+import { getDb } from '@/db/getDb';
 import { DAY_MS } from '@/lib/time';
 import { DEFAULT_REVIEW_LIMIT } from '@/lib/reviewLimitRange';
 import { useUIStore } from '@/store/useUIStore';
 import type { Word } from '@/db/word.type';
+
+const db = getDb('en');
 
 vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
 
@@ -28,6 +30,7 @@ function reviewWord(overrides: Partial<Word> & Pick<Word, 'term' | 'translation'
 describe('ReviewSession', () => {
   beforeEach(async () => {
     await db.words.clear();
+    useUIStore.setState({ studyLanguage: 'en' });
     useUIStore.setState({ screen: 'review', reviewLimit: DEFAULT_REVIEW_LIMIT });
   });
 

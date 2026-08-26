@@ -141,6 +141,6 @@ describe('WordItem', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Озвучить' }));
 
-    expect(speak).toHaveBeenCalledWith('apple');
+    expect(speak).toHaveBeenCalledWith('apple', 'en-US');
   });
 });

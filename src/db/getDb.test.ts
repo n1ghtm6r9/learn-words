@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { db } from './db';
+import { getDb } from './getDb';
 import { createWord } from './createWord';
+
+const db = getDb('en');
 
 describe('VocabDB', () => {
   beforeEach(async () => {
@@ -27,5 +29,24 @@ describe('VocabDB', () => {
     expect(newWords[0].term).toBe('cat');
     expect(reviewWords).toHaveLength(1);
     expect(reviewWords[0].term).toBe('dog');
+  });
+});
+
+describe('getDb', () => {
+  it('reuses one instance per studied language', () => {
+    expect(getDb('en')).toBe(getDb('en'));
+    expect(getDb('en')).not.toBe(getDb('es'));
+  });
+
+  it('keeps every studied language in a dictionary of its own', async () => {
+    const spanish = getDb('es');
+    await db.words.clear();
+    await spanish.words.clear();
+
+    await db.words.add(createWord('cat', 'кот'));
+    await spanish.words.add(createWord('gato', 'кот', 'es'));
+
+    expect((await db.words.toArray()).map((w) => w.term)).toEqual(['cat']);
+    expect((await spanish.words.toArray()).map((w) => w.term)).toEqual(['gato']);
   });
 });

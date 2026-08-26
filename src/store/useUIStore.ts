@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { ACCENT_PALETTE } from '@/lib/accentPalette';
+import { STUDY_LANGUAGE_NAMES } from '@/lib/studyLanguageNames';
 import { TRANSLATIONS } from '@/lib/translations';
 import { parsePositiveInt } from '@/lib/parsePositiveInt';
 import { MIN_PHASE_REPEATS, MAX_PHASE_REPEATS } from '@/lib/phaseRepeatsRange';
@@ -8,12 +9,15 @@ import type { Screen } from './screen.type';
 import type { Theme } from './theme.type';
 import type { AccentColor } from './accentColor.type';
 import type { Language } from './language.type';
+import type { StudyLanguage } from './studyLanguage.type';
 
 const DEFAULT_PHASE_REPEATS = 3;
 const DEFAULT_ACCENT_COLOR: AccentColor = 'blue';
 const ACCENT_COLORS = Object.keys(ACCENT_PALETTE) as AccentColor[];
 const DEFAULT_LANGUAGE: Language = 'ru';
 const LANGUAGES = Object.keys(TRANSLATIONS) as Language[];
+const DEFAULT_STUDY_LANGUAGE: StudyLanguage = 'en';
+const STUDY_LANGUAGES = Object.keys(STUDY_LANGUAGE_NAMES) as StudyLanguage[];
 
 function safeGetItem(key: string): string | null {
   try {
@@ -49,6 +53,9 @@ interface UIStore {
   language: Language;
   setLanguage: (language: Language) => void;
 
+  studyLanguage: StudyLanguage;
+  setStudyLanguage: (language: StudyLanguage) => void;
+
   phaseARepeats: number;
   setPhaseARepeats: (value: number) => void;
 
@@ -71,6 +78,13 @@ function readInitialAccentColor(): AccentColor {
 function readInitialLanguage(): Language {
   const stored = safeGetItem('language');
   return (LANGUAGES as string[]).includes(stored ?? '') ? (stored as Language) : DEFAULT_LANGUAGE;
+}
+
+function readInitialStudyLanguage(): StudyLanguage {
+  const stored = safeGetItem('studyLanguage');
+  return (STUDY_LANGUAGES as string[]).includes(stored ?? '')
+    ? (stored as StudyLanguage)
+    : DEFAULT_STUDY_LANGUAGE;
 }
 
 function readInitialNumber(key: string, fallback: number, min: number, max: number): number {
@@ -111,6 +125,12 @@ export const useUIStore = create<UIStore>((set) => ({
   setLanguage: (language) => {
     safeSetItem('language', language);
     set({ language });
+  },
+
+  studyLanguage: readInitialStudyLanguage(),
+  setStudyLanguage: (studyLanguage) => {
+    safeSetItem('studyLanguage', studyLanguage);
+    set({ studyLanguage });
   },
 
   phaseARepeats: readInitialNumber('phaseARepeats', DEFAULT_PHASE_REPEATS, MIN_PHASE_REPEATS, MAX_PHASE_REPEATS),

@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { WordList } from './WordList';
-import { db } from '@/db/db';
+import { getDb } from '@/db/getDb';
+import { useUIStore } from '@/store/useUIStore';
 import { DAY_MS } from '@/lib/time';
+
+const db = getDb('en');
 
 function baseWord(overrides: Partial<Parameters<typeof db.words.add>[0]>) {
   return {
@@ -24,6 +27,7 @@ function baseWord(overrides: Partial<Parameters<typeof db.words.add>[0]>) {
 describe('WordList', () => {
   beforeEach(async () => {
     await db.words.clear();
+    useUIStore.setState({ studyLanguage: 'en' });
   });
 
   it('shows the list of saved words', async () => {
@@ -187,5 +191,22 @@ describe('WordList', () => {
     await user.click(screen.getByRole('button', { name: 'Импорт' }));
 
     expect(await screen.findByText('Импорт данных')).toBeInTheDocument();
+  });
+
+  it('drops the previous dictionary the moment the studied language changes', async () => {
+    const spanish = getDb('es');
+    await spanish.words.clear();
+    await db.words.add(baseWord({ term: 'hello', translation: 'привет' }));
+    await spanish.words.add(baseWord({ term: 'hola', translation: 'привет' }));
+
+    render(<WordList />);
+    expect(await screen.findByText('hello')).toBeInTheDocument();
+
+    act(() => {
+      useUIStore.setState({ studyLanguage: 'es' });
+    });
+
+    expect(screen.queryByText('hello')).not.toBeInTheDocument();
+    expect(await screen.findByText('hola')).toBeInTheDocument();
   });
 });

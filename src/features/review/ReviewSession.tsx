@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { db } from '@/db/db';
+import { useDb } from '@/db/useDb';
 import { isUsableWord } from '@/db/isUsableWord';
 import type { Word } from '@/db/word.type';
 import { applyReviewOutcome } from '@/lib/applyReviewOutcome';
@@ -27,6 +27,7 @@ interface Counters {
 const EMPTY_COUNTERS: Counters = { correct: 0, almost: 0, wrong: 0 };
 
 export function ReviewSession() {
+  const db = useDb();
   const [queue, setQueue] = useState<Word[] | null>(null);
   const [index, setIndex] = useState(0);
   const [counters, setCounters] = useState<Counters>(EMPTY_COUNTERS);
@@ -35,6 +36,10 @@ export function ReviewSession() {
   const setScreen = useUIStore((s) => s.setScreen);
   const reviewLimit = useUIStore((s) => s.reviewLimit);
   const t = useTranslation();
+
+  useEffect(() => {
+    setQueue(null);
+  }, [db]);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,7 +57,7 @@ export function ReviewSession() {
     return () => {
       cancelled = true;
     };
-  }, [reviewLimit]);
+  }, [db, reviewLimit]);
 
   async function handleAnswer(word: Word, verdict: MatchVerdict, accuracy: number, speedFactor: number) {
     if (isSubmitting) return;

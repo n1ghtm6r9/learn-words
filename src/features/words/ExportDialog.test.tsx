@@ -2,11 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ExportDialog } from './ExportDialog';
-import { db } from '@/db/db';
+import { getDb } from '@/db/getDb';
+import { useUIStore } from '@/store/useUIStore';
+
+const db = getDb('en');
 
 describe('ExportDialog', () => {
   beforeEach(async () => {
     await db.words.clear();
+    useUIStore.setState({ studyLanguage: 'en' });
     URL.createObjectURL = vi.fn(() => 'blob:mock-url');
     URL.revokeObjectURL = vi.fn();
   });

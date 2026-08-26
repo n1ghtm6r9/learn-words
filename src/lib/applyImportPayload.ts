@@ -1,4 +1,4 @@
-import { db } from '@/db/db';
+import { getDb } from '@/db/getDb';
 import { isUsableWord } from '@/db/isUsableWord';
 import type { Word } from '@/db/word.type';
 import { clamp } from '@/lib/clamp';
@@ -14,6 +14,7 @@ import {
   MIN_STABILITY_DAYS,
 } from '@/lib/memoryParams';
 import { seedStabilityFromLegacyRating } from '@/lib/seedStabilityFromLegacyRating';
+import type { StudyLanguage } from '@/store/studyLanguage.type';
 import { useUIStore } from '@/store/useUIStore';
 import type { ImportResult } from './importResult.type';
 import type { ImportedWord } from './importedWord.type';
@@ -54,10 +55,16 @@ function importedDifficulty(value: unknown): number {
   return isFiniteNumber(value) ? clamp(value, MIN_DIFFICULTY, MAX_DIFFICULTY) : DEFAULT_DIFFICULTY;
 }
 
-function buildWord(entry: ImportedWord, term: string, translation: string, now: number): Word {
+function buildWord(
+  entry: ImportedWord,
+  term: string,
+  translation: string,
+  now: number,
+  language: StudyLanguage,
+): Word {
   const stage = entry.stage === 'new' || entry.stage === 'review' ? entry.stage : 'new';
   const learningPhase = entry.learningPhase === 'A' || entry.learningPhase === 'B' ? entry.learningPhase : 'A';
-  const kind = entry.kind === 'word' || entry.kind === 'phrase' ? entry.kind : detectWordKind(term);
+  const kind = entry.kind === 'word' || entry.kind === 'phrase' ? entry.kind : detectWordKind(term, language);
 
   const reviewStreak = importedStreak(entry.reviewStreak);
 
@@ -86,6 +93,7 @@ function buildWord(entry: ImportedWord, term: string, translation: string, now: 
 
 function dedupeByNormalizedTerm(
   words: ImportedWord[],
+  language: StudyLanguage,
 ): Array<{ entry: ImportedWord; term: string; translation: string }> {
   const seen = new Set<string>();
   const unique: Array<{ entry: ImportedWord; term: string; translation: string }> = [];
@@ -94,7 +102,7 @@ function dedupeByNormalizedTerm(
     const term = normalizeTerm(entry.term);
     const translation = normalizeTerm(entry.translation);
     if (!HAS_MEANINGFUL_CHARACTER.test(term) || translation === '') continue;
-    const key = duplicateKey(term);
+    const key = duplicateKey(term, language);
     if (seen.has(key)) continue;
     seen.add(key);
     unique.push({ entry, term, translation });
@@ -112,21 +120,25 @@ export async function applyImportPayload(
   let skippedCount = 0;
   let settingsApplied = false;
 
+  const importedSettings = options.importSettings ? parsed.settings : null;
+  const targetLanguage = importedSettings?.studyLanguage ?? useUIStore.getState().studyLanguage;
+
   if (options.importWords && parsed.words.length > 0) {
     const now = Date.now();
-    const unique = dedupeByNormalizedTerm(parsed.words);
+    const db = getDb(targetLanguage);
+    const unique = dedupeByNormalizedTerm(parsed.words, targetLanguage);
 
     await db.transaction('rw', db.words, async () => {
       const existingByTerm = new Map(
-        (await db.words.toArray()).filter(isUsableWord).map((w) => [duplicateKey(w.term), w]),
+        (await db.words.toArray()).filter(isUsableWord).map((w) => [duplicateKey(w.term, targetLanguage), w]),
       );
 
       const toAdd: Word[] = [];
       const toUpdate: Word[] = [];
 
       for (const { entry, term, translation } of unique) {
-        const candidate = buildWord(entry, term, translation, now);
-        const existing = existingByTerm.get(duplicateKey(term));
+        const candidate = buildWord(entry, term, translation, now, targetLanguage);
+        const existing = existingByTerm.get(duplicateKey(term, targetLanguage));
 
         if (!existing) {
           toAdd.push(candidate);
@@ -147,12 +159,14 @@ export async function applyImportPayload(
     });
   }
 
-  if (options.importSettings && parsed.settings) {
-    const { theme, accentColor, language, phaseARepeats, phaseBRepeats, reviewLimit } = parsed.settings;
+  if (importedSettings) {
+    const { theme, accentColor, language, studyLanguage, phaseARepeats, phaseBRepeats, reviewLimit } =
+      importedSettings;
     const store = useUIStore.getState();
     if (theme !== undefined) store.setTheme(theme);
     if (accentColor !== undefined) store.setAccentColor(accentColor);
     if (language !== undefined) store.setLanguage(language);
+    if (studyLanguage !== undefined) store.setStudyLanguage(studyLanguage);
     if (phaseARepeats !== undefined) store.setPhaseARepeats(phaseARepeats);
     if (phaseBRepeats !== undefined) store.setPhaseBRepeats(phaseBRepeats);
     if (reviewLimit !== undefined) store.setReviewLimit(reviewLimit);

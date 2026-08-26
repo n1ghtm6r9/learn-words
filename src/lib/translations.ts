@@ -56,7 +56,8 @@ const ru: TranslationKeys = {
   close: 'Закрыть',
 
   wordListLabel: 'Список слов',
-  wordListPlaceholder: 'привет - hello\nкот - cat',
+  wordListPlaceholder: (language) =>
+    language === 'es' ? 'hola - привет\ngato - кот' : 'hello - привет\ncat - кот',
   parseErrorPrefix: 'Не удалось разобрать:',
   bulkSaveError: 'Не удалось сохранить слова. Попробуйте ещё раз.',
   bulkDuplicatesSkipped: (count) => `Пропущено дубликатов: ${count}`,
@@ -123,7 +124,9 @@ const ru: TranslationKeys = {
   accentGreen: 'Зелёный',
   accentPurple: 'Фиолетовый',
   accentOrange: 'Оранжевый',
-  languageLabel: 'Язык',
+  languageLabel: 'Язык интерфейса',
+  studyLanguageLabel: 'Язык изучения',
+  studyLanguageHint: 'У каждого языка свой словарь и своё произношение',
 };
 
 const en: TranslationKeys = {
@@ -181,7 +184,8 @@ const en: TranslationKeys = {
   close: 'Close',
 
   wordListLabel: 'Word list',
-  wordListPlaceholder: 'hello - привет\ncat - кот',
+  wordListPlaceholder: (language) =>
+    language === 'es' ? 'hola - привет\ngato - кот' : 'hello - привет\ncat - кот',
   parseErrorPrefix: 'Could not parse:',
   bulkSaveError: 'Could not save the words. Please try again.',
   bulkDuplicatesSkipped: (count) => `Duplicates skipped: ${count}`,
@@ -248,7 +252,9 @@ const en: TranslationKeys = {
   accentGreen: 'Green',
   accentPurple: 'Purple',
   accentOrange: 'Orange',
-  languageLabel: 'Language',
+  languageLabel: 'Interface language',
+  studyLanguageLabel: 'Study language',
+  studyLanguageHint: 'Each language keeps its own dictionary and pronunciation',
 };
 
 export const TRANSLATIONS: Record<Language, TranslationKeys> = { ru, en };

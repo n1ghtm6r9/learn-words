@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ImportDialog } from './ImportDialog';
-import { db } from '@/db/db';
+import { getDb } from '@/db/getDb';
+import { useUIStore } from '@/store/useUIStore';
+
+const db = getDb('en');
 
 function jsonFile(content: unknown, name = 'import.json'): File {
   return new File([JSON.stringify(content)], name, { type: 'application/json' });
@@ -11,6 +14,7 @@ function jsonFile(content: unknown, name = 'import.json'): File {
 describe('ImportDialog', () => {
   beforeEach(async () => {
     await db.words.clear();
+    useUIStore.setState({ studyLanguage: 'en' });
   });
 
   it('shows a summary with the word count and settings presence after choosing a valid file', async () => {

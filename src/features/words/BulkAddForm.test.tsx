@@ -2,11 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BulkAddForm } from './BulkAddForm';
-import { db } from '@/db/db';
+import { getDb } from '@/db/getDb';
+import { useUIStore } from '@/store/useUIStore';
+
+const db = getDb('en');
 
 describe('BulkAddForm', () => {
   beforeEach(async () => {
     await db.words.clear();
+    useUIStore.setState({ studyLanguage: 'en' });
   });
 
   it('parses lines, shows a preview, and saves all valid pairs', async () => {

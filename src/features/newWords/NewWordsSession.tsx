@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { db } from '@/db/db';
+import { useDb } from '@/db/useDb';
 import { isUsableWord } from '@/db/isUsableWord';
 import type { Word } from '@/db/word.type';
 import type { MatchVerdict } from '@/lib/fuzzyMatch';
@@ -19,6 +19,7 @@ function pickRandomId(words: Word[], excludeId: number | null): number | null {
 }
 
 export function NewWordsSession() {
+  const db = useDb();
   const [pool, setPool] = useState<Word[] | null>(null);
   const [currentId, setCurrentId] = useState<number | null>(null);
   const [turn, setTurn] = useState(0);
@@ -31,6 +32,13 @@ export function NewWordsSession() {
   const addWordOpen = useUIStore((s) => s.addWordOpen);
   const setAddWordOpen = useUIStore((s) => s.setAddWordOpen);
   const t = useTranslation();
+
+  useEffect(() => {
+    setPool(null);
+    setCurrentId(null);
+    setLearnedCount(0);
+    setSaveFailed(false);
+  }, [db]);
 
   useEffect(() => {
     if (addWordOpen) return;
@@ -58,7 +66,7 @@ export function NewWordsSession() {
     return () => {
       cancelled = true;
     };
-  }, [addWordOpen]);
+  }, [db, addWordOpen]);
 
   function advanceTo(nextPool: Word[], justShownId: number) {
     setPool(nextPool);

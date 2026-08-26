@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { db } from '@/db/db';
+import { useDb } from '@/db/useDb';
 import { createWord } from '@/db/createWord';
 import { isUsableWord } from '@/db/isUsableWord';
 import type { Word } from '@/db/word.type';
@@ -10,6 +10,7 @@ import { detectWordKind } from '@/lib/detectWordKind';
 import { duplicateKey } from '@/lib/duplicateKey';
 import { normalizeTerm } from '@/lib/normalizeTerm';
 import { useTranslation } from '@/lib/useTranslation';
+import { useUIStore } from '@/store/useUIStore';
 
 const DUPLICATE_CHECK_DEBOUNCE_MS = 300;
 const HAS_MEANINGFUL_CHARACTER = /[\p{L}\p{N}]/u;
@@ -21,6 +22,8 @@ export interface WordFormProps {
 }
 
 export function WordForm({ mode, word, onDone }: WordFormProps) {
+  const db = useDb();
+  const studyLanguage = useUIStore((s) => s.studyLanguage);
   const [term, setTerm] = useState(word?.term ?? '');
   const [translation, setTranslation] = useState(word?.translation ?? '');
   const [duplicate, setDuplicate] = useState(false);
@@ -37,9 +40,9 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
   }, []);
 
   async function countExistingCollisions(value: string): Promise<number> {
-    const needle = duplicateKey(value);
+    const needle = duplicateKey(value, studyLanguage);
     return db.words
-      .filter((w) => w.id !== word?.id && isUsableWord(w) && duplicateKey(w.term) === needle)
+      .filter((w) => w.id !== word?.id && isUsableWord(w) && duplicateKey(w.term, studyLanguage) === needle)
       .count();
   }
 
@@ -102,10 +105,10 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
         await db.words.update(word.id, {
           term: trimmedTerm,
           translation: trimmedTranslation,
-          kind: detectWordKind(trimmedTerm),
+          kind: detectWordKind(trimmedTerm, studyLanguage),
         });
       } else {
-        await db.words.add(createWord(trimmedTerm, trimmedTranslation));
+        await db.words.add(createWord(trimmedTerm, trimmedTranslation, studyLanguage));
       }
 
       onDone();

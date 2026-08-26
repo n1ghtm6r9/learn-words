@@ -10,7 +10,7 @@ export function LanguageSection() {
   return (
     <div className="flex flex-col gap-1.5 text-sm">
       {t.languageLabel}
-      <div className="flex gap-2">
+      <div role="group" aria-label={t.languageLabel} className="flex gap-2">
         <Button type="button" variant={language === 'ru' ? 'default' : 'outline'} size="sm" onClick={() => setLanguage('ru')}>
           Русский
         </Button>

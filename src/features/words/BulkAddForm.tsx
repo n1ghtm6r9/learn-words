@@ -1,25 +1,30 @@
 import { useMemo, useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { db } from '@/db/db';
+import { useDb } from '@/db/useDb';
 import { createWord } from '@/db/createWord';
 import { isUsableWord } from '@/db/isUsableWord';
 import { duplicateKey } from '@/lib/duplicateKey';
 import { parseWordLines } from '@/lib/parseWordLines';
 import type { ParsedWordLine } from '@/lib/parsedWordLine.type';
 import { useTranslation } from '@/lib/useTranslation';
+import type { StudyLanguage } from '@/store/studyLanguage.type';
+import { useUIStore } from '@/store/useUIStore';
 
 interface BulkAddFormProps {
   onDone: () => void;
 }
 
-function dedupeByTerm(lines: ParsedWordLine[]): { unique: ParsedWordLine[]; duplicateCount: number } {
+function dedupeByTerm(
+  lines: ParsedWordLine[],
+  language: StudyLanguage,
+): { unique: ParsedWordLine[]; duplicateCount: number } {
   const seen = new Set<string>();
   const unique: ParsedWordLine[] = [];
   let duplicateCount = 0;
 
   for (const line of lines) {
-    const key = duplicateKey(line.term);
+    const key = duplicateKey(line.term, language);
     if (seen.has(key)) {
       duplicateCount += 1;
       continue;
@@ -32,6 +37,8 @@ function dedupeByTerm(lines: ParsedWordLine[]): { unique: ParsedWordLine[]; dupl
 }
 
 export function BulkAddForm({ onDone }: BulkAddFormProps) {
+  const db = useDb();
+  const studyLanguage = useUIStore((s) => s.studyLanguage);
   const [text, setText] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
@@ -39,9 +46,9 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
 
   const { invalidLines, valid, duplicateCount } = useMemo(() => {
     const parsed = parseWordLines(text);
-    const { unique, duplicateCount } = dedupeByTerm(parsed.valid);
+    const { unique, duplicateCount } = dedupeByTerm(parsed.valid, studyLanguage);
     return { invalidLines: parsed.invalidLines, valid: unique, duplicateCount };
-  }, [text]);
+  }, [text, studyLanguage]);
 
   async function handleSaveAll() {
     if (valid.length === 0 || isSaving) return;
@@ -49,11 +56,11 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
     setSaveError(false);
     try {
       const existing = new Set(
-        (await db.words.toArray()).filter(isUsableWord).map((w) => duplicateKey(w.term)),
+        (await db.words.toArray()).filter(isUsableWord).map((w) => duplicateKey(w.term, studyLanguage)),
       );
       const toSave = valid
-        .map((line) => createWord(line.term, line.translation))
-        .filter((word) => !existing.has(duplicateKey(word.term)));
+        .map((line) => createWord(line.term, line.translation, studyLanguage))
+        .filter((word) => !existing.has(duplicateKey(word.term, studyLanguage)));
       if (toSave.length > 0) {
         await db.words.bulkAdd(toSave);
       }
@@ -74,7 +81,7 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={8}
-          placeholder={t.wordListPlaceholder}
+          placeholder={t.wordListPlaceholder(studyLanguage)}
           className="w-full rounded-lg border border-input bg-transparent p-2.5 font-mono text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
       </label>

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { detectWordKind } from './detectWordKind';
 import { duplicateKey } from './duplicateKey';
 
 describe('duplicateKey', () => {
@@ -34,5 +35,20 @@ describe('duplicateKey', () => {
 
   it('keeps different words apart', () => {
     expect(duplicateKey('to laugh')).not.toBe(duplicateKey('to cry'));
+  });
+
+  it('leaves Spanish terms alone, since Spanish infinitives carry no marker', () => {
+    expect(duplicateKey('hablar', 'es')).toBe('hablar');
+    expect(duplicateKey('  Hablar  ', 'es')).toBe('hablar');
+  });
+
+  it('keeps Spanish nouns apart when only the article differs', () => {
+    expect(duplicateKey('el capital', 'es')).not.toBe(duplicateKey('la capital', 'es'));
+  });
+
+  it('agrees with detectWordKind about what the infinitive marker means', () => {
+    expect(duplicateKey('to eat')).toBe(duplicateKey('eat'));
+    expect(detectWordKind('to eat')).toBe(detectWordKind('eat'));
+    expect(detectWordKind('to give up')).toBe(detectWordKind('give up'));
   });
 });

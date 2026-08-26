@@ -3,14 +3,17 @@ vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NewWordsSession } from './NewWordsSession';
-import { db } from '@/db/db';
+import { getDb } from '@/db/getDb';
 import { createWord } from '@/db/createWord';
 import { useUIStore } from '@/store/useUIStore';
 import { DEFAULT_DIFFICULTY, INITIAL_STABILITY_DAYS } from '@/lib/memoryParams';
 
+const db = getDb('en');
+
 describe('NewWordsSession', () => {
   beforeEach(async () => {
     await db.words.clear();
+    useUIStore.setState({ studyLanguage: 'en' });
     useUIStore.setState({ phaseARepeats: 1, phaseBRepeats: 1, screen: 'newWords' });
   });
 

@@ -1,12 +1,19 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsPage } from './SettingsPage';
 import { useUIStore } from '@/store/useUIStore';
 
 describe('SettingsPage', () => {
   beforeEach(() => {
-    useUIStore.setState({ phaseARepeats: 3, phaseBRepeats: 3, theme: 'light', accentColor: 'blue', language: 'ru' });
+    useUIStore.setState({
+      phaseARepeats: 3,
+      phaseBRepeats: 3,
+      theme: 'light',
+      accentColor: 'blue',
+      language: 'ru',
+      studyLanguage: 'en',
+    });
   });
 
   it('shows current values and commits them to the store once editing finishes', async () => {
@@ -104,10 +111,23 @@ describe('SettingsPage', () => {
 
     expect(screen.getByText('Тема')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'English' }));
+    await user.click(
+      within(screen.getByRole('group', { name: 'Язык интерфейса' })).getByRole('button', { name: 'English' }),
+    );
 
     expect(useUIStore.getState().language).toBe('en');
     expect(screen.getByText('Theme')).toBeInTheDocument();
     expect(screen.getByLabelText(/Repeats in the recognition phase/)).toBeInTheDocument();
+  });
+
+  it('switches the language being studied', async () => {
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+
+    await user.click(
+      within(screen.getByRole('group', { name: 'Язык изучения' })).getByRole('button', { name: 'Español' }),
+    );
+
+    expect(useUIStore.getState().studyLanguage).toBe('es');
   });
 });

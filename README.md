@@ -8,6 +8,10 @@ far less often. Includes a flashcard study session,
 a word list with search/edit/delete, and a stats page with accuracy and
 activity tracking.
 
+You can study English or Spanish: the language is picked in the settings, and each
+one keeps its own dictionary, its own pronunciation voice and its own rules for
+telling a word from a phrase.
+
 All data is stored locally in the browser (IndexedDB) — there is no backend.
 
 ## Tech stack
