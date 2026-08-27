@@ -10,6 +10,6 @@ export const SPANISH_PROFILE: StudyLanguageProfile = {
   databaseName: 'vocab-db-es',
   verbParticles: SPANISH_VERB_PARTICLES,
   lexicalPrefix: ARTICLE,
-  duplicatePrefix: null,
+  identityPrefix: null,
   contractions: SPANISH_CONTRACTIONS,
 };

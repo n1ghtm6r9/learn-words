@@ -77,4 +77,15 @@ describe('detectWordKind', () => {
     expect(detectWordKind('la', 'es')).toBe('word');
     expect(detectWordKind('to')).toBe('word');
   });
+
+  it('recognizes an English noun carrying its article as a word', () => {
+    expect(detectWordKind('a car')).toBe('word');
+    expect(detectWordKind('an apple')).toBe('word');
+    expect(detectWordKind('the sun')).toBe('word');
+  });
+
+  it('still reads a quantifier that needs its article as a phrase', () => {
+    expect(detectWordKind('a few')).toBe('phrase');
+    expect(detectWordKind('a lot')).toBe('phrase');
+  });
 });

@@ -51,4 +51,27 @@ describe('duplicateKey', () => {
     expect(detectWordKind('to eat')).toBe(detectWordKind('eat'));
     expect(detectWordKind('to give up')).toBe(detectWordKind('give up'));
   });
+
+  it('treats a noun as the same word with or without its article', () => {
+    expect(duplicateKey('a car')).toBe(duplicateKey('car'));
+    expect(duplicateKey('an apple')).toBe(duplicateKey('apple'));
+    expect(duplicateKey('The Sun')).toBe(duplicateKey('sun'));
+  });
+
+  it('keeps the quantifiers whose meaning depends on the article', () => {
+    expect(duplicateKey('a few')).not.toBe(duplicateKey('few'));
+    expect(duplicateKey('a little')).not.toBe(duplicateKey('little'));
+    expect(duplicateKey('a lot')).not.toBe(duplicateKey('lot'));
+    expect(duplicateKey('a while')).not.toBe(duplicateKey('while'));
+  });
+
+  it('keeps a bare article usable as a term of its own', () => {
+    expect(duplicateKey('a')).toBe('a');
+    expect(duplicateKey('the')).toBe('the');
+  });
+
+  it('leaves the Spanish article in place, since it carries gender', () => {
+    expect(duplicateKey('la casa', 'es')).not.toBe(duplicateKey('casa', 'es'));
+    expect(duplicateKey('el capital', 'es')).not.toBe(duplicateKey('la capital', 'es'));
+  });
 });

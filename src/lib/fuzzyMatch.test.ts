@@ -98,6 +98,22 @@ describe('matchAnswer', () => {
     expect(matchAnswer('do not', "don't", 'es')).not.toBe('correct');
   });
 
+  it('accepts a noun with or without its article', () => {
+    expect(matchAnswer('car', 'a car')).toBe('correct');
+    expect(matchAnswer('a car', 'car')).toBe('correct');
+    expect(matchAnswer('apple', 'an apple')).toBe('correct');
+    expect(matchAnswer('laugh', 'to laugh')).toBe('correct');
+  });
+
+  it('holds the learner to the article when it changes the meaning', () => {
+    expect(matchAnswer('few', 'a few')).toBe('wrong');
+    expect(matchAnswer('little', 'a little')).toBe('wrong');
+  });
+
+  it('keeps the Spanish article, since dropping it would lose the gender', () => {
+    expect(matchAnswer('la capital', 'el capital', 'es')).toBe('wrong');
+  });
+
   it('does not let contraction hide a genuinely different answer', () => {
     expect(matchAnswer('that is when', "that's why")).toBe('wrong');
     expect(matchAnswer('do not go', "don't stop")).toBe('wrong');

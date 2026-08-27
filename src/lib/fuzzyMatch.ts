@@ -1,5 +1,7 @@
 import type { StudyLanguage } from '@/languages/studyLanguage.type';
+import { STUDY_LANGUAGE_PROFILES } from '@/languages/studyLanguageProfiles';
 import { contract } from './contract';
+import { withoutPrefix } from './withoutPrefix';
 
 export type MatchVerdict = 'correct' | 'almost' | 'wrong';
 
@@ -41,6 +43,10 @@ const MINOR_ERROR_DISTANCE = 1;
 
 const VERDICT_RANK: Record<MatchVerdict, number> = { wrong: 0, almost: 1, correct: 2 };
 
+function sameWordForm(text: string, language: StudyLanguage): string {
+  return contract(withoutPrefix(text, STUDY_LANGUAGE_PROFILES[language].identityPrefix), language);
+}
+
 function verdictFor(a: string, b: string): MatchVerdict {
   if (a === b) return 'correct';
   if (a.length === 0) return 'wrong';
@@ -62,7 +68,7 @@ export function matchAnswer(input: string, expected: string, language: StudyLang
   const written = verdictFor(a, b);
   if (written === 'correct') return written;
 
-  const contracted = verdictFor(contract(a, language), contract(b, language));
+  const contracted = verdictFor(sameWordForm(a, language), sameWordForm(b, language));
   return VERDICT_RANK[contracted] > VERDICT_RANK[written] ? contracted : written;
 }
 
@@ -70,5 +76,5 @@ export function matchAccuracy(input: string, expected: string, language: StudyLa
   const a = normalize(input);
   const b = normalize(expected);
 
-  return Math.max(accuracyFor(a, b), accuracyFor(contract(a, language), contract(b, language)));
+  return Math.max(accuracyFor(a, b), accuracyFor(sameWordForm(a, language), sameWordForm(b, language)));
 }

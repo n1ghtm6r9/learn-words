@@ -6,6 +6,6 @@ export interface StudyLanguageProfile {
   databaseName: string;
   verbParticles: ReadonlySet<string>;
   lexicalPrefix: RegExp | null;
-  duplicatePrefix: RegExp | null;
+  identityPrefix: RegExp | null;
   contractions: readonly ContractionRule[];
 }
