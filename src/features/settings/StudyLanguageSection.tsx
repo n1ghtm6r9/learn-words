@@ -1,10 +1,8 @@
 import { Button } from '@/components/ui/button';
-import { STUDY_LANGUAGE_NAMES } from '@/lib/studyLanguageNames';
+import { STUDY_LANGUAGE_PROFILES } from '@/languages/studyLanguageProfiles';
+import { STUDY_LANGUAGES } from '@/languages/studyLanguages';
 import { useTranslation } from '@/lib/useTranslation';
-import type { StudyLanguage } from '@/store/studyLanguage.type';
 import { useUIStore } from '@/store/useUIStore';
-
-const STUDY_LANGUAGES = Object.keys(STUDY_LANGUAGE_NAMES) as StudyLanguage[];
 
 export function StudyLanguageSection() {
   const studyLanguage = useUIStore((s) => s.studyLanguage);
@@ -23,7 +21,7 @@ export function StudyLanguageSection() {
             size="sm"
             onClick={() => setStudyLanguage(language)}
           >
-            {STUDY_LANGUAGE_NAMES[language]}
+            {STUDY_LANGUAGE_PROFILES[language].name}
           </Button>
         ))}
       </div>

@@ -11,6 +11,7 @@ import { useVisibleElapsedTimer } from '@/lib/useVisibleElapsedTimer';
 import { isSpeechSupported } from '@/lib/tts';
 import { useSpeak } from '@/lib/useSpeak';
 import { useTranslation } from '@/lib/useTranslation';
+import { useUIStore } from '@/store/useUIStore';
 import type { TranslationKeys } from '@/lib/translationKeys.type';
 
 const CORRECT_FLASH_MS = 500;
@@ -60,6 +61,7 @@ export function RecognitionCard({
   const timer = useVisibleElapsedTimer();
   const t = useTranslation();
   const speak = useSpeak();
+  const studyLanguage = useUIStore((s) => s.studyLanguage);
 
   useEffect(() => {
     if (!showCorrectFlash) return;
@@ -88,7 +90,7 @@ export function RecognitionCard({
     event.preventDefault();
     if (input.trim() === '') return;
 
-    const verdict = matchAnswer(input, term);
+    const verdict = matchAnswer(input, term, studyLanguage);
 
     if (verdict === 'correct') {
       setError(null);
@@ -99,7 +101,7 @@ export function RecognitionCard({
 
     if (originalVerdict === null) {
       setOriginalVerdict(verdict);
-      setOriginalAccuracy(matchAccuracy(input, term));
+      setOriginalAccuracy(matchAccuracy(input, term, studyLanguage));
     }
     setError({ verdict });
   }

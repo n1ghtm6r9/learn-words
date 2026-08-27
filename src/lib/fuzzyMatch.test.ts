@@ -63,6 +63,51 @@ describe('matchAnswer', () => {
     expect(matchAnswer('ёлка', nfd)).toBe('correct');
   });
 
+  it('accepts the written-out form of a contracted term', () => {
+    expect(matchAnswer('that is why', "that's why")).toBe('correct');
+    expect(matchAnswer('do not', "don't")).toBe('correct');
+    expect(matchAnswer('I am', "i'm")).toBe('correct');
+  });
+
+  it('accepts the contracted form of a written-out term', () => {
+    expect(matchAnswer("that's why", 'that is why')).toBe('correct');
+    expect(matchAnswer("can't", 'cannot')).toBe('correct');
+    expect(matchAnswer("can't", 'can not')).toBe('correct');
+  });
+
+  it('accepts either reading of an ambiguous contraction', () => {
+    expect(matchAnswer('he is gone', "he's gone")).toBe('correct');
+    expect(matchAnswer('he has gone', "he's gone")).toBe('correct');
+  });
+
+  it('accepts a curly apostrophe where the term has a straight one', () => {
+    expect(matchAnswer('don\u2019t', "don't")).toBe('correct');
+  });
+
+  it('accepts either way of negating an auxiliary', () => {
+    expect(matchAnswer("he's not here", 'he is not here')).toBe('correct');
+    expect(matchAnswer("he isn't here", "he's not here")).toBe('correct');
+  });
+
+  it('accepts the contractions of the language being studied', () => {
+    expect(matchAnswer('a el parque', 'al parque', 'es')).toBe('correct');
+    expect(matchAnswer('del coche', 'de el coche', 'es')).toBe('correct');
+  });
+
+  it('does not apply one language contractions to another', () => {
+    expect(matchAnswer('do not', "don't", 'es')).not.toBe('correct');
+  });
+
+  it('does not let contraction hide a genuinely different answer', () => {
+    expect(matchAnswer('that is when', "that's why")).toBe('wrong');
+    expect(matchAnswer('do not go', "don't stop")).toBe('wrong');
+  });
+
+  it('keeps the usual typo tolerance around a contractable phrase', () => {
+    expect(matchAnswer('do nol go', 'do not go')).toBe('almost');
+    expect(matchAnswer('the dogs tail', "the dog's tail")).toBe('almost');
+  });
+
   it('a trailing punctuation mark on the stored term does not block a correct answer', () => {
     expect(matchAnswer('etc', 'etc.')).toBe('correct');
   });
@@ -97,5 +142,9 @@ describe('matchAccuracy', () => {
 
   it('case and whitespace normalization do not affect accuracy', () => {
     expect(matchAccuracy('  CAT  ', 'cat')).toBe(1);
+  });
+  it('scores a written-out answer to a contracted term as a full match', () => {
+    expect(matchAccuracy('that is why', "that's why")).toBe(1);
+    expect(matchAccuracy("don't", 'do not')).toBe(1);
   });
 });

@@ -14,7 +14,7 @@ import {
   MIN_STABILITY_DAYS,
 } from '@/lib/memoryParams';
 import { seedStabilityFromLegacyRating } from '@/lib/seedStabilityFromLegacyRating';
-import type { StudyLanguage } from '@/store/studyLanguage.type';
+import type { StudyLanguage } from '@/languages/studyLanguage.type';
 import { useUIStore } from '@/store/useUIStore';
 import type { ImportResult } from './importResult.type';
 import type { ImportedWord } from './importedWord.type';

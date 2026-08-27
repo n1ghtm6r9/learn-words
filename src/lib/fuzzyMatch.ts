@@ -1,3 +1,6 @@
+import type { StudyLanguage } from '@/languages/studyLanguage.type';
+import { contract } from './contract';
+
 export type MatchVerdict = 'correct' | 'almost' | 'wrong';
 
 function levenshtein(a: string, b: string): number {
@@ -23,30 +26,49 @@ function levenshtein(a: string, b: string): number {
 }
 
 const TRAILING_PUNCTUATION = /[.,;:!?]+$/;
+const APOSTROPHES = /[\u2018\u2019\u02bc\u0060\u00b4]/g;
 
 function normalize(text: string): string {
-  return text.normalize('NFC').trim().toLowerCase().replace(TRAILING_PUNCTUATION, '');
+  return text
+    .normalize('NFC')
+    .trim()
+    .toLowerCase()
+    .replace(APOSTROPHES, "'")
+    .replace(TRAILING_PUNCTUATION, '');
 }
 
 const MINOR_ERROR_DISTANCE = 1;
 
-export function matchAnswer(input: string, expected: string): MatchVerdict {
-  const a = normalize(input);
-  const b = normalize(expected);
+const VERDICT_RANK: Record<MatchVerdict, number> = { wrong: 0, almost: 1, correct: 2 };
 
+function verdictFor(a: string, b: string): MatchVerdict {
   if (a === b) return 'correct';
   if (a.length === 0) return 'wrong';
 
   return levenshtein(a, b) === MINOR_ERROR_DISTANCE ? 'almost' : 'wrong';
 }
 
-export function matchAccuracy(input: string, expected: string): number {
-  const a = normalize(input);
-  const b = normalize(expected);
-
+function accuracyFor(a: string, b: string): number {
   if (a === b) return 1;
   if (b.length === 0) return a.length === 0 ? 1 : 0;
 
-  const distance = levenshtein(a, b);
-  return Math.max(0, 1 - distance / b.length);
+  return Math.max(0, 1 - levenshtein(a, b) / b.length);
+}
+
+export function matchAnswer(input: string, expected: string, language: StudyLanguage = 'en'): MatchVerdict {
+  const a = normalize(input);
+  const b = normalize(expected);
+
+  const written = verdictFor(a, b);
+  if (written === 'correct') return written;
+
+  const contracted = verdictFor(contract(a, language), contract(b, language));
+  return VERDICT_RANK[contracted] > VERDICT_RANK[written] ? contracted : written;
+}
+
+export function matchAccuracy(input: string, expected: string, language: StudyLanguage = 'en'): number {
+  const a = normalize(input);
+  const b = normalize(expected);
+
+  return Math.max(accuracyFor(a, b), accuracyFor(contract(a, language), contract(b, language)));
 }

@@ -1,12 +1,12 @@
-import type { StudyLanguage } from '@/store/studyLanguage.type';
-import { INFINITIVE_MARKER } from './infinitiveMarker';
+import type { StudyLanguage } from '@/languages/studyLanguage.type';
+import { STUDY_LANGUAGE_PROFILES } from '@/languages/studyLanguageProfiles';
 import { normalizeTerm } from './normalizeTerm';
 
 export function duplicateKey(term: string, language: StudyLanguage = 'en'): string {
   const normalized = normalizeTerm(term).toLowerCase();
-  const marker = INFINITIVE_MARKER[language];
-  if (marker === null) return normalized;
+  const prefix = STUDY_LANGUAGE_PROFILES[language].duplicatePrefix;
+  if (prefix === null) return normalized;
 
-  const withoutMarker = normalized.replace(marker, '');
-  return withoutMarker === '' ? normalized : withoutMarker;
+  const withoutPrefix = normalized.replace(prefix, '');
+  return withoutPrefix === '' ? normalized : withoutPrefix;
 }

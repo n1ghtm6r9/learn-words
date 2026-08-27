@@ -1,10 +1,8 @@
 import type { WordKind } from '@/db/wordKind.type';
-import type { StudyLanguage } from '@/store/studyLanguage.type';
-import { LEXICAL_PREFIX } from './lexicalPrefix';
-import { VERB_PARTICLES } from './verbParticles';
+import type { StudyLanguage } from '@/languages/studyLanguage.type';
+import { STUDY_LANGUAGE_PROFILES } from '@/languages/studyLanguageProfiles';
 
-function withoutLexicalPrefix(term: string, language: StudyLanguage): string {
-  const prefix = LEXICAL_PREFIX[language];
+function withoutLexicalPrefix(term: string, prefix: RegExp | null): string {
   if (prefix === null) return term;
 
   const stripped = term.replace(prefix, '');
@@ -16,10 +14,11 @@ function isParticleVerb(tokens: string[], particles: ReadonlySet<string>): boole
 }
 
 export function detectWordKind(term: string, language: StudyLanguage = 'en'): WordKind {
-  const lexeme = withoutLexicalPrefix(term.trim().toLowerCase(), language);
+  const profile = STUDY_LANGUAGE_PROFILES[language];
+  const lexeme = withoutLexicalPrefix(term.trim().toLowerCase(), profile.lexicalPrefix);
   const tokens = lexeme.split(/\s+/).filter(Boolean);
 
   if (tokens.length <= 1) return 'word';
-  if (isParticleVerb(tokens, VERB_PARTICLES[language])) return 'word';
+  if (isParticleVerb(tokens, profile.verbParticles)) return 'word';
   return 'phrase';
 }

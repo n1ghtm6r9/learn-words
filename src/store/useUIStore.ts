@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { ACCENT_PALETTE } from '@/lib/accentPalette';
-import { STUDY_LANGUAGE_NAMES } from '@/lib/studyLanguageNames';
+import { STUDY_LANGUAGES } from '@/languages/studyLanguages';
 import { TRANSLATIONS } from '@/lib/translations';
 import { parsePositiveInt } from '@/lib/parsePositiveInt';
 import { MIN_PHASE_REPEATS, MAX_PHASE_REPEATS } from '@/lib/phaseRepeatsRange';
@@ -9,7 +9,7 @@ import type { Screen } from './screen.type';
 import type { Theme } from './theme.type';
 import type { AccentColor } from './accentColor.type';
 import type { Language } from './language.type';
-import type { StudyLanguage } from './studyLanguage.type';
+import type { StudyLanguage } from '@/languages/studyLanguage.type';
 
 const DEFAULT_PHASE_REPEATS = 3;
 const DEFAULT_ACCENT_COLOR: AccentColor = 'blue';
@@ -17,7 +17,6 @@ const ACCENT_COLORS = Object.keys(ACCENT_PALETTE) as AccentColor[];
 const DEFAULT_LANGUAGE: Language = 'ru';
 const LANGUAGES = Object.keys(TRANSLATIONS) as Language[];
 const DEFAULT_STUDY_LANGUAGE: StudyLanguage = 'en';
-const STUDY_LANGUAGES = Object.keys(STUDY_LANGUAGE_NAMES) as StudyLanguage[];
 
 function safeGetItem(key: string): string | null {
   try {

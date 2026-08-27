@@ -10,7 +10,7 @@ import { WordList } from '@/features/words/WordList';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { useUIStore } from '@/store/useUIStore';
 import { applyAccentColor } from '@/lib/applyAccentColor';
-import { STUDY_LANGUAGE_NAMES } from '@/lib/studyLanguageNames';
+import { STUDY_LANGUAGE_PROFILES } from '@/languages/studyLanguageProfiles';
 import { useTranslation } from '@/lib/useTranslation';
 
 function App() {
@@ -45,7 +45,7 @@ function App() {
           <h1 className="font-mono text-base font-semibold tracking-tight">{t.appTitle}</h1>
           <span
             role="img"
-            aria-label={`${t.studyLanguageLabel}: ${STUDY_LANGUAGE_NAMES[studyLanguage]}`}
+            aria-label={`${t.studyLanguageLabel}: ${STUDY_LANGUAGE_PROFILES[studyLanguage].name}`}
             className="rounded-full bg-secondary px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-wide text-muted-foreground uppercase"
           >
             {studyLanguage}

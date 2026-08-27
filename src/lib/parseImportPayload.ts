@@ -1,8 +1,8 @@
 import type { AccentColor } from '@/store/accentColor.type';
 import type { Language } from '@/store/language.type';
-import type { StudyLanguage } from '@/store/studyLanguage.type';
+import type { StudyLanguage } from '@/languages/studyLanguage.type';
 import { ACCENT_PALETTE } from './accentPalette';
-import { STUDY_LANGUAGE_NAMES } from './studyLanguageNames';
+import { STUDY_LANGUAGES } from '@/languages/studyLanguages';
 import { TRANSLATIONS } from './translations';
 import { parsePositiveInt } from './parsePositiveInt';
 import { MIN_PHASE_REPEATS, MAX_PHASE_REPEATS } from './phaseRepeatsRange';
@@ -51,7 +51,7 @@ function parseSettings(rawSettings: unknown): Partial<Settings> | null {
 
   if (
     typeof candidate.studyLanguage === 'string' &&
-    Object.keys(STUDY_LANGUAGE_NAMES).includes(candidate.studyLanguage)
+    (STUDY_LANGUAGES as string[]).includes(candidate.studyLanguage)
   ) {
     settings.studyLanguage = candidate.studyLanguage as StudyLanguage;
   }

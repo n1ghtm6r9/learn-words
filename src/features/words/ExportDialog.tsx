@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useDb } from '@/db/useDb';
 import { buildExportPayload } from '@/lib/buildExportPayload';
 import { useTranslation } from '@/lib/useTranslation';
-import type { StudyLanguage } from '@/store/studyLanguage.type';
+import type { StudyLanguage } from '@/languages/studyLanguage.type';
 import { useUIStore } from '@/store/useUIStore';
 
 interface ExportDialogProps {

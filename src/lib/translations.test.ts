@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseWordLines } from './parseWordLines';
 import { TRANSLATIONS } from './translations';
 import type { Language } from '@/store/language.type';
-import type { StudyLanguage } from '@/store/studyLanguage.type';
+import type { StudyLanguage } from '@/languages/studyLanguage.type';
 
 const UI_LANGUAGES = Object.keys(TRANSLATIONS) as Language[];
 const STUDIED = ['en', 'es'] as StudyLanguage[];

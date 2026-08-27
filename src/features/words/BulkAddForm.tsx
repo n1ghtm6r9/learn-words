@@ -8,7 +8,7 @@ import { duplicateKey } from '@/lib/duplicateKey';
 import { parseWordLines } from '@/lib/parseWordLines';
 import type { ParsedWordLine } from '@/lib/parsedWordLine.type';
 import { useTranslation } from '@/lib/useTranslation';
-import type { StudyLanguage } from '@/store/studyLanguage.type';
+import type { StudyLanguage } from '@/languages/studyLanguage.type';
 import { useUIStore } from '@/store/useUIStore';
 
 interface BulkAddFormProps {

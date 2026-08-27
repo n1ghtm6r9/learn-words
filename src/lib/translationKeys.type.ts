@@ -1,4 +1,4 @@
-import type { StudyLanguage } from '@/store/studyLanguage.type';
+import type { StudyLanguage } from '@/languages/studyLanguage.type';
 
 export interface TranslationKeys {
   appTitle: string;

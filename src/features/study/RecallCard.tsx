@@ -11,6 +11,7 @@ import { useVisibleElapsedTimer } from '@/lib/useVisibleElapsedTimer';
 import { isSpeechSupported } from '@/lib/tts';
 import { useSpeak } from '@/lib/useSpeak';
 import { useTranslation } from '@/lib/useTranslation';
+import { useUIStore } from '@/store/useUIStore';
 import type { TranslationKeys } from '@/lib/translationKeys.type';
 
 const CORRECT_FLASH_MS = 500;
@@ -61,6 +62,7 @@ export function RecallCard({
   const timer = useVisibleElapsedTimer();
   const t = useTranslation();
   const speak = useSpeak();
+  const studyLanguage = useUIStore((s) => s.studyLanguage);
 
   useEffect(() => {
     if (!showCorrectFlash) return;
@@ -89,7 +91,7 @@ export function RecallCard({
     event.preventDefault();
     if (input.trim() === '') return;
 
-    const verdict = matchAnswer(input, expectedTerm);
+    const verdict = matchAnswer(input, expectedTerm, studyLanguage);
 
     if (verdict === 'correct') {
       setError(null);
@@ -100,7 +102,7 @@ export function RecallCard({
 
     if (originalVerdict === null) {
       setOriginalVerdict(verdict);
-      setOriginalAccuracy(matchAccuracy(input, expectedTerm));
+      setOriginalAccuracy(matchAccuracy(input, expectedTerm, studyLanguage));
     }
     setError({ verdict, correctAnswer: expectedTerm });
   }

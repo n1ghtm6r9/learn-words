@@ -2,7 +2,7 @@ import type { Word } from '@/db/word.type';
 import type { Theme } from '@/store/theme.type';
 import type { AccentColor } from '@/store/accentColor.type';
 import type { Language } from '@/store/language.type';
-import type { StudyLanguage } from '@/store/studyLanguage.type';
+import type { StudyLanguage } from '@/languages/studyLanguage.type';
 
 export interface ExportPayload {
   version: 3;
