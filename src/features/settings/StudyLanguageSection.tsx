@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { STUDY_LANGUAGE_PROFILES } from '@/languages/studyLanguageProfiles';
 import { STUDY_LANGUAGES } from '@/languages/studyLanguages';
-import { useTranslation } from '@/lib/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 
 export function StudyLanguageSection() {

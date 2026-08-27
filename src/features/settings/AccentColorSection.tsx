@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ACCENT_PALETTE } from '@/lib/accentPalette';
-import { useTranslation } from '@/lib/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { AccentColor } from '@/store/accentColor.type';
 import { useUIStore } from '@/store/useUIStore';
 

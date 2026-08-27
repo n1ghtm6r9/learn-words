@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { useTranslation } from '@/lib/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { WordForm } from './WordForm';
 import { BulkAddForm } from './BulkAddForm';
 

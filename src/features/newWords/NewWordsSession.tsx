@@ -5,7 +5,7 @@ import { isUsableWord } from '@/db/isUsableWord';
 import type { Word } from '@/db/word.type';
 import type { MatchVerdict } from '@/lib/fuzzyMatch';
 import { DEFAULT_DIFFICULTY, INITIAL_STABILITY_DAYS } from '@/lib/memoryParams';
-import { useTranslation } from '@/lib/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 import { RecognitionCard } from '@/features/study/RecognitionCard';
 import { RecallCard } from '@/features/study/RecallCard';

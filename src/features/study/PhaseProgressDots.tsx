@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { useTranslation } from '@/lib/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface PhaseProgressDotsProps {
   current: number;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useTranslation } from '@/lib/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DeleteWordButtonProps {
   onDelete: () => void;

@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { useTranslation } from '@/lib/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 
 export function ThemeSection() {

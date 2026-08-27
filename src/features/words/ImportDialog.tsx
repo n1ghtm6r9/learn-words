@@ -5,7 +5,7 @@ import { applyImportPayload } from '@/lib/applyImportPayload';
 import type { ImportResult } from '@/lib/importResult.type';
 import { parseImportPayload } from '@/lib/parseImportPayload';
 import type { ParsedImportPayload } from '@/lib/parsedImportPayload.type';
-import { useTranslation } from '@/lib/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ImportDialogProps {
   open: boolean;

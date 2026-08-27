@@ -10,7 +10,7 @@ import type { Word } from '@/db/word.type';
 import { CARD_CLASS } from '@/lib/cardClass';
 import { normalizeTerm } from '@/lib/normalizeTerm';
 import { cn } from '@/lib/utils';
-import { useTranslation } from '@/lib/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 import { ExportDialog } from './ExportDialog';
 import { ImportDialog } from './ImportDialog';

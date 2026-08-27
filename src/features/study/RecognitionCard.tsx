@@ -10,9 +10,9 @@ import { PhaseProgressDots } from './PhaseProgressDots';
 import { useVisibleElapsedTimer } from '@/lib/useVisibleElapsedTimer';
 import { isSpeechSupported } from '@/lib/tts';
 import { useSpeak } from '@/lib/useSpeak';
-import { useTranslation } from '@/lib/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
-import type { TranslationKeys } from '@/lib/translationKeys.type';
+import type { TranslationKeys } from '@/i18n/translationKeys.type';
 
 const CORRECT_FLASH_MS = 500;
 

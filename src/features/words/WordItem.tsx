@@ -9,7 +9,7 @@ import { RATING_DOT_CLASS } from '@/lib/ratingDotClass';
 import { RATING_TEXT_CLASS } from '@/lib/ratingTextClass';
 import { isSpeechSupported } from '@/lib/tts';
 import { useSpeak } from '@/lib/useSpeak';
-import { useTranslation } from '@/lib/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface WordItemProps {
   word: Word;

@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { parseWordLines } from './parseWordLines';
+import { parseWordLines } from '@/lib/parseWordLines';
 import { TRANSLATIONS } from './translations';
-import type { Language } from '@/store/language.type';
+import { UI_LANGUAGES } from './uiLanguages';
 import type { StudyLanguage } from '@/languages/studyLanguage.type';
 
-const UI_LANGUAGES = Object.keys(TRANSLATIONS) as Language[];
 const STUDIED = ['en', 'es'] as StudyLanguage[];
 
 const FIRST_TERM: Record<StudyLanguage, string> = { en: 'hello', es: 'hola' };
@@ -19,5 +18,20 @@ describe('bulk-add placeholder', () => {
         expect(valid[0].term).toBe(FIRST_TERM[studied]);
       }
     }
+  });
+});
+
+describe('translation bundles', () => {
+  it('covers every interface language with the same set of keys', () => {
+    const reference = Object.keys(TRANSLATIONS.ru).sort();
+
+    for (const language of UI_LANGUAGES) {
+      expect(Object.keys(TRANSLATIONS[language]).sort()).toEqual(reference);
+    }
+  });
+
+  it('names each language in that language itself', () => {
+    expect(TRANSLATIONS.ru.languageName).toBe('Русский');
+    expect(TRANSLATIONS.en.languageName).toBe('English');
   });
 });

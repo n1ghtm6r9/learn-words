@@ -1,5 +1,6 @@
 import { Input } from '@/components/ui/input';
-import { useTranslation } from '@/lib/useTranslation';
+import { APP_VERSION } from '@/lib/appVersion';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 import { ThemeSection } from './ThemeSection';
 import { AccentColorSection } from './AccentColorSection';
@@ -31,7 +32,7 @@ export function SettingsPage() {
         <StudyLanguageSection />
       </div>
 
-      <div className="flex flex-col gap-4 pt-5">
+      <div className="flex flex-col gap-4 py-5">
         <label className="flex flex-col gap-1.5 text-sm">
           {t.phaseARepeatsLabel}
           <Input
@@ -74,6 +75,8 @@ export function SettingsPage() {
           />
         </label>
       </div>
+
+      <p className="pt-5 text-center font-mono text-xs text-muted-foreground">{t.appVersion(APP_VERSION)}</p>
     </div>
   );
 }

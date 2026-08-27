@@ -1,21 +1,20 @@
 import { create } from 'zustand';
 import { ACCENT_PALETTE } from '@/lib/accentPalette';
 import { STUDY_LANGUAGES } from '@/languages/studyLanguages';
-import { TRANSLATIONS } from '@/lib/translations';
+import { UI_LANGUAGES } from '@/i18n/uiLanguages';
 import { parsePositiveInt } from '@/lib/parsePositiveInt';
 import { MIN_PHASE_REPEATS, MAX_PHASE_REPEATS } from '@/lib/phaseRepeatsRange';
 import { DEFAULT_REVIEW_LIMIT, MIN_REVIEW_LIMIT, MAX_REVIEW_LIMIT } from '@/lib/reviewLimitRange';
 import type { Screen } from './screen.type';
 import type { Theme } from './theme.type';
 import type { AccentColor } from './accentColor.type';
-import type { Language } from './language.type';
+import type { UiLanguage } from '@/i18n/uiLanguage.type';
 import type { StudyLanguage } from '@/languages/studyLanguage.type';
 
 const DEFAULT_PHASE_REPEATS = 3;
 const DEFAULT_ACCENT_COLOR: AccentColor = 'blue';
 const ACCENT_COLORS = Object.keys(ACCENT_PALETTE) as AccentColor[];
-const DEFAULT_LANGUAGE: Language = 'ru';
-const LANGUAGES = Object.keys(TRANSLATIONS) as Language[];
+const DEFAULT_LANGUAGE: UiLanguage = 'ru';
 const DEFAULT_STUDY_LANGUAGE: StudyLanguage = 'en';
 
 function safeGetItem(key: string): string | null {
@@ -49,8 +48,8 @@ interface UIStore {
   accentColor: AccentColor;
   setAccentColor: (color: AccentColor) => void;
 
-  language: Language;
-  setLanguage: (language: Language) => void;
+  language: UiLanguage;
+  setLanguage: (language: UiLanguage) => void;
 
   studyLanguage: StudyLanguage;
   setStudyLanguage: (language: StudyLanguage) => void;
@@ -74,9 +73,9 @@ function readInitialAccentColor(): AccentColor {
   return (ACCENT_COLORS as string[]).includes(stored ?? '') ? (stored as AccentColor) : DEFAULT_ACCENT_COLOR;
 }
 
-function readInitialLanguage(): Language {
+function readInitialLanguage(): UiLanguage {
   const stored = safeGetItem('language');
-  return (LANGUAGES as string[]).includes(stored ?? '') ? (stored as Language) : DEFAULT_LANGUAGE;
+  return (UI_LANGUAGES as string[]).includes(stored ?? '') ? (stored as UiLanguage) : DEFAULT_LANGUAGE;
 }
 
 function readInitialStudyLanguage(): StudyLanguage {

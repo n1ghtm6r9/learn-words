@@ -9,7 +9,7 @@ import type { Word } from '@/db/word.type';
 import { detectWordKind } from '@/lib/detectWordKind';
 import { duplicateKey } from '@/lib/duplicateKey';
 import { normalizeTerm } from '@/lib/normalizeTerm';
-import { useTranslation } from '@/lib/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 
 const DUPLICATE_CHECK_DEBOUNCE_MS = 300;

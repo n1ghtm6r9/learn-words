@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { BookOpen, Layers, ListChecks } from 'lucide-react';
-import { useTranslation } from '@/lib/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 import type { Screen } from '@/store/screen.type';
 

@@ -11,7 +11,7 @@ import { SettingsPage } from '@/features/settings/SettingsPage';
 import { useUIStore } from '@/store/useUIStore';
 import { applyAccentColor } from '@/lib/applyAccentColor';
 import { STUDY_LANGUAGE_PROFILES } from '@/languages/studyLanguageProfiles';
-import { useTranslation } from '@/lib/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 function App() {
   const screen = useUIStore((s) => s.screen);

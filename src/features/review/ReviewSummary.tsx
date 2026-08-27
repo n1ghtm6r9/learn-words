@@ -4,7 +4,7 @@ import { PartyPopper } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { confettiColors } from '@/lib/confettiColors';
-import { useTranslation } from '@/lib/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ReviewSummaryProps {
   correct: number;

@@ -1,9 +1,9 @@
 import type { AccentColor } from '@/store/accentColor.type';
-import type { Language } from '@/store/language.type';
+import type { UiLanguage } from '@/i18n/uiLanguage.type';
 import type { StudyLanguage } from '@/languages/studyLanguage.type';
 import { ACCENT_PALETTE } from './accentPalette';
 import { STUDY_LANGUAGES } from '@/languages/studyLanguages';
-import { TRANSLATIONS } from './translations';
+import { UI_LANGUAGES } from '@/i18n/uiLanguages';
 import { parsePositiveInt } from './parsePositiveInt';
 import { MIN_PHASE_REPEATS, MAX_PHASE_REPEATS } from './phaseRepeatsRange';
 import { MIN_REVIEW_LIMIT, MAX_REVIEW_LIMIT } from './reviewLimitRange';
@@ -45,8 +45,8 @@ function parseSettings(rawSettings: unknown): Partial<Settings> | null {
     settings.accentColor = candidate.accentColor as AccentColor;
   }
 
-  if (typeof candidate.language === 'string' && Object.keys(TRANSLATIONS).includes(candidate.language)) {
-    settings.language = candidate.language as Language;
+  if (typeof candidate.language === 'string' && (UI_LANGUAGES as string[]).includes(candidate.language)) {
+    settings.language = candidate.language as UiLanguage;
   }
 
   if (

@@ -7,7 +7,7 @@ import { isUsableWord } from '@/db/isUsableWord';
 import { duplicateKey } from '@/lib/duplicateKey';
 import { parseWordLines } from '@/lib/parseWordLines';
 import type { ParsedWordLine } from '@/lib/parsedWordLine.type';
-import { useTranslation } from '@/lib/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { StudyLanguage } from '@/languages/studyLanguage.type';
 import { useUIStore } from '@/store/useUIStore';
 

@@ -6,11 +6,11 @@ import { dueAt } from '@/lib/dueAt';
 import { formatDateTime } from '@/lib/formatDateTime';
 import { isSpeechSupported } from '@/lib/tts';
 import { useSpeak } from '@/lib/useSpeak';
-import { useTranslation } from '@/lib/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
-import type { Language } from '@/store/language.type';
+import type { UiLanguage } from '@/i18n/uiLanguage.type';
 
-function nextReviewText(word: Word, fallback: string, language: Language): string {
+function nextReviewText(word: Word, fallback: string, language: UiLanguage): string {
   const due = dueAt(word);
   return due == null ? fallback : formatDateTime(due, language);
 }

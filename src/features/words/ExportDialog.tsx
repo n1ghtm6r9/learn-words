@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useDb } from '@/db/useDb';
 import { buildExportPayload } from '@/lib/buildExportPayload';
-import { useTranslation } from '@/lib/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { StudyLanguage } from '@/languages/studyLanguage.type';
 import { useUIStore } from '@/store/useUIStore';
 

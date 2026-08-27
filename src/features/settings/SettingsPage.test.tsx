@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsPage } from './SettingsPage';
+import { APP_VERSION } from '@/lib/appVersion';
 import { useUIStore } from '@/store/useUIStore';
 
 describe('SettingsPage', () => {
@@ -129,5 +130,11 @@ describe('SettingsPage', () => {
     );
 
     expect(useUIStore.getState().studyLanguage).toBe('es');
+  });
+
+  it('shows which version of the app is running', () => {
+    render(<SettingsPage />);
+
+    expect(screen.getByText(`Версия ${APP_VERSION}`)).toBeInTheDocument();
   });
 });

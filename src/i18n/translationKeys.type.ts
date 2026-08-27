@@ -1,6 +1,7 @@
 import type { StudyLanguage } from '@/languages/studyLanguage.type';
 
 export interface TranslationKeys {
+  languageName: string;
   appTitle: string;
   navNewWords: string;
   navReview: string;
@@ -124,4 +125,5 @@ export interface TranslationKeys {
   languageLabel: string;
   studyLanguageLabel: string;
   studyLanguageHint: string;
+  appVersion: (version: string) => string;
 }
