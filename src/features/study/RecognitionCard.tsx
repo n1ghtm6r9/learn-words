@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { CARD_CLASS } from '@/lib/cardClass';
 import { matchAccuracy, matchAnswer, type MatchVerdict } from '@/lib/fuzzyMatch';
 import { speedFactor } from '@/lib/responseSpeed';
+import { DeleteWordButton } from './DeleteWordButton';
 import { PhaseProgressDots } from './PhaseProgressDots';
 import { useVisibleElapsedTimer } from '@/lib/useVisibleElapsedTimer';
 import { isSpeechSupported } from '@/lib/tts';
@@ -20,6 +21,7 @@ export interface RecognitionCardProps {
   currentStreak?: number;
   requiredStreak?: number;
   onAnswer: (verdict: MatchVerdict, accuracy: number, speedFactor: number) => void;
+  onDelete?: () => void;
 }
 
 type ErrorVerdict = Exclude<MatchVerdict, 'correct'>;
@@ -38,7 +40,14 @@ function errorFeedbackText(t: TranslationKeys, verdict: ErrorVerdict): string {
   return verdict === 'almost' ? t.recognitionFeedbackAlmost : t.recognitionFeedbackWrong;
 }
 
-export function RecognitionCard({ term, translation, currentStreak, requiredStreak, onAnswer }: RecognitionCardProps) {
+export function RecognitionCard({
+  term,
+  translation,
+  currentStreak,
+  requiredStreak,
+  onAnswer,
+  onDelete,
+}: RecognitionCardProps) {
   const [input, setInput] = useState('');
   const [error, setError] = useState<ErrorFeedback | null>(null);
   const [showCorrectFlash, setShowCorrectFlash] = useState(false);
@@ -115,16 +124,19 @@ export function RecognitionCard({ term, translation, currentStreak, requiredStre
             </span>
             <span className="text-sm text-muted-foreground text-balance">{translation}</span>
           </div>
-          {isSpeechSupported() && (
-            <button
-              type="button"
-              aria-label={t.speak}
-              onClick={() => speak(term)}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
-            >
-              <Volume2 className="h-[18px] w-[18px]" />
-            </button>
-          )}
+          <span className="flex shrink-0 items-center gap-0.5">
+            {isSpeechSupported() && (
+              <button
+                type="button"
+                aria-label={t.speak}
+                onClick={() => speak(term)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
+              >
+                <Volume2 className="h-[18px] w-[18px]" />
+              </button>
+            )}
+            {onDelete && <DeleteWordButton onDelete={onDelete} />}
+          </span>
         </div>
       </div>
 

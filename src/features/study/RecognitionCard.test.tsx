@@ -88,4 +88,26 @@ describe('RecognitionCard', () => {
 
     expect(screen.getByText('Прогресс: 2 из 3')).toBeInTheDocument();
   });
+
+  it('puts the delete control immediately after the speak button', async () => {
+    const onDelete = vi.fn();
+    const user = userEvent.setup();
+    render(<RecognitionCard term="hello" translation="привет" onAnswer={vi.fn()} onDelete={onDelete} />);
+
+    const speak = screen.getByRole('button', { name: 'Озвучить' });
+    const remove = screen.getByRole('button', { name: 'Удалить' });
+    expect(remove.parentElement).toBe(speak.parentElement);
+    expect(speak.compareDocumentPosition(remove) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    await user.click(remove);
+    expect(onDelete).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'Удалить' }));
+    expect(onDelete).toHaveBeenCalledOnce();
+  });
+
+  it('offers no delete control when the card is not allowed to delete', () => {
+    render(<RecognitionCard term="hello" translation="привет" onAnswer={vi.fn()} />);
+
+    expect(screen.queryByRole('button', { name: 'Удалить' })).not.toBeInTheDocument();
+  });
 });

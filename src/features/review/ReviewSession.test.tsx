@@ -231,4 +231,25 @@ describe('ReviewSession', () => {
     expect(word?.learningPhase).toBe('A');
     expect(word?.phaseStreak).toBe(0);
   });
+
+  it('does not offer to delete a word that is already being reviewed', async () => {
+    await db.words.add({
+      term: 'hello',
+      translation: 'привет',
+      createdAt: 0,
+      kind: 'word',
+      stage: 'review',
+      learningPhase: 'A',
+      phaseStreak: 0,
+      stability: 1,
+      difficulty: 5,
+      reviewStreak: 0,
+      lastReviewedAt: Date.now() - DAY_MS * 10,
+    });
+
+    render(<ReviewSession />);
+
+    expect(await screen.findByText('привет')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Удалить' })).not.toBeInTheDocument();
+  });
 });

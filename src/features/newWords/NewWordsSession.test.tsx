@@ -146,4 +146,60 @@ describe('NewWordsSession', () => {
     expect(await screen.findByText('Новые слова выучены')).toBeInTheDocument();
     expect(screen.getByText(/Выучено слов: 1/)).toBeInTheDocument();
   });
+
+  it('drops a word you do not want to learn and moves on to the next one', async () => {
+    await db.words.add(createWord('hello', 'привет'));
+    await db.words.add(createWord('cat', 'кот'));
+    const user = userEvent.setup();
+    render(<NewWordsSession />);
+
+    await screen.findByText('Осталось слов: 2');
+    await user.click(screen.getByRole('button', { name: 'Удалить' }));
+    await user.click(screen.getByRole('button', { name: 'Удалить' }));
+
+    await screen.findByText('Осталось слов: 1');
+    const remaining = await db.words.toArray();
+    expect(remaining).toHaveLength(1);
+  });
+
+  it('keeps the word when the deletion is cancelled', async () => {
+    await db.words.add(createWord('hello', 'привет'));
+    const user = userEvent.setup();
+    render(<NewWordsSession />);
+
+    await screen.findByText('Осталось слов: 1');
+    await user.click(screen.getByRole('button', { name: 'Удалить' }));
+    await user.click(screen.getByRole('button', { name: 'Отмена' }));
+
+    expect(await screen.findByText('Осталось слов: 1')).toBeInTheDocument();
+    expect(await db.words.count()).toBe(1);
+  });
+
+  it('shows the empty state once the last unwanted word is gone', async () => {
+    await db.words.add(createWord('hello', 'привет'));
+    const user = userEvent.setup();
+    render(<NewWordsSession />);
+
+    await screen.findByText('Осталось слов: 1');
+    await user.click(screen.getByRole('button', { name: 'Удалить' }));
+    await user.click(screen.getByRole('button', { name: 'Удалить' }));
+
+    expect(await screen.findByText('Нет новых слов — добавьте немного!')).toBeInTheDocument();
+  });
+
+  it('reports a failed deletion and keeps the word on screen', async () => {
+    await db.words.add(createWord('hello', 'привет'));
+    const deleteSpy = vi.spyOn(db.words, 'delete').mockRejectedValueOnce(new Error('db locked'));
+    const user = userEvent.setup();
+    render(<NewWordsSession />);
+
+    await screen.findByText('Осталось слов: 1');
+    await user.click(screen.getByRole('button', { name: 'Удалить' }));
+    await user.click(screen.getByRole('button', { name: 'Удалить' }));
+
+    expect(await screen.findByText('Не удалось удалить слово. Попробуйте ещё раз.')).toBeInTheDocument();
+    expect(await db.words.count()).toBe(1);
+
+    deleteSpy.mockRestore();
+  });
 });

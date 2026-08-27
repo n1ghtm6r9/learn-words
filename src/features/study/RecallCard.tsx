@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { CARD_CLASS } from '@/lib/cardClass';
 import { matchAccuracy, matchAnswer, type MatchVerdict } from '@/lib/fuzzyMatch';
 import { speedFactor } from '@/lib/responseSpeed';
+import { DeleteWordButton } from './DeleteWordButton';
 import { PhaseProgressDots } from './PhaseProgressDots';
 import { useVisibleElapsedTimer } from '@/lib/useVisibleElapsedTimer';
 import { isSpeechSupported } from '@/lib/tts';
@@ -20,6 +21,7 @@ export interface RecallCardProps {
   currentStreak?: number;
   requiredStreak?: number;
   onAnswer: (verdict: MatchVerdict, accuracy: number, speedFactor: number) => void;
+  onDelete?: () => void;
 }
 
 type ErrorVerdict = Exclude<MatchVerdict, 'correct'>;
@@ -39,7 +41,14 @@ function errorFeedbackLabel(t: TranslationKeys, verdict: ErrorVerdict): string {
   return verdict === 'almost' ? t.recallFeedbackAlmost : t.recallFeedbackWrong;
 }
 
-export function RecallCard({ translation, expectedTerm, currentStreak, requiredStreak, onAnswer }: RecallCardProps) {
+export function RecallCard({
+  translation,
+  expectedTerm,
+  currentStreak,
+  requiredStreak,
+  onAnswer,
+  onDelete,
+}: RecallCardProps) {
   const [input, setInput] = useState('');
   const [error, setError] = useState<ErrorFeedback | null>(null);
   const [showCorrectFlash, setShowCorrectFlash] = useState(false);
@@ -109,7 +118,10 @@ export function RecallCard({ translation, expectedTerm, currentStreak, requiredS
     <div className={`${CARD_CLASS} flex flex-col gap-6 p-6`}>
       <div className="flex flex-col gap-3">
         {showProgress && <PhaseProgressDots current={displayedStreak} total={requiredStreak ?? 0} />}
-        <span className="text-2xl leading-snug font-semibold text-balance">{translation}</span>
+        <div className="flex items-start justify-between gap-3">
+          <span className="text-2xl leading-snug font-semibold text-balance">{translation}</span>
+          {onDelete && <DeleteWordButton onDelete={onDelete} />}
+        </div>
       </div>
 
       <div className="flex min-h-32 flex-col justify-center">

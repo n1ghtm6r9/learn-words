@@ -26,6 +26,7 @@ export function NewWordsSession() {
   const [learnedCount, setLearnedCount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [deleteFailed, setDeleteFailed] = useState(false);
   const phaseARepeats = useUIStore((s) => s.phaseARepeats);
   const phaseBRepeats = useUIStore((s) => s.phaseBRepeats);
   const setScreen = useUIStore((s) => s.setScreen);
@@ -38,6 +39,7 @@ export function NewWordsSession() {
     setCurrentId(null);
     setLearnedCount(0);
     setSaveFailed(false);
+    setDeleteFailed(false);
   }, [db]);
 
   useEffect(() => {
@@ -71,6 +73,23 @@ export function NewWordsSession() {
   function advanceTo(nextPool: Word[], justShownId: number) {
     setPool(nextPool);
     setCurrentId(pickRandomId(nextPool, justShownId));
+  }
+
+  async function handleDelete(word: Word) {
+    const wordId = word.id;
+    if (!pool || wordId == null || isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      await db.words.delete(wordId);
+      setDeleteFailed(false);
+      setTurn((n) => n + 1);
+      advanceTo(pool.filter((w) => w.id !== wordId), wordId);
+    } catch {
+      setDeleteFailed(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   async function handleAnswer(word: Word, verdict: MatchVerdict) {
@@ -162,6 +181,11 @@ export function NewWordsSession() {
           {t.answerSaveError}
         </p>
       )}
+      {deleteFailed && (
+        <p role="alert" className="rounded-md bg-destructive/10 px-2.5 py-1.5 text-sm text-destructive">
+          {t.deleteError}
+        </p>
+      )}
       {current.learningPhase === 'A' ? (
         <RecognitionCard
           key={`${current.id}-A-${turn}`}
@@ -170,6 +194,7 @@ export function NewWordsSession() {
           currentStreak={current.phaseStreak}
           requiredStreak={phaseARepeats}
           onAnswer={(verdict) => void handleAnswer(current, verdict)}
+          onDelete={() => void handleDelete(current)}
         />
       ) : (
         <RecallCard
@@ -179,6 +204,7 @@ export function NewWordsSession() {
           currentStreak={current.phaseStreak}
           requiredStreak={phaseBRepeats}
           onAnswer={(verdict) => void handleAnswer(current, verdict)}
+          onDelete={() => void handleDelete(current)}
         />
       )}
     </div>
