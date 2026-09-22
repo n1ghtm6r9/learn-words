@@ -62,6 +62,27 @@ interface UIStore {
 
   reviewLimit: number;
   setReviewLimit: (value: number) => void;
+
+  lastUsedFolderId: number | null;
+  setLastUsedFolderId: (folderId: number | null) => void;
+
+  selectingWords: boolean;
+  setSelectingWords: (selecting: boolean) => void;
+
+  foldersOpen: boolean;
+  setFoldersOpen: (open: boolean) => void;
+
+  tagsOpen: boolean;
+  setTagsOpen: (open: boolean) => void;
+
+  colorFlowerOpen: boolean;
+  setColorFlowerOpen: (open: boolean) => void;
+
+  reviewFolderFilter: number | null | 'all';
+  setReviewFolderFilter: (value: number | null | 'all') => void;
+
+  reviewTagFilter: number[];
+  setReviewTagFilter: (value: number[]) => void;
 }
 
 function readInitialTheme(): Theme {
@@ -83,6 +104,13 @@ function readInitialStudyLanguage(): StudyLanguage {
   return (STUDY_LANGUAGES as string[]).includes(stored ?? '')
     ? (stored as StudyLanguage)
     : DEFAULT_STUDY_LANGUAGE;
+}
+
+function readLastUsedFolderId(language: StudyLanguage): number | null {
+  const stored = safeGetItem(`lastUsedFolderId:${language}`);
+  if (stored == null) return null;
+  const parsed = Number(stored);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
 function readInitialNumber(key: string, fallback: number, min: number, max: number): number {
@@ -128,7 +156,12 @@ export const useUIStore = create<UIStore>((set) => ({
   studyLanguage: readInitialStudyLanguage(),
   setStudyLanguage: (studyLanguage) => {
     safeSetItem('studyLanguage', studyLanguage);
-    set({ studyLanguage });
+    set({
+      studyLanguage,
+      lastUsedFolderId: readLastUsedFolderId(studyLanguage),
+      reviewFolderFilter: 'all',
+      reviewTagFilter: [],
+    });
   },
 
   phaseARepeats: readInitialNumber('phaseARepeats', DEFAULT_PHASE_REPEATS, MIN_PHASE_REPEATS, MAX_PHASE_REPEATS),
@@ -147,5 +180,30 @@ export const useUIStore = create<UIStore>((set) => ({
   setReviewLimit: (value) => {
     safeSetItem('reviewLimit', String(value));
     set({ reviewLimit: value });
+  },
+
+  selectingWords: false,
+  setSelectingWords: (selecting) => set({ selectingWords: selecting }),
+
+  foldersOpen: false,
+  setFoldersOpen: (open) => set({ foldersOpen: open }),
+
+  tagsOpen: false,
+  setTagsOpen: (open) => set({ tagsOpen: open }),
+
+  colorFlowerOpen: false,
+  setColorFlowerOpen: (open) => set({ colorFlowerOpen: open }),
+
+  reviewFolderFilter: 'all',
+  setReviewFolderFilter: (value) => set({ reviewFolderFilter: value }),
+
+  reviewTagFilter: [],
+  setReviewTagFilter: (value) => set({ reviewTagFilter: value }),
+
+  lastUsedFolderId: readLastUsedFolderId(readInitialStudyLanguage()),
+  setLastUsedFolderId: (folderId) => {
+    const language = useUIStore.getState().studyLanguage;
+    safeSetItem(`lastUsedFolderId:${language}`, folderId == null ? '' : String(folderId));
+    set({ lastUsedFolderId: folderId });
   },
 }));

@@ -1,3 +1,5 @@
+import { FolderTree, Hash } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { APP_VERSION } from '@/lib/appVersion';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -17,6 +19,9 @@ export function SettingsPage() {
   const setPhaseBRepeats = useUIStore((s) => s.setPhaseBRepeats);
   const reviewLimit = useUIStore((s) => s.reviewLimit);
   const setReviewLimit = useUIStore((s) => s.setReviewLimit);
+  const setSettingsOpen = useUIStore((s) => s.setSettingsOpen);
+  const setFoldersOpen = useUIStore((s) => s.setFoldersOpen);
+  const setTagsOpen = useUIStore((s) => s.setTagsOpen);
   const t = useTranslation();
 
   const phaseA = useNumberField(phaseARepeats, setPhaseARepeats, MIN_PHASE_REPEATS, MAX_PHASE_REPEATS);
@@ -30,6 +35,36 @@ export function SettingsPage() {
         <AccentColorSection />
         <LanguageSection />
         <StudyLanguageSection />
+
+        <div className="flex flex-col gap-1.5 text-sm">
+          {t.organizeTitle}
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSettingsOpen(false);
+                setFoldersOpen(true);
+              }}
+            >
+              <FolderTree className="h-3.5 w-3.5" aria-hidden="true" />
+              {t.foldersSectionTitle}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSettingsOpen(false);
+                setTagsOpen(true);
+              }}
+            >
+              <Hash className="h-3.5 w-3.5" aria-hidden="true" />
+              {t.tagsSectionTitle}
+            </Button>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 py-5">

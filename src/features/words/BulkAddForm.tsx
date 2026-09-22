@@ -1,9 +1,14 @@
 import { useMemo, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useDb } from '@/db/useDb';
 import { createWord } from '@/db/createWord';
+import { appendTag } from '@/db/appendTag';
+import { appendFolder } from '@/db/appendFolder';
 import { isUsableWord } from '@/db/isUsableWord';
+import { FolderPicker } from './FolderPicker';
+import { TagPicker } from './TagPicker';
 import { duplicateKey } from '@/lib/duplicateKey';
 import { parseWordLines } from '@/lib/parseWordLines';
 import type { ParsedWordLine } from '@/lib/parsedWordLine.type';
@@ -39,10 +44,23 @@ function dedupeByTerm(
 export function BulkAddForm({ onDone }: BulkAddFormProps) {
   const db = useDb();
   const studyLanguage = useUIStore((s) => s.studyLanguage);
+  const setLastUsedFolderId = useUIStore((s) => s.setLastUsedFolderId);
   const [text, setText] = useState('');
+  const [folderId, setFolderId] = useState<number | null>(null);
+  const [tagIds, setTagIds] = useState<number[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const t = useTranslation();
+
+  const snapshot = useLiveQuery(
+    async () => ({
+      db,
+      folders: await db.folders.orderBy('order').toArray(),
+      tags: await db.tags.orderBy('order').toArray(),
+    }),
+    [db],
+  );
+  const data = snapshot?.db === db ? snapshot : undefined;
 
   const { invalidLines, valid, duplicateCount } = useMemo(() => {
     const parsed = parseWordLines(text);
@@ -60,10 +78,17 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
       );
       const toSave = valid
         .map((line) => createWord(line.term, line.translation, studyLanguage))
-        .filter((word) => !existing.has(duplicateKey(word.term, studyLanguage)));
+        .filter((word) => !existing.has(duplicateKey(word.term, studyLanguage)))
+        .map((word) => (folderId == null ? word : { ...word, folderId }));
       if (toSave.length > 0) {
-        await db.words.bulkAdd(toSave);
+        await db.transaction('rw', db.words, db.wordTags, async () => {
+          const ids = await db.words.bulkAdd(toSave, { allKeys: true });
+          if (tagIds.length > 0) {
+            await db.wordTags.bulkAdd(ids.flatMap((wordId) => tagIds.map((tagId) => ({ wordId, tagId }))));
+          }
+        });
       }
+      setLastUsedFolderId(folderId);
       onDone();
     } catch {
       setSaveError(true);
@@ -85,6 +110,26 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
           className="w-full rounded-lg border border-input bg-transparent p-2.5 font-mono text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
       </label>
+
+      <FolderPicker
+        folders={data?.folders ?? []}
+        value={folderId}
+        onChange={setFolderId}
+        onCreate={(name, color) => void appendFolder(db, name, color).then(setFolderId)}
+      />
+
+      <TagPicker
+        tags={data?.tags ?? []}
+        selected={tagIds}
+        onToggle={(tagId) =>
+          setTagIds((current) =>
+            current.includes(tagId) ? current.filter((id) => id !== tagId) : [...current, tagId],
+          )
+        }
+        onCreate={(name, color) =>
+          void appendTag(db, name, color).then((tagId) => setTagIds((current) => [...current, tagId]))
+        }
+      />
 
       {valid.length > 0 && (
         <ul className="flex max-h-48 flex-col gap-1.5 overflow-y-auto">

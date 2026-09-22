@@ -7,6 +7,8 @@ import { NewWordsSession } from '@/features/newWords/NewWordsSession';
 import { ReviewSession } from '@/features/review/ReviewSession';
 import { AddWordDialog } from '@/features/words/AddWordDialog';
 import { WordList } from '@/features/words/WordList';
+import { FoldersDialog } from '@/features/organize/FoldersDialog';
+import { TagsDialog } from '@/features/organize/TagsDialog';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { useUIStore } from '@/store/useUIStore';
 import { applyAccentColor } from '@/lib/applyAccentColor';
@@ -23,6 +25,11 @@ function App() {
   const setAddWordOpen = useUIStore((s) => s.setAddWordOpen);
   const settingsOpen = useUIStore((s) => s.settingsOpen);
   const setSettingsOpen = useUIStore((s) => s.setSettingsOpen);
+  const selectingWords = useUIStore((s) => s.selectingWords);
+  const foldersOpen = useUIStore((s) => s.foldersOpen);
+  const setFoldersOpen = useUIStore((s) => s.setFoldersOpen);
+  const tagsOpen = useUIStore((s) => s.tagsOpen);
+  const setTagsOpen = useUIStore((s) => s.setTagsOpen);
   const t = useTranslation();
 
   useLayoutEffect(() => {
@@ -77,15 +84,17 @@ function App() {
         </AnimatePresence>
       </main>
 
-      <motion.button
-        type="button"
-        aria-label={t.addWordButtonLabel}
-        whileTap={{ scale: 0.92 }}
-        onClick={() => setAddWordOpen(true)}
-        className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
-      >
-        <Plus className="h-6 w-6" aria-hidden="true" />
-      </motion.button>
+      {!selectingWords && (
+        <motion.button
+          type="button"
+          aria-label={t.addWordButtonLabel}
+          whileTap={{ scale: 0.92 }}
+          onClick={() => setAddWordOpen(true)}
+          className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
+        >
+          <Plus className="h-6 w-6" aria-hidden="true" />
+        </motion.button>
+      )}
 
       <Dialog open={addWordOpen} onOpenChange={setAddWordOpen}>
         <DialogContent>
@@ -104,6 +113,9 @@ function App() {
           <SettingsPage />
         </DialogContent>
       </Dialog>
+
+      <FoldersDialog open={foldersOpen} onOpenChange={setFoldersOpen} />
+      <TagsDialog open={tagsOpen} onOpenChange={setTagsOpen} />
 
       <NavBar />
     </div>

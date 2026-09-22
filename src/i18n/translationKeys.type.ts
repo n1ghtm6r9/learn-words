@@ -1,4 +1,5 @@
 import type { StudyLanguage } from '@/languages/studyLanguage.type';
+import type { LabelColor } from '@/db/labelColor.type';
 
 export interface TranslationKeys {
   languageName: string;
@@ -18,6 +19,8 @@ export interface TranslationKeys {
   done: string;
 
   noReviewsYet: string;
+  noReviewsInScope: string;
+  resetFilters: string;
   aheadOfSchedule: string;
   reviewLimitLabel: string;
   detailsInterval: string;
@@ -126,4 +129,65 @@ export interface TranslationKeys {
   studyLanguageLabel: string;
   studyLanguageHint: string;
   appVersion: (version: string) => string;
+
+  navOrganize: string;
+  organizeTitle: string;
+  backToWords: string;
+  manageFolders: string;
+  manageTags: string;
+  foldersSectionTitle: string;
+  tagsSectionTitle: string;
+  folderLabel: string;
+  tagsLabel: string;
+  noFolder: string;
+  allFolders: string;
+  noTags: string;
+  newFolder: string;
+  newTag: string;
+  folderNamePlaceholder: string;
+  tagNamePlaceholder: string;
+  renameFolder: string;
+  renameTag: string;
+  deleteFolder: string;
+  deleteTag: string;
+  deleteFolderConfirm: (name: string, wordCount: number) => string;
+  deleteTagConfirm: (name: string, wordCount: number) => string;
+  folderWordCount: (count: number) => string;
+  tagWordCount: (count: number) => string;
+  duplicateFolderName: string;
+  duplicateTagName: string;
+  noFoldersYet: string;
+  noTagsYet: string;
+  moveUp: string;
+  moveDown: string;
+  selectWords: string;
+  selectAll: string;
+  moveToFolder: string;
+  wordsMovedToFolder: (count: number, folder: string) => string;
+  wordsMovedToRoot: (count: number) => string;
+  tagAddedToWords: (count: number, tag: string) => string;
+  tagRemovedFromWords: (count: number, tag: string) => string;
+  undo: string;
+  selectedOf: (count: number, total: number) => string;
+  selectionHint: string;
+  deselectAll: string;
+  exitSelection: string;
+  actionToFolder: string;
+  actionAddTag: string;
+  actionRemoveTag: string;
+  actionDelete: string;
+  moveSheetTitle: string;
+  addTagSheetTitle: string;
+  removeTagSheetTitle: string;
+  tagOnSome: (have: number, total: number) => string;
+  tagOnAll: string;
+  allHereAlready: string;
+  noTagsOnSelection: string;
+  wordsDeleted: (count: number) => string;
+  confirmCreate: string;
+  reorderHandle: (name: string) => string;
+  labelColorsTitle: string;
+  labelColorName: (color: LabelColor) => string;
+  bulkActionFailed: string;
+  dbBlockedMessage: string;
 }

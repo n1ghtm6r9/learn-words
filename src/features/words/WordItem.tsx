@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Pencil, Trash2, Volume2 } from 'lucide-react';
+import { Check, GripVertical, Pencil, Trash2, Volume2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import type { Tag } from '@/db/tag.type';
+import type { LabelColor } from '@/db/labelColor.type';
 import type { Word } from '@/db/word.type';
 import { effectiveRating } from '@/lib/effectiveRating';
 import { ratingColor } from '@/lib/ratingColor';
@@ -10,15 +12,41 @@ import { RATING_TEXT_CLASS } from '@/lib/ratingTextClass';
 import { isSpeechSupported } from '@/lib/tts';
 import { useSpeak } from '@/lib/useSpeak';
 import { useTranslation } from '@/i18n/useTranslation';
+import { FolderGlyph } from './FolderGlyph';
+import { TagGlyph } from './TagGlyph';
 
 interface WordItemProps {
   word: Word;
+  folder?: { name: string; color: LabelColor };
+  tags?: Tag[];
+  selectable?: boolean;
+  selected?: boolean;
+  dragging?: boolean;
+  rowRef?: (element: HTMLLIElement | null) => void;
+  dragHandle?: {
+    ref: (element: HTMLElement | null) => void;
+    props: React.HTMLAttributes<HTMLElement>;
+  };
+  onToggleSelected?: () => void;
   onEdit: () => void;
   onDelete: () => void;
   onOpenDetails: () => void;
 }
 
-export function WordItem({ word, onEdit, onDelete, onOpenDetails }: WordItemProps) {
+export function WordItem({
+  word,
+  folder,
+  tags,
+  selectable = false,
+  selected = false,
+  dragging = false,
+  rowRef,
+  dragHandle,
+  onToggleSelected,
+  onEdit,
+  onDelete,
+  onOpenDetails,
+}: WordItemProps) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const t = useTranslation();
   const speak = useSpeak();
@@ -28,11 +56,45 @@ export function WordItem({ word, onEdit, onDelete, onOpenDetails }: WordItemProp
   const color = rating == null ? null : ratingColor(rating);
 
   return (
-    <li className="flex items-center gap-2 px-3 py-2.5">
+    <li
+      ref={rowRef}
+      className={cn(
+        'flex items-center gap-2 px-3 py-2.5 transition-colors',
+        dragging && 'bg-secondary/60 [&>*]:opacity-30',
+        selectable && selected && 'bg-primary/12',
+      )}
+    >
+      {dragHandle && !selectable && (
+        <span
+          ref={dragHandle.ref}
+          {...dragHandle.props}
+          aria-label={`${t.moveToFolder} ${word.term}`}
+          className="flex h-7 w-5 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground/60 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 active:cursor-grabbing"
+        >
+          <GripVertical className="h-3.5 w-3.5" aria-hidden="true" />
+        </span>
+      )}
+      {selectable && (
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={selected}
+          aria-label={word.term}
+          onClick={onToggleSelected}
+          className={cn(
+            'flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md border-2 transition-all',
+            selected
+              ? 'scale-100 border-primary bg-primary text-primary-foreground'
+              : 'border-muted-foreground/35 hover:border-primary/60',
+          )}
+        >
+          {selected && <Check className="h-3.5 w-3.5 animate-in zoom-in-50 duration-150" strokeWidth={3} aria-hidden="true" />}
+        </button>
+      )}
       <button
         type="button"
         aria-label={`${t.openWordDetails}: ${word.term}`}
-        onClick={onOpenDetails}
+        onClick={selectable ? onToggleSelected : onOpenDetails}
         className="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left transition-colors hover:bg-secondary/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
       >
         <span className="flex w-8 shrink-0 flex-col items-center gap-1">
@@ -68,10 +130,29 @@ export function WordItem({ word, onEdit, onDelete, onOpenDetails }: WordItemProp
             )}
           </span>
           <span className="block truncate text-[13px] text-muted-foreground">{word.translation}</span>
+          {(folder || (tags && tags.length > 0)) && (
+            <span className="mt-0.5 flex items-center gap-2 overflow-hidden">
+              {folder && (
+                <span className="flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground/80">
+                  <FolderGlyph color={folder.color} className="h-3 w-3" />
+                  {folder.name}
+                </span>
+              )}
+              {tags?.map((tag) => (
+                <span
+                  key={tag.id}
+                  className="flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground/80"
+                >
+                  <TagGlyph color={tag.color} />
+                  {tag.name}
+                </span>
+              ))}
+            </span>
+          )}
         </span>
       </button>
 
-      {confirmingDelete ? (
+      {selectable ? null : confirmingDelete ? (
         <div className="flex shrink-0 items-center gap-1.5">
           <span role="alert" className="sr-only">
             {t.confirmDelete}

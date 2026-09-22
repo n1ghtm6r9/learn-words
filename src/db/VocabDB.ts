@@ -1,8 +1,13 @@
 import Dexie, { type Table } from 'dexie';
 import { detectWordKind } from '@/lib/detectWordKind';
+import { ACCENT_PALETTE } from '@/lib/accentPalette';
 import { DEFAULT_DIFFICULTY, INITIAL_STABILITY_DAYS } from '@/lib/memoryParams';
 import { seedStabilityFromLegacyRating } from '@/lib/seedStabilityFromLegacyRating';
+import type { AccentColor } from '@/store/accentColor.type';
+import type { Folder } from './folder.type';
+import type { Tag } from './tag.type';
 import type { Word } from './word.type';
+import type { WordTag } from './wordTag.type';
 
 interface LegacyWordV1 {
   rating?: number;
@@ -18,9 +23,18 @@ interface LegacyWordV3 {
 
 export class VocabDB extends Dexie {
   words!: Table<Word, number>;
+  folders!: Table<Folder, number>;
+  tags!: Table<Tag, number>;
+  wordTags!: Table<WordTag, number>;
+
+  isBlocked = false;
 
   constructor(name = 'vocab-db') {
     super(name);
+
+    this.on('blocked', () => {
+      this.isBlocked = true;
+    });
 
     this.version(1).stores({
       words: '++id, term, dueDate',
@@ -94,6 +108,28 @@ export class VocabDB extends Dexie {
             }
 
             delete word.rating;
+          });
+      });
+
+    this.version(5).stores({
+      words: '++id, term, stage, kind, folderId',
+      folders: '++id, name, order',
+      tags: '++id, name, order',
+      wordTags: '++id, wordId, tagId, &[wordId+tagId]',
+    });
+
+    this.version(6)
+      .stores({
+        folders: '++id, name, order',
+      })
+      .upgrade(async (tx) => {
+        const palette = Object.keys(ACCENT_PALETTE) as AccentColor[];
+        let index = 0;
+        await tx
+          .table<Folder, number>('folders')
+          .toCollection()
+          .modify((folder) => {
+            folder.color ??= palette[index++ % palette.length];
           });
       });
   }

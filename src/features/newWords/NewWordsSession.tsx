@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useDb } from '@/db/useDb';
 import { isUsableWord } from '@/db/isUsableWord';
+import { deleteWordCascade } from '@/db/deleteWordCascade';
 import type { Word } from '@/db/word.type';
 import type { MatchVerdict } from '@/lib/fuzzyMatch';
 import { DEFAULT_DIFFICULTY, INITIAL_STABILITY_DAYS } from '@/lib/memoryParams';
@@ -81,7 +82,7 @@ export function NewWordsSession() {
     setIsSubmitting(true);
 
     try {
-      await db.words.delete(wordId);
+      await deleteWordCascade(db, wordId);
       setDeleteFailed(false);
       setTurn((n) => n + 1);
       advanceTo(pool.filter((w) => w.id !== wordId), wordId);

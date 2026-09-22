@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useDb } from '@/db/useDb';
 import { createWord } from '@/db/createWord';
 import { isUsableWord } from '@/db/isUsableWord';
+import { setWordTags } from '@/db/setWordTags';
+import { appendTag } from '@/db/appendTag';
+import { appendFolder } from '@/db/appendFolder';
 import type { Word } from '@/db/word.type';
+import { FolderPicker } from './FolderPicker';
+import { TagPicker } from './TagPicker';
 import { detectWordKind } from '@/lib/detectWordKind';
 import { duplicateKey } from '@/lib/duplicateKey';
 import { normalizeTerm } from '@/lib/normalizeTerm';
@@ -24,8 +30,34 @@ export interface WordFormProps {
 export function WordForm({ mode, word, onDone }: WordFormProps) {
   const db = useDb();
   const studyLanguage = useUIStore((s) => s.studyLanguage);
+  const lastUsedFolderId = useUIStore((s) => s.lastUsedFolderId);
+  const setLastUsedFolderId = useUIStore((s) => s.setLastUsedFolderId);
   const [term, setTerm] = useState(word?.term ?? '');
   const [translation, setTranslation] = useState(word?.translation ?? '');
+  const [folderId, setFolderId] = useState<number | null>(
+    mode === 'edit' ? (word?.folderId ?? null) : lastUsedFolderId,
+  );
+  const [tagIds, setTagIds] = useState<number[]>([]);
+
+  const snapshot = useLiveQuery(
+    async () => ({
+      db,
+      folders: await db.folders.orderBy('order').toArray(),
+      tags: await db.tags.orderBy('order').toArray(),
+      links: word?.id == null ? [] : await db.wordTags.where('wordId').equals(word.id).toArray(),
+    }),
+    [db, word?.id],
+  );
+  const data = snapshot?.db === db ? snapshot : undefined;
+
+  const seededTagsFor = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (mode !== 'edit' || !data || word?.id == null) return;
+    if (seededTagsFor.current === word.id) return;
+    seededTagsFor.current = word.id;
+    setTagIds(data.links.map((link) => link.tagId));
+  }, [mode, data, word?.id]);
   const [duplicate, setDuplicate] = useState(false);
   const [duplicateConfirmed, setDuplicateConfirmed] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -102,13 +134,23 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
       }
 
       if (mode === 'edit' && word?.id != null) {
-        await db.words.update(word.id, {
-          term: trimmedTerm,
-          translation: trimmedTranslation,
-          kind: detectWordKind(trimmedTerm, studyLanguage),
+        const wordId = word.id;
+        await db.transaction('rw', db.words, db.wordTags, async () => {
+          await db.words.update(wordId, {
+            term: trimmedTerm,
+            translation: trimmedTranslation,
+            kind: detectWordKind(trimmedTerm, studyLanguage),
+            folderId: folderId ?? undefined,
+          });
+          await setWordTags(db, wordId, tagIds);
         });
       } else {
-        await db.words.add(createWord(trimmedTerm, trimmedTranslation, studyLanguage));
+        const fresh = createWord(trimmedTerm, trimmedTranslation, studyLanguage);
+        await db.transaction('rw', db.words, db.wordTags, async () => {
+          const wordId = await db.words.add(folderId == null ? fresh : { ...fresh, folderId });
+          if (tagIds.length > 0) await setWordTags(db, wordId, tagIds);
+        });
+        setLastUsedFolderId(folderId);
       }
 
       onDone();
@@ -158,6 +200,26 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
           className="font-mono"
         />
       </label>
+
+      <FolderPicker
+        folders={data?.folders ?? []}
+        value={folderId}
+        onChange={setFolderId}
+        onCreate={(name, color) => void appendFolder(db, name, color).then(setFolderId)}
+      />
+
+      <TagPicker
+        tags={data?.tags ?? []}
+        selected={tagIds}
+        onToggle={(tagId) =>
+          setTagIds((current) =>
+            current.includes(tagId) ? current.filter((id) => id !== tagId) : [...current, tagId],
+          )
+        }
+        onCreate={(name, color) =>
+          void appendTag(db, name, color).then((tagId) => setTagIds((current) => [...current, tagId]))
+        }
+      />
 
       {invalid && (
         <p role="alert" className="flex items-start gap-2 rounded-md bg-destructive/10 p-2.5 text-sm text-destructive">

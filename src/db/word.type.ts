@@ -19,4 +19,6 @@ export interface Word {
   reviewStreak: number;
 
   lastReviewedAt?: number;
+
+  folderId?: number;
 }

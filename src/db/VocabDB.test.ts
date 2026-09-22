@@ -171,3 +171,63 @@ describe('VocabDB migration v2 -> v3', () => {
     upgraded.close();
   });
 });
+
+describe('VocabDB migration v4 -> v5', () => {
+  afterEach(async () => {
+    await Dexie.delete(TEST_DB_NAME);
+  });
+
+  it('keeps existing words and leaves them outside any folder', async () => {
+    const legacy = new Dexie(TEST_DB_NAME);
+    legacy.version(4).stores({ words: '++id, term, stage, kind' });
+    await legacy.open();
+    await legacy.table('words').add({
+      term: 'keep',
+      translation: 'хранить',
+      createdAt: 1,
+      kind: 'word',
+      stage: 'new',
+      learningPhase: 'A',
+      phaseStreak: 0,
+      stability: 1,
+      difficulty: 5,
+      reviewStreak: 0,
+    });
+    legacy.close();
+
+    const upgraded = new VocabDB(TEST_DB_NAME);
+    const [word] = await upgraded.words.toArray();
+
+    expect(word.term).toBe('keep');
+    expect(word.folderId).toBeUndefined();
+    expect(await upgraded.folders.count()).toBe(0);
+    expect(await upgraded.tags.count()).toBe(0);
+    expect(await upgraded.wordTags.count()).toBe(0);
+    upgraded.close();
+  });
+
+  it('keeps the stage and kind indexes queryable next to the new folderId one', async () => {
+    const legacy = new Dexie(TEST_DB_NAME);
+    legacy.version(4).stores({ words: '++id, term, stage, kind' });
+    await legacy.open();
+    await legacy.table('words').bulkAdd([
+      { term: 'fresh', translation: 'свежий', createdAt: 0, kind: 'word', stage: 'new', learningPhase: 'A', phaseStreak: 0, stability: 1, difficulty: 5, reviewStreak: 0 },
+      { term: 'studied', translation: 'изученный', createdAt: 0, kind: 'word', stage: 'review', learningPhase: 'A', phaseStreak: 0, stability: 9, difficulty: 5, reviewStreak: 2 },
+      { term: 'give up', translation: 'сдаваться', createdAt: 0, kind: 'phrase', stage: 'new', learningPhase: 'A', phaseStreak: 0, stability: 1, difficulty: 5, reviewStreak: 0 },
+    ]);
+    legacy.close();
+
+    const upgraded = new VocabDB(TEST_DB_NAME);
+
+    expect(await upgraded.words.where('stage').equals('new').count()).toBe(2);
+    expect(await upgraded.words.where('kind').equals('phrase').count()).toBe(1);
+    expect(await upgraded.words.where('term').equals('studied').count()).toBe(1);
+
+    const folderId = await upgraded.folders.add({ name: 'box', color: 'blue', order: 1 });
+    const [fresh] = await upgraded.words.where('term').equals('fresh').toArray();
+    await upgraded.words.update(fresh.id!, { folderId });
+
+    expect(await upgraded.words.where('folderId').equals(folderId).count()).toBe(1);
+    upgraded.close();
+  });
+});

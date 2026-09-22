@@ -9,6 +9,8 @@ import { useSpeak } from '@/lib/useSpeak';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 import type { UiLanguage } from '@/i18n/uiLanguage.type';
+import type { Folder } from '@/db/folder.type';
+import { FolderOptionLabel } from './FolderOptionLabel';
 
 function nextReviewText(word: Word, fallback: string, language: UiLanguage): string {
   const due = dueAt(word);
@@ -17,10 +19,12 @@ function nextReviewText(word: Word, fallback: string, language: UiLanguage): str
 
 interface WordDetailsDialogProps {
   word: Word | null;
+  folder?: Folder;
+  tagNames?: string[];
   onOpenChange: (open: boolean) => void;
 }
 
-export function WordDetailsDialog({ word, onOpenChange }: WordDetailsDialogProps) {
+export function WordDetailsDialog({ word, folder, tagNames, onOpenChange }: WordDetailsDialogProps) {
   const language = useUIStore((s) => s.language);
   const t = useTranslation();
   const speak = useSpeak();
@@ -56,6 +60,18 @@ export function WordDetailsDialog({ word, onOpenChange }: WordDetailsDialogProps
             <div className="flex flex-col gap-1">
               <dt className="text-xs text-muted-foreground">{t.detailsKind}</dt>
               <dd>{word.kind === 'phrase' ? t.phraseTag : t.wordTag}</dd>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <dt className="text-xs text-muted-foreground">{t.folderLabel}</dt>
+              <dd>
+                <FolderOptionLabel folder={folder} />
+              </dd>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <dt className="text-xs text-muted-foreground">{t.tagsLabel}</dt>
+              <dd>{tagNames && tagNames.length > 0 ? tagNames.join(', ') : t.noTags}</dd>
             </div>
 
             <div className="flex flex-col gap-1">
