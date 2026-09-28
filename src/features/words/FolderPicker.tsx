@@ -14,8 +14,8 @@ import { FolderOptionLabel } from './FolderOptionLabel';
 
 interface FolderPickerProps {
   folders: Folder[];
-  value: number | null;
-  onChange: (folderId: number | null) => void;
+  value: string | null;
+  onChange: (folderId: string | null) => void;
   onCreate?: (name: string, color: LabelColor) => void;
 }
 
@@ -40,7 +40,7 @@ export function FolderPicker({ folders, value, onChange, onCreate }: FolderPicke
 
       {draft === null ? (
         <div className="flex flex-col gap-1.5">
-          <Select<number | null> value={value} onValueChange={(next) => onChange(next)}>
+          <Select<string | null> value={value} onValueChange={(next) => onChange(next)}>
             <SelectTrigger aria-label={t.folderLabel}>
               <SelectValue>{() => <FolderOptionLabel folder={current} />}</SelectValue>
             </SelectTrigger>

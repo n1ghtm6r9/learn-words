@@ -60,7 +60,7 @@ describe('WordList folder and tag filter', () => {
     const tagId = await db.tags.add({ name: 'verbs', color: 'blue', order: 1 });
     const taggedId = await db.words.add(baseWord({ term: 'run', translation: 'бежать' }));
     await db.words.add(baseWord({ term: 'table', translation: 'стол' }));
-    await db.wordTags.add({ wordId: taggedId as number, tagId: tagId as number });
+    await db.wordTags.add({ wordId: taggedId, tagId: tagId });
 
     render(<WordList />);
     expect(await screen.findByText('table')).toBeInTheDocument();
@@ -80,7 +80,7 @@ describe('WordList folder and tag filter', () => {
     await userEvent.click(await screen.findByRole('button', { name: /temporary/ }));
     await waitFor(() => expect(screen.queryByText('outside')).not.toBeInTheDocument());
 
-    await db.folders.delete(folderId as number);
+    await db.folders.delete(folderId);
 
     expect(await screen.findByText('outside')).toBeInTheDocument();
   });
@@ -132,7 +132,7 @@ describe('WordList bulk selection', () => {
     await userEvent.click(within(sheet).getByRole('button', { name: /nouns/ }));
 
     await waitFor(async () => {
-      expect(await db.wordTags.where('tagId').equals(tagId as number).count()).toBe(2);
+      expect(await db.wordTags.where('tagId').equals(tagId).count()).toBe(2);
     });
   });
 
@@ -159,12 +159,12 @@ describe('WordList bulk selection', () => {
     await userEvent.click(within(sheet).getByRole('button', { name: /work/ }));
 
     await waitFor(() => expect(screen.queryByRole('checkbox', { name: 'meeting' })).not.toBeInTheDocument());
-    expect(screen.getByRole('button', { name: 'Выбрать' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Выбрать' })).toBeInTheDocument();
   });
 
   it('puts moved words back where they were on undo', async () => {
-    const work = (await db.folders.add({ name: 'work', color: 'blue', order: 1 })) as number;
-    const travel = (await db.folders.add({ name: 'travel', color: 'green', order: 2 })) as number;
+    const work = (await db.folders.add({ name: 'work', color: 'blue', order: 1 }));
+    const travel = (await db.folders.add({ name: 'travel', color: 'green', order: 2 }));
     await db.words.add(baseWord({ term: 'meeting', translation: 'встреча', folderId: work }));
 
     render(<WordList />);
@@ -180,8 +180,8 @@ describe('WordList bulk selection', () => {
   });
 
   it('deletes the selection at once and brings it back on undo', async () => {
-    const tagId = (await db.tags.add({ name: 'verbs', color: 'blue', order: 1 })) as number;
-    const runId = (await db.words.add(baseWord({ term: 'run', translation: 'бежать' }))) as number;
+    const tagId = (await db.tags.add({ name: 'verbs', color: 'blue', order: 1 }));
+    const runId = (await db.words.add(baseWord({ term: 'run', translation: 'бежать' })));
     await db.words.add(baseWord({ term: 'walk', translation: 'идти' }));
     await db.words.add(baseWord({ term: 'table', translation: 'стол' }));
     await db.wordTags.add({ wordId: runId, tagId });
@@ -202,9 +202,9 @@ describe('WordList bulk selection', () => {
   });
 
   it('offers to remove only the tags the selected words actually carry', async () => {
-    const verbs = (await db.tags.add({ name: 'verbs', color: 'blue', order: 1 })) as number;
+    const verbs = (await db.tags.add({ name: 'verbs', color: 'blue', order: 1 }));
     await db.tags.add({ name: 'unused', color: 'green', order: 2 });
-    const runId = (await db.words.add(baseWord({ term: 'run', translation: 'бежать' }))) as number;
+    const runId = (await db.words.add(baseWord({ term: 'run', translation: 'бежать' })));
     await db.words.add(baseWord({ term: 'walk', translation: 'идти' }));
     await db.wordTags.add({ wordId: runId, tagId: verbs });
 
@@ -218,8 +218,8 @@ describe('WordList bulk selection', () => {
   });
 
   it('does not offer to add a tag every selected word already has', async () => {
-    const verbs = (await db.tags.add({ name: 'verbs', color: 'blue', order: 1 })) as number;
-    const runId = (await db.words.add(baseWord({ term: 'run', translation: 'бежать' }))) as number;
+    const verbs = (await db.tags.add({ name: 'verbs', color: 'blue', order: 1 }));
+    const runId = (await db.words.add(baseWord({ term: 'run', translation: 'бежать' })));
     await db.wordTags.add({ wordId: runId, tagId: verbs });
 
     render(<WordList />);
@@ -233,7 +233,7 @@ describe('WordList bulk selection', () => {
   it('drops the tag links of a word deleted from the list', async () => {
     const tagId = await db.tags.add({ name: 'doomed', color: 'orange', order: 1 });
     const wordId = await db.words.add(baseWord({ term: 'gone', translation: 'ушёл' }));
-    await db.wordTags.add({ wordId: wordId as number, tagId: tagId as number });
+    await db.wordTags.add({ wordId: wordId, tagId: tagId });
 
     render(<WordList />);
     const row = (await screen.findByText('gone')).closest('li')!;
@@ -241,7 +241,7 @@ describe('WordList bulk selection', () => {
     await userEvent.click(within(row).getByRole('button', { name: 'Удалить' }));
 
     await waitFor(async () => {
-      expect(await db.wordTags.where('wordId').equals(wordId as number).count()).toBe(0);
+      expect(await db.wordTags.where('wordId').equals(wordId).count()).toBe(0);
     });
   });
 });
@@ -258,8 +258,8 @@ describe('WordList stale selection', () => {
   it('forgets the selection when the folder filter changes', async () => {
     const folderId = await db.folders.add({ name: 'work', color: 'blue', order: 1 });
     const otherId = await db.folders.add({ name: 'travel', color: 'blue', order: 2 });
-    await db.words.add(baseWord({ term: 'meeting', translation: 'встреча', folderId: folderId as number }));
-    await db.words.add(baseWord({ term: 'airport', translation: 'аэропорт', folderId: otherId as number }));
+    await db.words.add(baseWord({ term: 'meeting', translation: 'встреча', folderId: folderId }));
+    await db.words.add(baseWord({ term: 'airport', translation: 'аэропорт', folderId: otherId }));
 
     render(<WordList />);
     await userEvent.click(await screen.findByRole('button', { name: 'Выбрать' }));
@@ -276,9 +276,9 @@ describe('WordList stale selection', () => {
     const travelId = await db.folders.add({ name: 'travel', color: 'blue', order: 2 });
     await db.tags.add({ name: 'hard', color: 'blue', order: 1 });
     const hiddenId = await db.words.add(
-      baseWord({ term: 'meeting', translation: 'встреча', folderId: workId as number }),
+      baseWord({ term: 'meeting', translation: 'встреча', folderId: workId }),
     );
-    await db.words.add(baseWord({ term: 'airport', translation: 'аэропорт', folderId: travelId as number }));
+    await db.words.add(baseWord({ term: 'airport', translation: 'аэропорт', folderId: travelId }));
 
     render(<WordList />);
     await userEvent.click(await screen.findByRole('button', { name: 'Выбрать' }));
@@ -288,7 +288,7 @@ describe('WordList stale selection', () => {
     await waitFor(() => expect(screen.queryByText('meeting')).not.toBeInTheDocument());
 
     expect(screen.getByRole('button', { name: 'Добавить тег' })).toBeDisabled();
-    expect(await db.wordTags.where('wordId').equals(hiddenId as number).count()).toBe(0);
+    expect(await db.wordTags.where('wordId').equals(hiddenId).count()).toBe(0);
   });
 });
 

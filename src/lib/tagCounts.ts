@@ -1,9 +1,9 @@
 import type { Word } from '@/db/word.type';
 import type { WordTag } from '@/db/wordTag.type';
 
-export function tagCounts(words: Word[], links: WordTag[]): Map<number, number> {
+export function tagCounts(words: Word[], links: WordTag[]): Map<string, number> {
   const usable = new Set(words.map((word) => word.id));
-  const counts = new Map<number, number>();
+  const counts = new Map<string, number>();
 
   for (const link of links) {
     if (!usable.has(link.wordId)) continue;

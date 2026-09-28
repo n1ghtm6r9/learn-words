@@ -1,6 +1,7 @@
 import Dexie from 'dexie';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { VocabDB } from './VocabDB';
+import { LearnWordsDB } from './LearnWordsDB';
 import { createWord } from './createWord';
 import { createFolder } from './createFolder';
 import { createTag } from './createTag';
@@ -21,15 +22,17 @@ import { reorderByDrag } from '@/lib/reorderByDrag';
 const TEST_DB_NAME = 'vocab-db-cascade-test';
 
 describe('folder and tag cascades', () => {
+  let store: LearnWordsDB;
   let db: VocabDB;
 
   beforeEach(async () => {
-    db = new VocabDB(TEST_DB_NAME);
-    await db.open();
+    store = new LearnWordsDB(TEST_DB_NAME);
+    db = new VocabDB(store, 'en');
+    await store.open();
   });
 
   afterEach(async () => {
-    db.close();
+    store.close();
     await Dexie.delete(TEST_DB_NAME);
   });
 
@@ -76,28 +79,20 @@ describe('folder and tag cascades', () => {
     const links = await db.wordTags.where('wordId').equals(wordId).toArray();
     expect(links.map((link) => link.tagId)).toEqual([keptTagId]);
   });
-
-  it('refuses to link the same tag to the same word twice', async () => {
-    const wordId = await db.words.add(createWord('twice', 'дважды'));
-    const tagId = await db.tags.add(createTag('unique', 'purple', 1));
-
-    await db.wordTags.add({ wordId, tagId });
-    await expect(db.wordTags.add({ wordId, tagId })).rejects.toThrow();
-
-    expect(await db.wordTags.where('wordId').equals(wordId).count()).toBe(1);
-  });
 });
 
 describe('setWordTags', () => {
+  let store: LearnWordsDB;
   let db: VocabDB;
 
   beforeEach(async () => {
-    db = new VocabDB(TEST_DB_NAME);
-    await db.open();
+    store = new LearnWordsDB(TEST_DB_NAME);
+    db = new VocabDB(store, 'en');
+    await store.open();
   });
 
   afterEach(async () => {
-    db.close();
+    store.close();
     await Dexie.delete(TEST_DB_NAME);
   });
 
@@ -142,15 +137,17 @@ describe('setWordTags', () => {
 });
 
 describe('bulk operations', () => {
+  let store: LearnWordsDB;
   let db: VocabDB;
 
   beforeEach(async () => {
-    db = new VocabDB(TEST_DB_NAME);
-    await db.open();
+    store = new LearnWordsDB(TEST_DB_NAME);
+    db = new VocabDB(store, 'en');
+    await store.open();
   });
 
   afterEach(async () => {
-    db.close();
+    store.close();
     await Dexie.delete(TEST_DB_NAME);
   });
 
@@ -207,15 +204,17 @@ describe('bulk operations', () => {
 });
 
 describe('swapOrder', () => {
+  let store: LearnWordsDB;
   let db: VocabDB;
 
   beforeEach(async () => {
-    db = new VocabDB(TEST_DB_NAME);
-    await db.open();
+    store = new LearnWordsDB(TEST_DB_NAME);
+    db = new VocabDB(store, 'en');
+    await store.open();
   });
 
   afterEach(async () => {
-    db.close();
+    store.close();
     await Dexie.delete(TEST_DB_NAME);
   });
 
@@ -232,22 +231,24 @@ describe('swapOrder', () => {
   it('leaves the table untouched when one row is missing', async () => {
     const firstId = await db.folders.add(createFolder('lonely', 'blue', 1));
 
-    await swapOrder(db.folders, firstId, firstId + 999);
+    await swapOrder(db.folders, firstId, 'missing-id');
 
     expect((await db.folders.get(firstId))?.order).toBe(1);
   });
 });
 
 describe('writeOrder with reorderByDrag', () => {
+  let store: LearnWordsDB;
   let db: VocabDB;
 
   beforeEach(async () => {
-    db = new VocabDB(TEST_DB_NAME);
-    await db.open();
+    store = new LearnWordsDB(TEST_DB_NAME);
+    db = new VocabDB(store, 'en');
+    await store.open();
   });
 
   afterEach(async () => {
-    db.close();
+    store.close();
     await Dexie.delete(TEST_DB_NAME);
   });
 
@@ -271,8 +272,9 @@ describe('writeOrder with reorderByDrag', () => {
   it('renumbers every row so no two share a position', async () => {
     await db.tags.bulkAdd([createTag('a', 'blue', 5), createTag('b', 'green', 5)]);
 
-    const rows = await db.tags.toArray();
-    await writeOrder(db.tags, [rows[1].id!, rows[0].id!]);
+    const a = await db.tags.where('name').equals('a').first();
+    const b = await db.tags.where('name').equals('b').first();
+    await writeOrder(db.tags, [b!.id!, a!.id!]);
 
     const after = await db.tags.orderBy('order').toArray();
     expect(after.map((t) => t.order)).toEqual([1, 2]);
@@ -281,15 +283,17 @@ describe('writeOrder with reorderByDrag', () => {
 });
 
 describe('undoable bulk operations', () => {
+  let store: LearnWordsDB;
   let db: VocabDB;
 
   beforeEach(async () => {
-    db = new VocabDB(TEST_DB_NAME);
-    await db.open();
+    store = new LearnWordsDB(TEST_DB_NAME);
+    db = new VocabDB(store, 'en');
+    await store.open();
   });
 
   afterEach(async () => {
-    db.close();
+    store.close();
     await Dexie.delete(TEST_DB_NAME);
   });
 

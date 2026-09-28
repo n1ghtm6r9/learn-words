@@ -14,6 +14,9 @@ function jsonFile(content: unknown, name = 'import.json'): File {
 describe('ImportDialog', () => {
   beforeEach(async () => {
     await db.words.clear();
+    await db.folders.clear();
+    await db.tags.clear();
+    await db.wordTags.clear();
     useUIStore.setState({ studyLanguage: 'en' });
   });
 
@@ -51,7 +54,7 @@ describe('ImportDialog', () => {
     await user.upload(screen.getByLabelText('Выберите файл'), file);
 
     await screen.findByText('Найдено слов: 1');
-    expect(screen.getByRole('checkbox', { name: 'Слова и прогресс' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Слова, прогресс, папки и теги' })).toBeChecked();
     expect(screen.queryByRole('checkbox', { name: 'Настройки' })).not.toBeInTheDocument();
   });
 
@@ -212,4 +215,29 @@ describe('ImportDialog', () => {
     expect(screen.queryByText('Найдено слов: 1')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Импортировать' })).not.toBeInTheDocument();
   });
+
+  it('counts the folders and tags in the file and imports a file that only has them', async () => {
+    const user = userEvent.setup();
+    render(<ImportDialog open onOpenChange={vi.fn()} />);
+
+    const file = jsonFile({
+      version: 4,
+      exportedAt: 0,
+      words: [],
+      folders: [{ name: 'Travel', color: 'blue', order: 1 }],
+      tags: [
+        { name: 'verbs', color: 'green', order: 1 },
+        { name: 'often', color: 'amber', order: 2 },
+      ],
+    });
+    await user.upload(screen.getByLabelText('Выберите файл'), file);
+
+    expect(await screen.findByText('Папок: 1, тегов: 2')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Импортировать' }));
+
+    await screen.findByText('Импортировано слов: 0');
+    expect((await db.folders.toArray()).map((folder) => folder.name)).toEqual(['Travel']);
+    expect(await db.tags.count()).toBe(2);
+  });
 });
+

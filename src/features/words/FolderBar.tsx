@@ -15,10 +15,10 @@ const CHIP_GAP_PX = 6;
 
 interface FolderBarProps {
   folders: Folder[];
-  counts: Map<number | null, number>;
-  value: number | null | 'all';
+  counts: Map<string | null, number>;
+  value: string | null | 'all';
   wordDragging: boolean;
-  onChange: (value: number | null | 'all') => void;
+  onChange: (value: string | null | 'all') => void;
 }
 
 export function FolderBar({ folders, counts, value, wordDragging, onChange }: FolderBarProps) {

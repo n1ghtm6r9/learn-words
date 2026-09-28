@@ -12,7 +12,7 @@ import { RecognitionCard } from '@/features/study/RecognitionCard';
 import { RecallCard } from '@/features/study/RecallCard';
 import { NewWordsSummary } from './NewWordsSummary';
 
-function pickRandomId(words: Word[], excludeId: number | null): number | null {
+function pickRandomId(words: Word[], excludeId: string | null): string | null {
   if (words.length === 0) return null;
   const candidates = words.length > 1 && excludeId != null ? words.filter((w) => w.id !== excludeId) : words;
   const pickFrom = candidates.length > 0 ? candidates : words;
@@ -22,7 +22,7 @@ function pickRandomId(words: Word[], excludeId: number | null): number | null {
 export function NewWordsSession() {
   const db = useDb();
   const [pool, setPool] = useState<Word[] | null>(null);
-  const [currentId, setCurrentId] = useState<number | null>(null);
+  const [currentId, setCurrentId] = useState<string | null>(null);
   const [turn, setTurn] = useState(0);
   const [learnedCount, setLearnedCount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -71,7 +71,7 @@ export function NewWordsSession() {
     };
   }, [db, addWordOpen]);
 
-  function advanceTo(nextPool: Word[], justShownId: number) {
+  function advanceTo(nextPool: Word[], justShownId: string) {
     setPool(nextPool);
     setCurrentId(pickRandomId(nextPool, justShownId));
   }

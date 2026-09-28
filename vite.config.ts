@@ -21,5 +21,10 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
+    env: {
+      VITE_DEXIE_CLOUD_URL: "",
+      VITE_ALLOWED_EMAIL_HASHES: "",
+      VITE_SIGN_IN_EMAIL: "",
+    },
   },
 })

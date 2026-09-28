@@ -5,19 +5,19 @@ import { useHandleSensors } from '@/lib/useHandleSensors';
 import { DragOverlayPortal } from '@/components/dnd/DragOverlayPortal';
 
 interface SortableRowsProps {
-  ids: number[];
-  onReorder: (orderedIds: number[]) => void;
-  renderPreview: (id: number) => React.ReactNode;
+  ids: string[];
+  onReorder: (orderedIds: string[]) => void;
+  renderPreview: (id: string) => React.ReactNode;
   onDraggingChange?: (dragging: boolean) => void;
   children: React.ReactNode;
 }
 
 export function SortableRows({ ids, onReorder, renderPreview, onDraggingChange, children }: SortableRowsProps) {
-  const [activeId, setActiveId] = useState<number | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useHandleSensors();
 
   function handleDragStart(event: DragStartEvent) {
-    setActiveId(Number(event.active.id));
+    setActiveId(String(event.active.id));
     onDraggingChange?.(true);
   }
 
@@ -25,8 +25,8 @@ export function SortableRows({ ids, onReorder, renderPreview, onDraggingChange, 
     setActiveId(null);
     onDraggingChange?.(false);
     if (!over || active.id === over.id) return;
-    const from = ids.indexOf(Number(active.id));
-    const to = ids.indexOf(Number(over.id));
+    const from = ids.indexOf(String(active.id));
+    const to = ids.indexOf(String(over.id));
     if (from === -1 || to === -1) return;
     onReorder(arrayMove(ids, from, to));
   }

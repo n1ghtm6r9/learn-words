@@ -7,9 +7,9 @@ import { TagGlyph } from './TagGlyph';
 
 interface TagFilterProps {
   tags: Tag[];
-  counts: Map<number, number>;
-  selected: number[];
-  onToggle: (tagId: number) => void;
+  counts: Map<string, number>;
+  selected: string[];
+  onToggle: (tagId: string) => void;
 }
 
 export function TagFilter({ tags, counts, selected, onToggle }: TagFilterProps) {

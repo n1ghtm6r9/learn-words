@@ -4,7 +4,7 @@ import type { WordScope } from './wordScope.type';
 export function filterWordsByScope(
   words: Word[],
   scope: WordScope,
-  tagsByWord: Map<number, number[]>,
+  tagsByWord: Map<string, string[]>,
 ): Word[] {
   const matchesFolder =
     scope.folderId === 'all'

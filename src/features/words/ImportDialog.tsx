@@ -23,7 +23,8 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
   const fileRequestId = useRef(0);
   const t = useTranslation();
 
-  const hasWords = parsed != null && parsed.valid && parsed.words.length > 0;
+  const hasWords =
+    parsed != null && parsed.valid && parsed.words.length + parsed.folders.length + parsed.tags.length > 0;
   const hasSettings = parsed != null && parsed.valid && parsed.settings !== null;
   const canImport = (hasWords && importWords) || (hasSettings && importSettings);
 
@@ -54,7 +55,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     setParsed(result);
     setImportResult(null);
     setFailed(false);
-    setImportWords(result.words.length > 0);
+    setImportWords(result.words.length + result.folders.length + result.tags.length > 0);
     setImportSettings(result.settings !== null);
   }
 
@@ -99,6 +100,11 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
               <p className="text-sm text-muted-foreground">
                 {t.importSummary(parsed.words.length, parsed.settings !== null)}
               </p>
+              {parsed.folders.length + parsed.tags.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {t.importLabelsSummary(parsed.folders.length, parsed.tags.length)}
+                </p>
+              )}
 
               {hasWords && (
                 <label className="flex items-center gap-2 text-sm">

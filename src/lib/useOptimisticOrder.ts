@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
-export function useOptimisticOrder<T extends { id?: number }>(items: T[]) {
-  const [pending, setPending] = useState<number[] | null>(null);
+export function useOptimisticOrder<T extends { id?: string }>(items: T[]) {
+  const [pending, setPending] = useState<string[] | null>(null);
 
   useEffect(() => {
     setPending(null);

@@ -10,6 +10,8 @@ import { WordList } from '@/features/words/WordList';
 import { FoldersDialog } from '@/features/organize/FoldersDialog';
 import { TagsDialog } from '@/features/organize/TagsDialog';
 import { SettingsPage } from '@/features/settings/SettingsPage';
+import { LoginDialog } from '@/features/settings/login/LoginDialog';
+import { getCloud } from '@/cloud/getCloud';
 import { useUIStore } from '@/store/useUIStore';
 import { applyAccentColor } from '@/lib/applyAccentColor';
 import { STUDY_LANGUAGE_PROFILES } from '@/languages/studyLanguageProfiles';
@@ -31,6 +33,7 @@ function App() {
   const tagsOpen = useUIStore((s) => s.tagsOpen);
   const setTagsOpen = useUIStore((s) => s.setTagsOpen);
   const t = useTranslation();
+  const cloud = getCloud();
 
   useLayoutEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -116,6 +119,7 @@ function App() {
 
       <FoldersDialog open={foldersOpen} onOpenChange={setFoldersOpen} />
       <TagsDialog open={tagsOpen} onOpenChange={setTagsOpen} />
+      {cloud && <LoginDialog cloud={cloud} />}
 
       <NavBar />
     </div>

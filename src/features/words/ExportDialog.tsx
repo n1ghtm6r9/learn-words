@@ -39,9 +39,16 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     setIsExporting(true);
     setFailed(false);
     try {
-      const words = includeWords ? await db.words.toArray() : undefined;
+      const vocabulary = includeWords
+        ? {
+            words: await db.words.toArray(),
+            folders: await db.folders.toArray(),
+            tags: await db.tags.toArray(),
+            links: await db.wordTags.toArray(),
+          }
+        : {};
       const settings = includeSettings ? currentSettingsSnapshot() : undefined;
-      const payload = buildExportPayload({ words, settings });
+      const payload = buildExportPayload({ ...vocabulary, settings });
 
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);

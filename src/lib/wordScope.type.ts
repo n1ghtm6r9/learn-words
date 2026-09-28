@@ -1,4 +1,4 @@
 export interface WordScope {
-  folderId: number | null | 'all';
-  tagIds: number[];
+  folderId: string | null | 'all';
+  tagIds: string[];
 }

@@ -34,10 +34,10 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
   const setLastUsedFolderId = useUIStore((s) => s.setLastUsedFolderId);
   const [term, setTerm] = useState(word?.term ?? '');
   const [translation, setTranslation] = useState(word?.translation ?? '');
-  const [folderId, setFolderId] = useState<number | null>(
+  const [folderId, setFolderId] = useState<string | null>(
     mode === 'edit' ? (word?.folderId ?? null) : lastUsedFolderId,
   );
-  const [tagIds, setTagIds] = useState<number[]>([]);
+  const [tagIds, setTagIds] = useState<string[]>([]);
 
   const snapshot = useLiveQuery(
     async () => ({
@@ -50,7 +50,7 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
   );
   const data = snapshot?.db === db ? snapshot : undefined;
 
-  const seededTagsFor = useRef<number | null>(null);
+  const seededTagsFor = useRef<string | null>(null);
 
   useEffect(() => {
     if (mode !== 'edit' || !data || word?.id == null) return;

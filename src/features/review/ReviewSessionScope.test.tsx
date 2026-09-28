@@ -52,7 +52,7 @@ describe('ReviewSession folder and tag filter', () => {
   });
 
   it('reviews only the words of the chosen folder', async () => {
-    const folderId = (await db.folders.add({ name: 'work', color: 'blue', order: 1 })) as number;
+    const folderId = await db.folders.add({ name: 'work', color: 'blue', order: 1 });
     await db.words.add(reviewWord({ term: 'meeting', translation: 'встреча', folderId }));
     await db.words.add(reviewWord({ term: 'table', translation: 'стол', stability: 1 }));
 
@@ -66,8 +66,8 @@ describe('ReviewSession folder and tag filter', () => {
   });
 
   it('reviews only the words carrying the chosen tag', async () => {
-    const tagId = (await db.tags.add({ name: 'verbs', color: 'green', order: 1 })) as number;
-    const runId = (await db.words.add(reviewWord({ term: 'run', translation: 'бежать' }))) as number;
+    const tagId = (await db.tags.add({ name: 'verbs', color: 'green', order: 1 }));
+    const runId = (await db.words.add(reviewWord({ term: 'run', translation: 'бежать' })));
     await db.words.add(reviewWord({ term: 'table', translation: 'стол', stability: 1 }));
     await db.wordTags.add({ wordId: runId, tagId });
 
@@ -82,7 +82,7 @@ describe('ReviewSession folder and tag filter', () => {
 
   it('applies the session limit after the filter, not before', async () => {
     useUIStore.setState({ reviewLimit: 2 });
-    const folderId = (await db.folders.add({ name: 'work', color: 'blue', order: 1 })) as number;
+    const folderId = await db.folders.add({ name: 'work', color: 'blue', order: 1 });
     for (let i = 0; i < 3; i++) {
       await db.words.add(reviewWord({ term: `work${i}`, translation: `работа${i}`, folderId }));
     }
@@ -116,7 +116,7 @@ describe('ReviewSession folder and tag filter', () => {
   });
 
   it('keeps the chosen folder when the screen is left and opened again', async () => {
-    const folderId = (await db.folders.add({ name: 'work', color: 'blue', order: 1 })) as number;
+    const folderId = await db.folders.add({ name: 'work', color: 'blue', order: 1 });
     await db.words.add(reviewWord({ term: 'meeting', translation: 'встреча', folderId }));
     await db.words.add(reviewWord({ term: 'table', translation: 'стол', stability: 1 }));
 
@@ -132,7 +132,7 @@ describe('ReviewSession folder and tag filter', () => {
   });
 
   it('counts only the words that are due for review on the folder chip', async () => {
-    const folderId = (await db.folders.add({ name: 'work', color: 'blue', order: 1 })) as number;
+    const folderId = await db.folders.add({ name: 'work', color: 'blue', order: 1 });
     await db.words.add(reviewWord({ term: 'meeting', translation: 'встреча', folderId }));
     await db.words.add({ ...reviewWord({ term: 'fresh', translation: 'новое', folderId }), stage: 'new', learningPhase: 'A' });
 
@@ -142,8 +142,8 @@ describe('ReviewSession folder and tag filter', () => {
   });
 
   it('forgets the filter when the study language changes', async () => {
-    const folderId = (await db.folders.add({ name: 'work', color: 'blue', order: 1 })) as number;
-    useUIStore.setState({ reviewFolderFilter: folderId, reviewTagFilter: [5] });
+    const folderId = await db.folders.add({ name: 'work', color: 'blue', order: 1 });
+    useUIStore.setState({ reviewFolderFilter: folderId, reviewTagFilter: ['5'] });
 
     useUIStore.getState().setStudyLanguage('es');
     useUIStore.getState().setStudyLanguage('en');

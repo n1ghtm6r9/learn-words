@@ -67,9 +67,9 @@ export function WordList() {
   const data = snapshot?.db === db ? snapshot : undefined;
   const words = data?.words;
   const [search, setSearch] = useState('');
-  const [folderFilter, setFolderFilter] = useState<number | null | 'all'>('all');
-  const [tagFilter, setTagFilter] = useState<number[]>([]);
-  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [folderFilter, setFolderFilter] = useState<string | null | 'all'>('all');
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const selecting = useUIStore((s) => s.selectingWords);
   const setSelecting = useUIStore((s) => s.setSelectingWords);
   const [editingWord, setEditingWord] = useState<Word | null>(null);
@@ -141,7 +141,7 @@ export function WordList() {
 
   const scopedTotal = useMemo(() => filterWordsByScope(usable, { folderId: 'all', tagIds: [] }, linksByWord).length, [usable, linksByWord]);
 
-  async function moveDraggedWord(wordId: number, folderId: number | null) {
+  async function moveDraggedWord(wordId: string, folderId: string | null) {
     try {
       const previous = new Map([[wordId, usable.find((word) => word.id === wordId)?.folderId]]);
       await moveWordToFolder(db, wordId, folderId);
@@ -205,7 +205,7 @@ export function WordList() {
     });
   }
 
-  async function handleDelete(id?: number) {
+  async function handleDelete(id?: string) {
     if (id == null) return;
     try {
       const snapshot = await deleteWordsCascade(db, [id]);
@@ -221,13 +221,13 @@ export function WordList() {
 
   const sharedFolder = useMemo(() => {
     if (targets.length === 0) return undefined;
-    const folderOf = (id: number) => usable.find((word) => word.id === id)?.folderId ?? null;
+    const folderOf = (id: string) => usable.find((word) => word.id === id)?.folderId ?? null;
     const first = folderOf(targets[0]);
     return targets.every((id) => folderOf(id) === first) ? first : undefined;
   }, [targets, usable]);
 
   const coverage = useMemo(() => {
-    const counts = new Map<number, number>();
+    const counts = new Map<string, number>();
     for (const id of targets) {
       for (const tagId of linksByWord.get(id) ?? []) counts.set(tagId, (counts.get(tagId) ?? 0) + 1);
     }
@@ -240,7 +240,7 @@ export function WordList() {
     setSheet(null);
   }
 
-  async function runBulk(action: (ids: number[]) => Promise<{ message: string; undo: () => Promise<void> }>) {
+  async function runBulk(action: (ids: string[]) => Promise<{ message: string; undo: () => Promise<void> }>) {
     if (targets.length === 0) return;
     try {
       const { message, undo } = await action(targets);
@@ -252,7 +252,7 @@ export function WordList() {
     }
   }
 
-  function moveSelection(folderId: number | null) {
+  function moveSelection(folderId: string | null) {
     void runBulk(async (ids) => {
       const previous = new Map(ids.map((id) => [id, usable.find((word) => word.id === id)?.folderId]));
       const moved = await moveWordsToFolder(db, ids, folderId);
@@ -264,7 +264,7 @@ export function WordList() {
     });
   }
 
-  function tagSelection(tagId: number, tagName: string) {
+  function tagSelection(tagId: string, tagName: string) {
     void runBulk(async (ids) => {
       const fresh = ids.filter((id) => !(linksByWord.get(id) ?? []).includes(tagId));
       const added = await addTagToWords(db, fresh, tagId);
@@ -277,7 +277,7 @@ export function WordList() {
     });
   }
 
-  function untagSelection(tagId: number) {
+  function untagSelection(tagId: string) {
     void runBulk(async (ids) => {
       const tagged = ids.filter((id) => (linksByWord.get(id) ?? []).includes(tagId));
       const removed = await removeTagFromWords(db, tagged, tagId);
@@ -494,7 +494,7 @@ export function WordList() {
         <WordDetailsDialog
           word={detailsWord}
           folder={detailsWord?.folderId == null ? undefined : folderById.get(detailsWord.folderId)}
-          tagNames={(linksByWord.get(detailsWord?.id ?? -1) ?? []).map((id) => tagById.get(id)?.name ?? '')}
+          tagNames={(linksByWord.get(detailsWord?.id ?? '') ?? []).map((id) => tagById.get(id)?.name ?? '')}
           onOpenChange={(open) => !open && setDetailsWord(null)}
         />
 

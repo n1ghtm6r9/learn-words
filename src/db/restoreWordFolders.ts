@@ -1,6 +1,6 @@
 import type { VocabDB } from './VocabDB';
 
-export async function restoreWordFolders(db: VocabDB, previous: Map<number, number | undefined>): Promise<void> {
+export async function restoreWordFolders(db: VocabDB, previous: Map<string, string | undefined>): Promise<void> {
   if (previous.size === 0) return;
 
   await db.transaction('rw', db.words, db.folders, async () => {

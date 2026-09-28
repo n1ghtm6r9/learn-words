@@ -1,5 +1,5 @@
 export interface WordTag {
-  id?: number;
-  wordId: number;
-  tagId: number;
+  id?: string;
+  wordId: string;
+  tagId: string;
 }

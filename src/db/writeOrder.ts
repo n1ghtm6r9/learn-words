@@ -3,8 +3,8 @@ import type { Folder } from './folder.type';
 import type { Tag } from './tag.type';
 
 export async function writeOrder(
-  table: Table<Folder, number> | Table<Tag, number>,
-  orderedIds: number[],
+  table: Table<Folder, string> | Table<Tag, string>,
+  orderedIds: string[],
 ): Promise<void> {
   await table.db.transaction('rw', table, async () => {
     for (const [index, id] of orderedIds.entries()) {

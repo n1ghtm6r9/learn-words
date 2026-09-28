@@ -1,9 +1,11 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SettingsPage } from './SettingsPage';
 import { APP_VERSION } from '@/lib/appVersion';
 import { useUIStore } from '@/store/useUIStore';
+
+vi.mock('@/cloud/getCloud', () => ({ getCloud: () => null }));
 
 describe('SettingsPage', () => {
   beforeEach(() => {

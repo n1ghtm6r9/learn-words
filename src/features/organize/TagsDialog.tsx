@@ -46,12 +46,12 @@ export function TagsDialog({ open, onOpenChange }: TagsDialogProps) {
     [data?.words, data?.links],
   );
 
-  function reorder(orderedIds: number[]) {
+  function reorder(orderedIds: string[]) {
     setPendingOrder(orderedIds);
     void writeOrder(db.tags, orderedIds);
   }
 
-  function renderPreview(id: number) {
+  function renderPreview(id: string) {
     const tag = tags.find((item) => item.id === id);
     if (!tag) return null;
     return (

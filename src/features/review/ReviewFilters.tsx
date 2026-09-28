@@ -18,12 +18,12 @@ interface ReviewFiltersProps {
   db: VocabDB;
   folders: Folder[];
   tags: Tag[];
-  folderCounts: Map<number | null, number>;
-  tagCounts: Map<number, number>;
-  folderFilter: number | null | 'all';
-  tagFilter: number[];
-  onFolderFilterChange: (value: number | null | 'all') => void;
-  onTagFilterChange: (value: number[]) => void;
+  folderCounts: Map<string | null, number>;
+  tagCounts: Map<string, number>;
+  folderFilter: string | null | 'all';
+  tagFilter: string[];
+  onFolderFilterChange: (value: string | null | 'all') => void;
+  onTagFilterChange: (value: string[]) => void;
 }
 
 export function ReviewFilters({
@@ -38,7 +38,7 @@ export function ReviewFilters({
   onTagFilterChange,
 }: ReviewFiltersProps) {
   const [folders, setPendingOrder] = useOptimisticOrder(storedFolders);
-  const [draggedFolderId, setDraggedFolderId] = useState<number | null>(null);
+  const [draggedFolderId, setDraggedFolderId] = useState<string | null>(null);
   const sensors = useTouchFriendlySensors();
 
   function handleDragStart(event: DragStartEvent) {

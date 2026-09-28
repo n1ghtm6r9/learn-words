@@ -3,7 +3,7 @@ import type { LabelColor } from './labelColor.type';
 import { createFolder } from './createFolder';
 import type { VocabDB } from './VocabDB';
 
-export async function appendFolder(db: VocabDB, name: string, color?: LabelColor): Promise<number> {
+export async function appendFolder(db: VocabDB, name: string, color?: LabelColor): Promise<string> {
   return db.transaction('rw', db.folders, async () => {
     const last = await db.folders.orderBy('order').last();
     const picked = color ?? LABEL_COLORS[(await db.folders.count()) % LABEL_COLORS.length];

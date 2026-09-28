@@ -3,7 +3,7 @@ import type { LearningPhase } from './learningPhase.type';
 import type { WordKind } from './wordKind.type';
 
 export interface Word {
-  id?: number;
+  id?: string;
   term: string;
   translation: string;
   createdAt: number;
@@ -20,5 +20,5 @@ export interface Word {
 
   lastReviewedAt?: number;
 
-  folderId?: number;
+  folderId?: string;
 }

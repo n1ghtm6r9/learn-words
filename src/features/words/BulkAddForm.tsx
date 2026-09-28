@@ -46,8 +46,8 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
   const studyLanguage = useUIStore((s) => s.studyLanguage);
   const setLastUsedFolderId = useUIStore((s) => s.setLastUsedFolderId);
   const [text, setText] = useState('');
-  const [folderId, setFolderId] = useState<number | null>(null);
-  const [tagIds, setTagIds] = useState<number[]>([]);
+  const [folderId, setFolderId] = useState<string | null>(null);
+  const [tagIds, setTagIds] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const t = useTranslation();

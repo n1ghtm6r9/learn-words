@@ -12,9 +12,9 @@ interface TagTargetSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   tags: Tag[];
-  coverage: Map<number, number>;
+  coverage: Map<string, number>;
   selectedCount: number;
-  onPick: (tagId: number) => void;
+  onPick: (tagId: string) => void;
   onCreate: (name: string, color: LabelColor) => void;
 }
 
@@ -31,7 +31,7 @@ export function TagTargetSheet({
   const t = useTranslation();
   const visible = mode === 'add' ? tags : tags.filter((tag) => (coverage.get(tag.id!) ?? 0) > 0);
 
-  function hintFor(tagId: number): string | undefined {
+  function hintFor(tagId: string): string | undefined {
     const have = coverage.get(tagId) ?? 0;
     if (mode === 'add' && have === selectedCount) return t.tagOnAll;
     return have > 0 ? t.tagOnSome(have, selectedCount) : undefined;

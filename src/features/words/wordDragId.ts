@@ -1,3 +1,3 @@
-export function wordDragId(wordId: number): string {
+export function wordDragId(wordId: string): string {
   return `word:${wordId}`;
 }

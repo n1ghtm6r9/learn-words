@@ -3,6 +3,8 @@ import { ACCENT_PALETTE } from '@/lib/accentPalette';
 import { STUDY_LANGUAGES } from '@/languages/studyLanguages';
 import { UI_LANGUAGES } from '@/i18n/uiLanguages';
 import { parsePositiveInt } from '@/lib/parsePositiveInt';
+import { safeGetItem } from '@/lib/safeGetItem';
+import { safeSetItem } from '@/lib/safeSetItem';
 import { MIN_PHASE_REPEATS, MAX_PHASE_REPEATS } from '@/lib/phaseRepeatsRange';
 import { DEFAULT_REVIEW_LIMIT, MIN_REVIEW_LIMIT, MAX_REVIEW_LIMIT } from '@/lib/reviewLimitRange';
 import type { Screen } from './screen.type';
@@ -16,20 +18,6 @@ const DEFAULT_ACCENT_COLOR: AccentColor = 'blue';
 const ACCENT_COLORS = Object.keys(ACCENT_PALETTE) as AccentColor[];
 const DEFAULT_LANGUAGE: UiLanguage = 'ru';
 const DEFAULT_STUDY_LANGUAGE: StudyLanguage = 'en';
-
-function safeGetItem(key: string): string | null {
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function safeSetItem(key: string, value: string): void {
-  try {
-    window.localStorage.setItem(key, value);
-  } catch {}
-}
 
 interface UIStore {
   screen: Screen;
@@ -63,8 +51,8 @@ interface UIStore {
   reviewLimit: number;
   setReviewLimit: (value: number) => void;
 
-  lastUsedFolderId: number | null;
-  setLastUsedFolderId: (folderId: number | null) => void;
+  lastUsedFolderId: string | null;
+  setLastUsedFolderId: (folderId: string | null) => void;
 
   selectingWords: boolean;
   setSelectingWords: (selecting: boolean) => void;
@@ -78,11 +66,11 @@ interface UIStore {
   colorFlowerOpen: boolean;
   setColorFlowerOpen: (open: boolean) => void;
 
-  reviewFolderFilter: number | null | 'all';
-  setReviewFolderFilter: (value: number | null | 'all') => void;
+  reviewFolderFilter: string | null | 'all';
+  setReviewFolderFilter: (value: string | null | 'all') => void;
 
-  reviewTagFilter: number[];
-  setReviewTagFilter: (value: number[]) => void;
+  reviewTagFilter: string[];
+  setReviewTagFilter: (value: string[]) => void;
 }
 
 function readInitialTheme(): Theme {
@@ -106,11 +94,10 @@ function readInitialStudyLanguage(): StudyLanguage {
     : DEFAULT_STUDY_LANGUAGE;
 }
 
-function readLastUsedFolderId(language: StudyLanguage): number | null {
+function readLastUsedFolderId(language: StudyLanguage): string | null {
   const stored = safeGetItem(`lastUsedFolderId:${language}`);
-  if (stored == null) return null;
-  const parsed = Number(stored);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  if (!stored || /^\d+$/.test(stored)) return null;
+  return stored;
 }
 
 function readInitialNumber(key: string, fallback: number, min: number, max: number): number {
@@ -203,7 +190,7 @@ export const useUIStore = create<UIStore>((set) => ({
   lastUsedFolderId: readLastUsedFolderId(readInitialStudyLanguage()),
   setLastUsedFolderId: (folderId) => {
     const language = useUIStore.getState().studyLanguage;
-    safeSetItem(`lastUsedFolderId:${language}`, folderId == null ? '' : String(folderId));
+    safeSetItem(`lastUsedFolderId:${language}`, folderId ?? '');
     set({ lastUsedFolderId: folderId });
   },
 }));

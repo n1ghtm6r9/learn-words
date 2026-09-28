@@ -12,9 +12,9 @@ interface FolderTargetSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   folders: Folder[];
-  counts: Map<number | null, number>;
-  sharedFolder: number | null | undefined;
-  onPick: (folderId: number | null) => void;
+  counts: Map<string | null, number>;
+  sharedFolder: string | null | undefined;
+  onPick: (folderId: string | null) => void;
   onCreate: (name: string, color: LabelColor) => void;
 }
 

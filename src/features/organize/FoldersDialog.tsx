@@ -42,12 +42,12 @@ export function FoldersDialog({ open, onOpenChange }: FoldersDialogProps) {
   const [folders, setPendingOrder] = useOptimisticOrder(stored);
   const counts = useMemo(() => folderCounts((data?.words ?? []).filter(isUsableWord)), [data?.words]);
 
-  function reorder(orderedIds: number[]) {
+  function reorder(orderedIds: string[]) {
     setPendingOrder(orderedIds);
     void writeOrder(db.folders, orderedIds);
   }
 
-  function renderPreview(id: number) {
+  function renderPreview(id: string) {
     const folder = folders.find((f) => f.id === id);
     if (!folder) return null;
     return (

@@ -58,7 +58,7 @@ describe('WordForm with folders and tags', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Сохранить' }));
 
     await waitFor(async () => {
-      expect(await db.wordTags.where('tagId').equals(tagId as number).count()).toBe(1);
+      expect(await db.wordTags.where('tagId').equals(tagId).count()).toBe(1);
     });
   });
 
@@ -78,18 +78,18 @@ describe('WordForm with folders and tags', () => {
       reviewStreak: 0,
     });
     await db.wordTags.bulkAdd([
-      { wordId: wordId as number, tagId: keptId as number },
-      { wordId: wordId as number, tagId: droppedId as number },
+      { wordId: wordId, tagId: keptId },
+      { wordId: wordId, tagId: droppedId },
     ]);
 
-    const word = await db.words.get(wordId as number);
+    const word = await db.words.get(wordId);
     render(<WordForm mode="edit" word={word} onDone={() => {}} />);
 
     await userEvent.click(await screen.findByRole('button', { name: /dropped/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Сохранить' }));
 
     await waitFor(async () => {
-      const links = await db.wordTags.where('wordId').equals(wordId as number).toArray();
+      const links = await db.wordTags.where('wordId').equals(wordId).toArray();
       expect(links.map((link) => link.tagId)).toEqual([keptId]);
     });
   });
@@ -188,9 +188,9 @@ describe('WordForm live query resilience', () => {
       difficulty: 5,
       reviewStreak: 0,
     });
-    await db.wordTags.add({ wordId: editedId as number, tagId: tagId as number });
+    await db.wordTags.add({ wordId: editedId, tagId: tagId });
 
-    const word = await db.words.get(editedId as number);
+    const word = await db.words.get(editedId);
     render(<WordForm mode="edit" word={word} onDone={() => {}} />);
 
     const chip = await screen.findByRole('button', { name: /hard/ });
@@ -199,10 +199,10 @@ describe('WordForm live query resilience', () => {
     await userEvent.click(chip);
     expect(chip).toHaveAttribute('aria-pressed', 'false');
 
-    await db.wordTags.add({ wordId: otherId as number, tagId: tagId as number });
+    await db.wordTags.add({ wordId: otherId, tagId: tagId });
 
     await waitFor(async () => {
-      expect(await db.wordTags.where('tagId').equals(tagId as number).count()).toBe(2);
+      expect(await db.wordTags.where('tagId').equals(tagId).count()).toBe(2);
     });
     expect(chip).toHaveAttribute('aria-pressed', 'false');
   });
@@ -273,7 +273,7 @@ describe('WordForm folder select icons', () => {
 
   it('shows the chosen folder with its icon in the closed select', async () => {
     const folderId = await db.folders.add({ name: 'work', color: 'pink', order: 1 });
-    useUIStore.setState({ lastUsedFolderId: folderId as number });
+    useUIStore.setState({ lastUsedFolderId: folderId });
 
     render(<WordForm mode="create" onDone={() => {}} />);
 

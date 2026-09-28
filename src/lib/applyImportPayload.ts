@@ -1,6 +1,9 @@
+import { ensureLabels } from '@/db/ensureLabels';
 import { getDb } from '@/db/getDb';
 import { isUsableWord } from '@/db/isUsableWord';
+import { labelIdentityKey } from '@/db/merge/labelIdentityKey';
 import type { Word } from '@/db/word.type';
+import type { WordTag } from '@/db/wordTag.type';
 import { clamp } from '@/lib/clamp';
 import { detectWordKind } from '@/lib/detectWordKind';
 import { duplicateKey } from '@/lib/duplicateKey';
@@ -123,35 +126,71 @@ export async function applyImportPayload(
   const importedSettings = options.importSettings ? parsed.settings : null;
   const targetLanguage = importedSettings?.studyLanguage ?? useUIStore.getState().studyLanguage;
 
-  if (options.importWords && parsed.words.length > 0) {
+  const hasVocabulary = parsed.words.length > 0 || parsed.folders.length > 0 || parsed.tags.length > 0;
+  if (options.importWords && hasVocabulary) {
     const now = Date.now();
     const db = getDb(targetLanguage);
     const unique = dedupeByNormalizedTerm(parsed.words, targetLanguage);
 
-    await db.transaction('rw', db.words, async () => {
+    await db.transaction('rw', db.words, db.folders, db.tags, db.wordTags, async () => {
+      const folderIds = await ensureLabels(db.folders, [
+        ...parsed.folders,
+        ...unique.flatMap(({ entry }) => (entry.folder ? [{ name: entry.folder }] : [])),
+      ]);
+      const tagIds = await ensureLabels(db.tags, [
+        ...parsed.tags,
+        ...unique.flatMap(({ entry }) => (entry.tags ?? []).map((name) => ({ name }))),
+      ]);
       const existingByTerm = new Map(
         (await db.words.toArray()).filter(isUsableWord).map((w) => [duplicateKey(w.term, targetLanguage), w]),
       );
 
       const toAdd: Word[] = [];
+      const addedEntries: ImportedWord[] = [];
       const toUpdate: Word[] = [];
+      const updatedEntries: ImportedWord[] = [];
 
       for (const { entry, term, translation } of unique) {
         const candidate = buildWord(entry, term, translation, now, targetLanguage);
         const existing = existingByTerm.get(duplicateKey(term, targetLanguage));
+        const folderId = entry.folder ? folderIds.get(labelIdentityKey(entry.folder)) : undefined;
 
         if (!existing) {
-          toAdd.push(candidate);
+          toAdd.push(folderId ? { ...candidate, folderId } : candidate);
+          addedEntries.push(entry);
         } else if (options.replaceExisting) {
-          toUpdate.push({ ...candidate, id: existing.id });
+          const keptFolderId = folderId ?? existing.folderId;
+          toUpdate.push(keptFolderId ? { ...candidate, id: existing.id, folderId: keptFolderId } : { ...candidate, id: existing.id });
+          updatedEntries.push(entry);
         }
       }
 
-      if (toAdd.length > 0) {
-        await db.words.bulkAdd(toAdd);
-      }
+      const addedIds = toAdd.length > 0 ? await db.words.bulkAdd(toAdd, { allKeys: true }) : [];
       if (toUpdate.length > 0) {
         await db.words.bulkPut(toUpdate);
+      }
+
+      const touched: Array<[string, ImportedWord]> = [
+        ...addedEntries.map((entry, index): [string, ImportedWord] => [addedIds[index], entry]),
+        ...updatedEntries.map((entry, index): [string, ImportedWord] => [toUpdate[index].id!, entry]),
+      ];
+      const linked = new Set(
+        (await db.wordTags.where('wordId').anyOf(touched.map(([wordId]) => wordId)).toArray()).map(
+          (link) => `${link.wordId}|${link.tagId}`,
+        ),
+      );
+      const links: WordTag[] = [];
+      for (const [wordId, entry] of touched) {
+        for (const name of entry.tags ?? []) {
+          const tagId = tagIds.get(labelIdentityKey(name));
+          const pair = `${wordId}|${tagId}`;
+          if (!tagId || linked.has(pair)) continue;
+          linked.add(pair);
+          links.push({ wordId, tagId });
+        }
+      }
+      if (links.length > 0) {
+        await db.wordTags.bulkAdd(links);
       }
       importedCount = toAdd.length;
       updatedCount = toUpdate.length;

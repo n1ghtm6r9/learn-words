@@ -1,11 +1,11 @@
 import Dexie from 'dexie';
 import { afterEach, describe, expect, it } from 'vitest';
-import { VocabDB } from './VocabDB';
+import { LegacyVocabDB } from './LegacyVocabDB';
 import { DEFAULT_DIFFICULTY, INITIAL_STABILITY_DAYS } from '@/lib/memoryParams';
 
 const TEST_DB_NAME = 'vocab-db-migration-test';
 
-describe('VocabDB migration v1 -> v2', () => {
+describe('LegacyVocabDB migration v1 -> v2', () => {
   afterEach(async () => {
     await Dexie.delete(TEST_DB_NAME);
   });
@@ -27,7 +27,7 @@ describe('VocabDB migration v1 -> v2', () => {
     });
     legacy.close();
 
-    const upgraded = new VocabDB(TEST_DB_NAME);
+    const upgraded = new LegacyVocabDB(TEST_DB_NAME);
     const [word] = await upgraded.words.toArray();
 
     expect(word.stage).toBe('review');
@@ -60,7 +60,7 @@ describe('VocabDB migration v1 -> v2', () => {
     });
     legacy.close();
 
-    const upgraded = new VocabDB(TEST_DB_NAME);
+    const upgraded = new LegacyVocabDB(TEST_DB_NAME);
     const [word] = await upgraded.words.toArray();
 
     expect(word.stage).toBe('new');
@@ -74,7 +74,7 @@ describe('VocabDB migration v1 -> v2', () => {
   });
 });
 
-describe('VocabDB migration v2 -> v3', () => {
+describe('LegacyVocabDB migration v2 -> v3', () => {
   afterEach(async () => {
     await Dexie.delete(TEST_DB_NAME);
   });
@@ -89,7 +89,7 @@ describe('VocabDB migration v2 -> v3', () => {
     ]);
     legacy.close();
 
-    const upgraded = new VocabDB(TEST_DB_NAME);
+    const upgraded = new LegacyVocabDB(TEST_DB_NAME);
     const words = await upgraded.words.toArray();
 
     expect(words).toHaveLength(1);
@@ -110,7 +110,7 @@ describe('VocabDB migration v2 -> v3', () => {
     ]);
     legacy.close();
 
-    const upgraded = new VocabDB(TEST_DB_NAME);
+    const upgraded = new LegacyVocabDB(TEST_DB_NAME);
     const words = await upgraded.words.toArray();
 
     expect(words.find((w) => w.term === 'apple')?.kind).toBe('word');
@@ -135,7 +135,7 @@ describe('VocabDB migration v2 -> v3', () => {
     });
     legacy.close();
 
-    const upgraded = new VocabDB(TEST_DB_NAME);
+    const upgraded = new LegacyVocabDB(TEST_DB_NAME);
     const [word] = await upgraded.words.toArray();
 
     expect(word).toMatchObject({
@@ -163,7 +163,7 @@ describe('VocabDB migration v2 -> v3', () => {
     ]);
     legacy.close();
 
-    const upgraded = new VocabDB(TEST_DB_NAME);
+    const upgraded = new LegacyVocabDB(TEST_DB_NAME);
     const phrases = await upgraded.words.where('kind').equals('phrase').toArray();
 
     expect(phrases).toHaveLength(1);
@@ -172,7 +172,7 @@ describe('VocabDB migration v2 -> v3', () => {
   });
 });
 
-describe('VocabDB migration v4 -> v5', () => {
+describe('LegacyVocabDB migration v4 -> v5', () => {
   afterEach(async () => {
     await Dexie.delete(TEST_DB_NAME);
   });
@@ -195,7 +195,7 @@ describe('VocabDB migration v4 -> v5', () => {
     });
     legacy.close();
 
-    const upgraded = new VocabDB(TEST_DB_NAME);
+    const upgraded = new LegacyVocabDB(TEST_DB_NAME);
     const [word] = await upgraded.words.toArray();
 
     expect(word.term).toBe('keep');
@@ -217,7 +217,7 @@ describe('VocabDB migration v4 -> v5', () => {
     ]);
     legacy.close();
 
-    const upgraded = new VocabDB(TEST_DB_NAME);
+    const upgraded = new LegacyVocabDB(TEST_DB_NAME);
 
     expect(await upgraded.words.where('stage').equals('new').count()).toBe(2);
     expect(await upgraded.words.where('kind').equals('phrase').count()).toBe(1);

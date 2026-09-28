@@ -18,7 +18,7 @@ describe('BulkAddForm folder handling', () => {
 
   it('never drops a batch into the last used folder on its own', async () => {
     const folderId = await db.folders.add({ name: 'work', color: 'blue', order: 1 });
-    useUIStore.setState({ lastUsedFolderId: folderId as number });
+    useUIStore.setState({ lastUsedFolderId: folderId });
 
     render(<BulkAddForm onDone={() => {}} />);
 
@@ -43,7 +43,7 @@ describe('BulkAddForm folder handling', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Сохранить всё' }));
 
     await waitFor(async () => {
-      expect(await db.words.where('folderId').equals(folderId as number).count()).toBe(2);
+      expect(await db.words.where('folderId').equals(folderId).count()).toBe(2);
     });
   });
 });

@@ -8,12 +8,15 @@ import { DEFAULT_DIFFICULTY, INITIAL_STABILITY_DAYS, MAX_STABILITY_DAYS, MIN_STA
 const db = getDb('en');
 
 function payload(overrides: Partial<ParsedImportPayload> = {}): ParsedImportPayload {
-  return { valid: true, words: [], settings: null, ...overrides };
+  return { valid: true, words: [], folders: [], tags: [], settings: null, ...overrides };
 }
 
 describe('applyImportPayload', () => {
   beforeEach(async () => {
     await db.words.clear();
+    await db.folders.clear();
+    await db.tags.clear();
+    await db.wordTags.clear();
     useUIStore.setState({
       theme: 'light',
       accentColor: 'blue',

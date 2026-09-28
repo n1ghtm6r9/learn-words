@@ -10,8 +10,13 @@ import { MIN_REVIEW_LIMIT, MAX_REVIEW_LIMIT } from './reviewLimitRange';
 import type { ExportPayload } from './exportPayload.type';
 import type { ParsedImportPayload } from './parsedImportPayload.type';
 import type { ImportedWord } from './importedWord.type';
+import type { ImportedLabel } from './importedLabel.type';
+import type { LabelColor } from '@/db/labelColor.type';
+import { LABEL_COLORS } from './labelColors';
 
-const SUPPORTED_EXPORT_VERSION = 3;
+const SUPPORTED_EXPORT_VERSION = 4;
+
+const INVALID_PAYLOAD: ParsedImportPayload = { valid: false, words: [], folders: [], tags: [], settings: null };
 
 type Settings = NonNullable<ExportPayload['settings']>;
 
@@ -27,9 +32,34 @@ function parseWords(rawWords: unknown): ParsedImportPayload['words'] {
     if (typeof entry !== 'object' || entry === null) continue;
     const candidate = entry as Record<string, unknown>;
     if (!isNonEmptyString(candidate.term) || !isNonEmptyString(candidate.translation)) continue;
-    words.push(candidate as unknown as ImportedWord);
+    const { folderId: _folderId, folder, tags, ...rest } = candidate;
+    const word = rest as unknown as ImportedWord;
+    if (isNonEmptyString(folder)) word.folder = folder;
+    if (Array.isArray(tags)) {
+      const names = tags.filter(isNonEmptyString);
+      if (names.length > 0) word.tags = names;
+    }
+    words.push(word);
   }
   return words;
+}
+
+function parseLabels(rawLabels: unknown): ImportedLabel[] {
+  if (!Array.isArray(rawLabels)) return [];
+
+  const labels: ImportedLabel[] = [];
+  for (const entry of rawLabels) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const candidate = entry as Record<string, unknown>;
+    if (!isNonEmptyString(candidate.name)) continue;
+    const label: ImportedLabel = { name: candidate.name };
+    if (typeof candidate.color === 'string' && (LABEL_COLORS as string[]).includes(candidate.color)) {
+      label.color = candidate.color as LabelColor;
+    }
+    if (typeof candidate.order === 'number' && Number.isFinite(candidate.order)) label.order = candidate.order;
+    labels.push(label);
+  }
+  return labels;
 }
 
 function parseSettings(rawSettings: unknown): Partial<Settings> | null {
@@ -73,11 +103,11 @@ export function parseImportPayload(jsonText: string): ParsedImportPayload {
   try {
     parsedJson = JSON.parse(jsonText);
   } catch {
-    return { valid: false, words: [], settings: null };
+    return INVALID_PAYLOAD;
   }
 
   if (typeof parsedJson !== 'object' || parsedJson === null || Array.isArray(parsedJson)) {
-    return { valid: false, words: [], settings: null };
+    return INVALID_PAYLOAD;
   }
 
   const payload = parsedJson as Record<string, unknown>;
@@ -86,12 +116,14 @@ export function parseImportPayload(jsonText: string): ParsedImportPayload {
     payload.version !== undefined &&
     (typeof payload.version !== 'number' || payload.version > SUPPORTED_EXPORT_VERSION);
   if (hasUnsupportedVersion) {
-    return { valid: false, words: [], settings: null };
+    return INVALID_PAYLOAD;
   }
 
   return {
     valid: true,
     words: parseWords(payload.words),
+    folders: parseLabels(payload.folders),
+    tags: parseLabels(payload.tags),
     settings: parseSettings(payload.settings),
   };
 }

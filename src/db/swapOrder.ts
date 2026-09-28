@@ -2,7 +2,7 @@ import type { Table } from 'dexie';
 import type { Folder } from './folder.type';
 import type { Tag } from './tag.type';
 
-export async function swapOrder(table: Table<Folder, number> | Table<Tag, number>, aId: number, bId: number): Promise<void> {
+export async function swapOrder(table: Table<Folder, string> | Table<Tag, string>, aId: string, bId: string): Promise<void> {
   await table.db.transaction('rw', table, async () => {
     const [a, b] = await Promise.all([table.get(aId), table.get(bId)]);
     if (!a || !b) return;

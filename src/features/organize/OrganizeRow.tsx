@@ -10,7 +10,7 @@ import type { LabelColor } from '@/db/labelColor.type';
 import { cn } from '@/lib/utils';
 
 interface OrganizeRowProps {
-  id: number;
+  id: string;
   name: string;
   count: number;
   marker: React.ReactNode;

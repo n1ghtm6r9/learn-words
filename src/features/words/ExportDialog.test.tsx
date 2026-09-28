@@ -18,7 +18,7 @@ describe('ExportDialog', () => {
   it('shows both checkboxes checked by default', () => {
     render(<ExportDialog open onOpenChange={vi.fn()} />);
 
-    expect(screen.getByRole('checkbox', { name: 'Слова и прогресс' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Слова, прогресс, папки и теги' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Настройки' })).toBeChecked();
   });
 
@@ -29,7 +29,7 @@ describe('ExportDialog', () => {
     const confirmButton = screen.getByRole('button', { name: 'Скачать' });
     expect(confirmButton).not.toBeDisabled();
 
-    await user.click(screen.getByRole('checkbox', { name: 'Слова и прогресс' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Слова, прогресс, папки и теги' }));
     expect(confirmButton).not.toBeDisabled();
 
     await user.click(screen.getByRole('checkbox', { name: 'Настройки' }));

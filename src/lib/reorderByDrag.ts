@@ -1,4 +1,4 @@
-export function reorderByDrag<T extends { id?: number }>(items: T[], draggedId: number, targetId: number): T[] {
+export function reorderByDrag<T extends { id?: string }>(items: T[], draggedId: string, targetId: string): T[] {
   const from = items.findIndex((item) => item.id === draggedId);
   const to = items.findIndex((item) => item.id === targetId);
   if (from === -1 || to === -1 || from === to) return items;

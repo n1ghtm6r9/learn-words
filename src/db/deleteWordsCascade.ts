@@ -1,7 +1,7 @@
 import type { DeletedWordsSnapshot } from './deletedWordsSnapshot.type';
 import type { VocabDB } from './VocabDB';
 
-export async function deleteWordsCascade(db: VocabDB, wordIds: number[]): Promise<DeletedWordsSnapshot> {
+export async function deleteWordsCascade(db: VocabDB, wordIds: string[]): Promise<DeletedWordsSnapshot> {
   if (wordIds.length === 0) return { words: [], links: [] };
 
   return db.transaction('rw', db.words, db.wordTags, async () => {

@@ -2,8 +2,10 @@ import { FolderTree, Hash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { APP_VERSION } from '@/lib/appVersion';
+import { getCloud } from '@/cloud/getCloud';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
+import { AccountSection } from './AccountSection';
 import { ThemeSection } from './ThemeSection';
 import { AccentColorSection } from './AccentColorSection';
 import { LanguageSection } from './LanguageSection';
@@ -23,6 +25,7 @@ export function SettingsPage() {
   const setFoldersOpen = useUIStore((s) => s.setFoldersOpen);
   const setTagsOpen = useUIStore((s) => s.setTagsOpen);
   const t = useTranslation();
+  const cloud = getCloud();
 
   const phaseA = useNumberField(phaseARepeats, setPhaseARepeats, MIN_PHASE_REPEATS, MAX_PHASE_REPEATS);
   const phaseB = useNumberField(phaseBRepeats, setPhaseBRepeats, MIN_PHASE_REPEATS, MAX_PHASE_REPEATS);
@@ -30,7 +33,13 @@ export function SettingsPage() {
 
   return (
     <div className="flex flex-col divide-y divide-border">
-      <div className="flex flex-col gap-4 pb-5">
+      {cloud && (
+        <div className="pb-5">
+          <AccountSection cloud={cloud} />
+        </div>
+      )}
+
+      <div className="flex flex-col gap-4 py-5 first:pt-0">
         <ThemeSection />
         <AccentColorSection />
         <LanguageSection />

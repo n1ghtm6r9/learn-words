@@ -26,3 +26,7 @@ dist-ssr
 # Local-only planning docs (not part of the shipped project)
 /docs
 /PLAN.md
+
+# Dexie Cloud credentials created by `npx dexie-cloud create`
+dexie-cloud.json
+dexie-cloud.key

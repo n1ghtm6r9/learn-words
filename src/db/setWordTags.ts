@@ -1,6 +1,6 @@
 import type { VocabDB } from './VocabDB';
 
-export async function setWordTags(db: VocabDB, wordId: number, tagIds: number[]): Promise<void> {
+export async function setWordTags(db: VocabDB, wordId: string, tagIds: string[]): Promise<void> {
   const wanted = new Set(tagIds);
 
   await db.transaction('rw', db.wordTags, async () => {

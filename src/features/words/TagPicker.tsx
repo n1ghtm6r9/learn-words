@@ -13,8 +13,8 @@ import { TagGlyph } from './TagGlyph';
 
 interface TagPickerProps {
   tags: Tag[];
-  selected: number[];
-  onToggle: (tagId: number) => void;
+  selected: string[];
+  onToggle: (tagId: string) => void;
   onCreate?: (name: string, color: LabelColor) => void;
 }
 

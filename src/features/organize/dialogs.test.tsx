@@ -8,7 +8,7 @@ import { useUIStore } from '@/store/useUIStore';
 
 const db = getDb('en');
 
-function word(term: string, folderId?: number) {
+function word(term: string, folderId?: string) {
   return {
     term,
     translation: term,
@@ -45,7 +45,7 @@ describe('FoldersDialog', () => {
 
   it('creates a folder and counts its words', async () => {
     const folderId = await db.folders.add({ name: 'work', color: 'blue', order: 1 });
-    await db.words.add(word('meeting', folderId as number));
+    await db.words.add(word('meeting', folderId));
 
     render(<FoldersDialog open onOpenChange={() => {}} />);
 
@@ -62,7 +62,7 @@ describe('FoldersDialog', () => {
 
   it('keeps the words of a deleted folder', async () => {
     const folderId = await db.folders.add({ name: 'doomed', color: 'blue', order: 1 });
-    const wordId = await db.words.add(word('kept', folderId as number));
+    const wordId = await db.words.add(word('kept', folderId));
 
     render(<FoldersDialog open onOpenChange={() => {}} />);
 
@@ -73,7 +73,7 @@ describe('FoldersDialog', () => {
     await waitFor(async () => {
       expect(await db.folders.count()).toBe(0);
     });
-    expect((await db.words.get(wordId as number))?.folderId).toBeUndefined();
+    expect((await db.words.get(wordId))?.folderId).toBeUndefined();
   });
 });
 
@@ -99,7 +99,7 @@ describe('TagsDialog', () => {
   it('drops the links of a deleted tag but keeps the word', async () => {
     const tagId = await db.tags.add({ name: 'doomed', color: 'blue', order: 1 });
     const wordId = await db.words.add(word('tagged'));
-    await db.wordTags.add({ wordId: wordId as number, tagId: tagId as number });
+    await db.wordTags.add({ wordId: wordId, tagId: tagId });
 
     render(<TagsDialog open onOpenChange={() => {}} />);
 
@@ -110,7 +110,7 @@ describe('TagsDialog', () => {
     await waitFor(async () => {
       expect(await db.wordTags.count()).toBe(0);
     });
-    expect(await db.words.get(wordId as number)).toBeDefined();
+    expect(await db.words.get(wordId)).toBeDefined();
   });
 
   it('gives every row a drag handle to reorder with', async () => {
@@ -231,9 +231,9 @@ describe('deleting a tag', () => {
   });
 
   it('warns visibly that the tag comes off every word before deleting', async () => {
-    const tagId = (await db.tags.add({ name: 'verbs', color: 'blue', order: 1 })) as number;
+    const tagId = (await db.tags.add({ name: 'verbs', color: 'blue', order: 1 }));
     for (const term of ['run', 'walk', 'jump']) {
-      const wordId = (await db.words.add(word(term))) as number;
+      const wordId = (await db.words.add(word(term)));
       await db.wordTags.add({ wordId, tagId });
     }
 
@@ -246,11 +246,11 @@ describe('deleting a tag', () => {
   });
 
   it('takes the tag off every word but keeps the words', async () => {
-    const tagId = (await db.tags.add({ name: 'verbs', color: 'blue', order: 1 })) as number;
-    const keptTagId = (await db.tags.add({ name: 'kept', color: 'green', order: 2 })) as number;
-    const ids: number[] = [];
+    const tagId = (await db.tags.add({ name: 'verbs', color: 'blue', order: 1 }));
+    const keptTagId = (await db.tags.add({ name: 'kept', color: 'green', order: 2 }));
+    const ids: string[] = [];
     for (const term of ['run', 'walk', 'jump']) {
-      const wordId = (await db.words.add(word(term))) as number;
+      const wordId = (await db.words.add(word(term)));
       ids.push(wordId);
       await db.wordTags.add({ wordId, tagId });
     }

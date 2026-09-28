@@ -2,8 +2,8 @@ import type { VocabDB } from './VocabDB';
 
 export async function moveWordsToFolder(
   db: VocabDB,
-  wordIds: number[],
-  folderId: number | null,
+  wordIds: string[],
+  folderId: string | null,
 ): Promise<number> {
   if (wordIds.length === 0) return 0;
 

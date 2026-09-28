@@ -1,7 +1,7 @@
 import type { Word } from '@/db/word.type';
 
-export function folderCounts(words: Word[]): Map<number | null, number> {
-  const counts = new Map<number | null, number>();
+export function folderCounts(words: Word[]): Map<string | null, number> {
+  const counts = new Map<string | null, number>();
 
   for (const word of words) {
     const key = word.folderId ?? null;

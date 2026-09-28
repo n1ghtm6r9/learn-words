@@ -5,7 +5,7 @@ describe('parseImportPayload', () => {
   it('reports invalid for text that is not valid JSON', () => {
     const result = parseImportPayload('not json{{{');
 
-    expect(result).toEqual({ valid: false, words: [], settings: null });
+    expect(result).toEqual({ valid: false, words: [], folders: [], tags: [], settings: null });
   });
 
   it('reports invalid for JSON whose top level is not a plain object', () => {
@@ -18,6 +18,7 @@ describe('parseImportPayload', () => {
   it('accepts the supported export version', () => {
     expect(parseImportPayload('{"version":1,"words":[]}').valid).toBe(true);
     expect(parseImportPayload('{"version":3,"words":[]}').valid).toBe(true);
+    expect(parseImportPayload('{"version":4,"words":[]}').valid).toBe(true);
   });
 
   it('accepts a legacy file that carries no version at all', () => {
@@ -25,7 +26,7 @@ describe('parseImportPayload', () => {
   });
 
   it('rejects a newer export format instead of mis-parsing it as the current one', () => {
-    expect(parseImportPayload('{"version":4,"words":[{"term":"cat","translation":"кот"}]}').valid).toBe(false);
+    expect(parseImportPayload('{"version":5,"words":[{"term":"cat","translation":"кот"}]}').valid).toBe(false);
   });
 
   it('rejects a version field that is not a number', () => {
@@ -120,4 +121,25 @@ describe('parseImportPayload', () => {
     });
     expect(parseImportPayload(JSON.stringify({ settings: { studyLanguage: 'fr' } })).settings).toBeNull();
   });
+
+  it('reads folders, tags and the folder and tag names of each word', () => {
+    const result = parseImportPayload(
+      JSON.stringify({
+        version: 4,
+        folders: [{ name: 'Travel', color: 'blue', order: 1 }, { name: 'Odd', color: 'not-a-color' }, { name: '  ' }],
+        tags: [{ name: 'verbs', color: 'green', order: 2 }],
+        words: [
+          { term: 'go', translation: 'идти', folder: 'Travel', tags: ['verbs', '', 7], folderId: 'stale-id' },
+          { term: 'cat', translation: 'кот', folder: '' },
+        ],
+      }),
+    );
+
+    expect(result.folders).toEqual([{ name: 'Travel', color: 'blue', order: 1 }, { name: 'Odd' }]);
+    expect(result.tags).toEqual([{ name: 'verbs', color: 'green', order: 2 }]);
+    expect(result.words[0]).toMatchObject({ folder: 'Travel', tags: ['verbs'] });
+    expect(result.words[0]).not.toHaveProperty('folderId');
+    expect(result.words[1]).not.toHaveProperty('folder');
+  });
 });
+

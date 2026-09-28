@@ -12,7 +12,7 @@ vi.mock('@/lib/tts', () => ({
 
 function baseWord(overrides: Partial<Word> = {}): Word {
   return {
-    id: 1,
+    id: 'w1',
     term: 'apple',
     translation: 'яблоко',
     createdAt: 0,

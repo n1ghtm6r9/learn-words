@@ -1,6 +1,6 @@
 import type { VocabDB } from './VocabDB';
 
-export async function removeTagFromWords(db: VocabDB, wordIds: number[], tagId: number): Promise<number> {
+export async function removeTagFromWords(db: VocabDB, wordIds: string[], tagId: string): Promise<number> {
   if (wordIds.length === 0) return 0;
 
   return db.transaction('rw', db.wordTags, async () => {

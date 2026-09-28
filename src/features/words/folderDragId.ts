@@ -1,3 +1,3 @@
-export function folderDragId(folderId: number): string {
+export function folderDragId(folderId: string): string {
   return `folder:${folderId}`;
 }
