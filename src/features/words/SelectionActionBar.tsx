@@ -47,7 +47,7 @@ export function SelectionActionBar({ disabled, onMove, onAddTag, onRemoveTag, on
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 24, opacity: 0 }}
       transition={{ type: 'spring', stiffness: 520, damping: 38 }}
-      className="fixed inset-x-0 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-30 mx-auto w-full max-w-md px-3"
+      className="fixed inset-x-0 bottom-[calc(5.25rem+var(--safe-bottom))] z-30 mx-auto w-full max-w-md px-3"
     >
       <div className="grid grid-cols-4 gap-1 rounded-2xl border border-border/80 bg-card/95 p-1.5 shadow-xl backdrop-blur">
         {actions.map((action) => (

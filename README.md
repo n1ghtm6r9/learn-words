@@ -91,6 +91,24 @@ its own session once signed in.
 
 Signing out removes the words from that device; they stay in the account.
 
+## Telegram Mini App
+
+The same deployed page runs inside Telegram (iOS, Android, macOS, Desktop) as a
+Mini App; no bot server is needed. In [@BotFather](https://t.me/BotFather):
+
+1. `/newbot` — create the bot.
+2. `/mybots` → the bot → *Bot Settings* → *Menu Button* — set the URL
+   `https://n1ghtm6r9.github.io/learn-words/`. Optionally `/newapp` gives it a
+   direct `t.me/<bot>/<app>` link as well.
+
+Inside Telegram the app opens full height, keeps vertical swipes for its own
+gestures, matches Telegram's colours and safe areas, and follows Telegram's
+light/dark scheme until a theme is picked in the settings. The Telegram SDK is
+loaded only there. Telegram keeps its own storage, separate from the browser, so
+sign in to get the account's words; sign-in always uses the emailed code there,
+because Google refuses to sign in inside embedded web views. Each time the Mini
+App comes back to the front it pulls the latest changes from the cloud.
+
 ## Testing
 
 ```bash

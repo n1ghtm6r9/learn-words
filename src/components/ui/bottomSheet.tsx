@@ -19,7 +19,7 @@ export function BottomSheet({ open, onOpenChange, title, children }: BottomSheet
         <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/20 duration-200 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
         <DialogPrimitive.Popup
           data-slot="bottom-sheet"
-          className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[80dvh] w-full max-w-md flex-col rounded-t-2xl bg-popover pb-[env(safe-area-inset-bottom)] text-popover-foreground shadow-2xl ring-1 ring-foreground/10 outline-none duration-200 data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom"
+          className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[80dvh] w-full max-w-md flex-col rounded-t-2xl bg-popover pb-[var(--safe-bottom)] text-popover-foreground shadow-2xl ring-1 ring-foreground/10 outline-none duration-200 data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom"
         >
           <div className="flex justify-center pt-2.5 pb-1" aria-hidden="true">
             <span className="h-1 w-10 rounded-full bg-muted-foreground/25" />

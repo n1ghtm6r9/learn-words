@@ -55,6 +55,7 @@
 }
 
 :root {
+    --safe-bottom: max(env(safe-area-inset-bottom), var(--tg-safe-area-inset-bottom, 0px));
     --background: oklch(0.97 0.012 95);
     --foreground: oklch(0.24 0.03 265);
     --card: oklch(0.995 0.006 95);

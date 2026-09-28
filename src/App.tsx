@@ -49,7 +49,7 @@ function App() {
   }, [language, t.appTitle]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background pb-[calc(5rem+env(safe-area-inset-bottom))] text-foreground">
+    <div className="flex min-h-screen flex-col bg-background pb-[calc(5rem+var(--safe-bottom))] text-foreground">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/90 px-4 py-3 backdrop-blur">
         <div className="flex min-w-0 items-center gap-2">
           <h1 className="font-mono text-base font-semibold tracking-tight">{t.appTitle}</h1>
@@ -93,7 +93,7 @@ function App() {
           aria-label={t.addWordButtonLabel}
           whileTap={{ scale: 0.92 }}
           onClick={() => setAddWordOpen(true)}
-          className="fixed right-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
+          className="fixed right-4 bottom-[calc(5rem+var(--safe-bottom))] z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
         >
           <Plus className="h-6 w-6" aria-hidden="true" />
         </motion.button>

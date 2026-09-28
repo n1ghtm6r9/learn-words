@@ -1,5 +1,6 @@
 import Dexie from 'dexie';
 import dexieCloud from 'dexie-cloud-addon';
+import { SOCIAL_AUTH_ENABLED } from '@/cloud/socialAuthEnabled';
 import { STUDY_LANGUAGES } from '@/languages/studyLanguages';
 import { assignMissingId } from './assignMissingId';
 import { languageSchema } from './languageSchema';
@@ -26,6 +27,7 @@ export class LearnWordsDB extends Dexie {
         databaseUrl,
         requireAuth: false,
         customLoginGui: true,
+        socialAuth: SOCIAL_AUTH_ENABLED,
       });
     }
   }

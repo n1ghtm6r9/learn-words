@@ -1,0 +1,22 @@
+import { vi } from 'vitest';
+import type { TelegramWebApp } from '../telegramWebApp.type';
+
+export function createFakeWebApp(colorScheme: 'light' | 'dark' = 'light') {
+  const handlers = new Map<string, Array<() => void>>();
+  const fake = {
+    colorScheme,
+    ready: vi.fn(),
+    expand: vi.fn(),
+    disableVerticalSwipes: vi.fn(),
+    setHeaderColor: vi.fn(),
+    setBackgroundColor: vi.fn(),
+    setBottomBarColor: vi.fn(),
+    onEvent: vi.fn((name: string, handler: () => void) => {
+      handlers.set(name, [...(handlers.get(name) ?? []), handler]);
+    }),
+    emit(name: string) {
+      handlers.get(name)?.forEach((handler) => handler());
+    },
+  };
+  return { fake, webApp: fake as unknown as TelegramWebApp };
+}

@@ -6,15 +6,20 @@ import { startAccessGuard } from '@/cloud/startAccessGuard'
 import { startDuplicateMerging } from '@/cloud/startDuplicateMerging'
 import { migrateLegacyDatabases } from '@/db/legacy/migrateLegacyDatabases'
 import { requestPersistentStorage } from '@/lib/requestPersistentStorage'
+import { followTelegramColorScheme } from '@/telegram/followTelegramColorScheme'
+import { loadTelegramWebApp } from '@/telegram/loadTelegramWebApp'
+import { startTelegramMiniApp } from '@/telegram/startTelegramMiniApp'
 
 void requestPersistentStorage()
 
-void migrateLegacyDatabases().then(() => {
+void Promise.all([loadTelegramWebApp(), migrateLegacyDatabases()]).then(([telegram]) => {
   startAccessGuard()
   startDuplicateMerging()
+  if (telegram) followTelegramColorScheme(telegram)
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <App />
     </StrictMode>,
   )
+  if (telegram) startTelegramMiniApp(telegram)
 })
