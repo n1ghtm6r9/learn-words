@@ -199,8 +199,16 @@ export async function applyImportPayload(
   }
 
   if (importedSettings) {
-    const { theme, accentColor, language, studyLanguage, phaseARepeats, phaseBRepeats, reviewLimit } =
-      importedSettings;
+    const {
+      theme,
+      accentColor,
+      language,
+      studyLanguage,
+      phaseARepeats,
+      phaseBRepeats,
+      reviewLimit,
+      keyboardSuggestions,
+    } = importedSettings;
     const store = useUIStore.getState();
     if (theme !== undefined) store.setTheme(theme);
     if (accentColor !== undefined) store.setAccentColor(accentColor);
@@ -209,6 +217,7 @@ export async function applyImportPayload(
     if (phaseARepeats !== undefined) store.setPhaseARepeats(phaseARepeats);
     if (phaseBRepeats !== undefined) store.setPhaseBRepeats(phaseBRepeats);
     if (reviewLimit !== undefined) store.setReviewLimit(reviewLimit);
+    if (keyboardSuggestions !== undefined) store.setKeyboardSuggestions(keyboardSuggestions);
     settingsApplied = true;
   }
 

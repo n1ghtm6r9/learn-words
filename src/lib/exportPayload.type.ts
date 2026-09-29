@@ -19,5 +19,6 @@ export interface ExportPayload {
     phaseARepeats: number;
     phaseBRepeats: number;
     reviewLimit: number;
+    keyboardSuggestions: boolean;
   };
 }

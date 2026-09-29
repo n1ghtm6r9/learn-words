@@ -141,6 +141,10 @@ export const ENGLISH_TRANSLATIONS: TranslationKeys = {
   languageLabel: 'Interface language',
   studyLanguageLabel: 'Study language',
   studyLanguageHint: 'Each language keeps its own dictionary and pronunciation',
+  keyboardSuggestionsLabel: 'Keyboard suggestions',
+  keyboardSuggestionsHint: 'Word predictions and autocorrect while you type a word',
+  keyboardSuggestionsOn: 'On',
+  keyboardSuggestionsOff: 'Off',
   appVersion: (version) => `Version ${version}`,
   navHotkeyHint: (label, key) => `${label} — key ${key}`,
 

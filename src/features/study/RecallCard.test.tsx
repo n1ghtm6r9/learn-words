@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RecallCard } from './RecallCard';
+import { useUIStore } from '@/store/useUIStore';
 
 vi.mock('@/lib/tts', () => ({
   isSpeechSupported: () => true,
@@ -9,6 +10,27 @@ vi.mock('@/lib/tts', () => ({
 }));
 
 describe('RecallCard', () => {
+  it('keeps keyboard suggestions off in the answer field by default', () => {
+    useUIStore.setState({ keyboardSuggestions: false });
+    render(<RecallCard translation="привет" expectedTerm="hello" onAnswer={vi.fn()} />);
+
+    const input = screen.getByLabelText('Слово');
+    expect(input).toHaveAttribute('autocomplete', 'off');
+    expect(input).toHaveAttribute('autocorrect', 'off');
+    expect(input).toHaveAttribute('spellcheck', 'false');
+  });
+
+  it('lets the keyboard suggest words in the answer field when the setting is on', () => {
+    useUIStore.setState({ keyboardSuggestions: true });
+    render(<RecallCard translation="привет" expectedTerm="hello" onAnswer={vi.fn()} />);
+
+    const input = screen.getByLabelText('Слово');
+    expect(input).toHaveAttribute('autocomplete', 'on');
+    expect(input).toHaveAttribute('autocorrect', 'on');
+    expect(input).toHaveAttribute('spellcheck', 'true');
+    useUIStore.setState({ keyboardSuggestions: false });
+  });
+
   it('shows the translation and hides the term before answering', () => {
     render(<RecallCard translation="привет" expectedTerm="hello" onAnswer={vi.fn()} />);
 

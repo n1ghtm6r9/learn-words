@@ -13,6 +13,7 @@ describe('useUIStore', () => {
       settingsOpen: false,
       phaseARepeats: 3,
       phaseBRepeats: 3,
+      keyboardSuggestions: false,
     });
     window.localStorage.clear();
   });
@@ -68,5 +69,15 @@ describe('useUIStore', () => {
 
     expect(useUIStore.getState().studyLanguage).toBe('es');
     expect(window.localStorage.getItem('studyLanguage')).toBe('es');
+  });
+
+  it('setKeyboardSuggestions toggles keyboard suggestions and persists the choice to localStorage', () => {
+    useUIStore.getState().setKeyboardSuggestions(true);
+    expect(useUIStore.getState().keyboardSuggestions).toBe(true);
+    expect(window.localStorage.getItem('keyboardSuggestions')).toBe('on');
+
+    useUIStore.getState().setKeyboardSuggestions(false);
+    expect(useUIStore.getState().keyboardSuggestions).toBe(false);
+    expect(window.localStorage.getItem('keyboardSuggestions')).toBe('off');
   });
 });

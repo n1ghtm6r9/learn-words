@@ -23,9 +23,9 @@ function exportFileName(studyLanguage: StudyLanguage): string {
 }
 
 function currentSettingsSnapshot() {
-  const { theme, accentColor, language, studyLanguage, phaseARepeats, phaseBRepeats, reviewLimit } =
+  const { theme, accentColor, language, studyLanguage, phaseARepeats, phaseBRepeats, reviewLimit, keyboardSuggestions } =
     useUIStore.getState();
-  return { theme, accentColor, language, studyLanguage, phaseARepeats, phaseBRepeats, reviewLimit };
+  return { theme, accentColor, language, studyLanguage, phaseARepeats, phaseBRepeats, reviewLimit, keyboardSuggestions };
 }
 
 const OBJECT_URL_RELEASE_MS = 60_000;

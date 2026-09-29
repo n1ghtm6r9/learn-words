@@ -95,6 +95,10 @@ function parseSettings(rawSettings: unknown): Partial<Settings> | null {
   const reviewLimit = parsePositiveInt(String(candidate.reviewLimit), MIN_REVIEW_LIMIT, MAX_REVIEW_LIMIT);
   if (reviewLimit !== null) settings.reviewLimit = reviewLimit;
 
+  if (typeof candidate.keyboardSuggestions === 'boolean') {
+    settings.keyboardSuggestions = candidate.keyboardSuggestions;
+  }
+
   return Object.keys(settings).length > 0 ? settings : null;
 }
 

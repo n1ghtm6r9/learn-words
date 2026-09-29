@@ -51,6 +51,9 @@ interface UIStore {
   reviewLimit: number;
   setReviewLimit: (value: number) => void;
 
+  keyboardSuggestions: boolean;
+  setKeyboardSuggestions: (enabled: boolean) => void;
+
   lastUsedFolderId: string | null;
   setLastUsedFolderId: (folderId: string | null) => void;
 
@@ -92,6 +95,10 @@ function readInitialStudyLanguage(): StudyLanguage {
   return (STUDY_LANGUAGES as string[]).includes(stored ?? '')
     ? (stored as StudyLanguage)
     : DEFAULT_STUDY_LANGUAGE;
+}
+
+function readInitialKeyboardSuggestions(): boolean {
+  return safeGetItem('keyboardSuggestions') === 'on';
 }
 
 function readLastUsedFolderId(language: StudyLanguage): string | null {
@@ -167,6 +174,12 @@ export const useUIStore = create<UIStore>((set) => ({
   setReviewLimit: (value) => {
     safeSetItem('reviewLimit', String(value));
     set({ reviewLimit: value });
+  },
+
+  keyboardSuggestions: readInitialKeyboardSuggestions(),
+  setKeyboardSuggestions: (enabled) => {
+    safeSetItem('keyboardSuggestions', enabled ? 'on' : 'off');
+    set({ keyboardSuggestions: enabled });
   },
 
   selectingWords: false,

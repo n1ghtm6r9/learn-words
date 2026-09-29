@@ -19,6 +19,7 @@ import { isSpeechSupported } from '@/lib/tts';
 import { useSpeak } from '@/lib/useSpeak';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
+import { useKeyboardSuggestionProps } from '@/lib/useKeyboardSuggestionProps';
 import type { TranslationKeys } from '@/i18n/translationKeys.type';
 
 const CORRECT_FLASH_MS = 500;
@@ -72,6 +73,7 @@ export function RecallCard({
   const t = useTranslation();
   const speak = useSpeak();
   const studyLanguage = useUIStore((s) => s.studyLanguage);
+  const keyboardSuggestionProps = useKeyboardSuggestionProps();
 
   useEffect(() => {
     if (!showCorrectFlash) return;
@@ -196,7 +198,7 @@ export function RecallCard({
           </div>
         ) : (
           <form onSubmit={handleCheck} className="flex flex-col gap-3">
-            <Input aria-label={t.wordInputLabel} autoCapitalize="none" autoCorrect="off" autoComplete="off" spellCheck={false} enterKeyHint="done" value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="h-14 rounded-2xl text-lg font-mono md:h-12 md:rounded-xl" />
+            <Input aria-label={t.wordInputLabel} {...keyboardSuggestionProps} enterKeyHint="done" value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="h-14 rounded-2xl text-lg font-mono md:h-12 md:rounded-xl" />
             <Button type="submit" size="lg">{t.checkAnswer}</Button>
           </form>
         )}

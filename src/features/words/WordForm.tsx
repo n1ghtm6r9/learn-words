@@ -17,6 +17,7 @@ import { duplicateKey } from '@/lib/duplicateKey';
 import { normalizeTerm } from '@/lib/normalizeTerm';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
+import { useKeyboardSuggestionProps } from '@/lib/useKeyboardSuggestionProps';
 
 const DUPLICATE_CHECK_DEBOUNCE_MS = 300;
 const HAS_MEANINGFUL_CHARACTER = /[\p{L}\p{N}]/u;
@@ -66,6 +67,7 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
   const duplicateRequestId = useRef(0);
   const duplicateTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const t = useTranslation();
+  const keyboardSuggestionProps = useKeyboardSuggestionProps();
 
   useEffect(() => {
     return () => clearTimeout(duplicateTimeout.current);
@@ -167,10 +169,7 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
         {t.wordInputLabel}
         <Input
           aria-label={t.wordInputLabel}
-          autoCapitalize="none"
-          autoCorrect="off"
-          autoComplete="off"
-          spellCheck={false}
+          {...keyboardSuggestionProps}
           value={term}
           maxLength={200}
           onChange={(e) => {

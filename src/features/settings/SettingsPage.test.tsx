@@ -16,6 +16,7 @@ describe('SettingsPage', () => {
       accentColor: 'blue',
       language: 'ru',
       studyLanguage: 'en',
+      keyboardSuggestions: false,
     });
   });
 
@@ -132,6 +133,21 @@ describe('SettingsPage', () => {
     );
 
     expect(useUIStore.getState().studyLanguage).toBe('es');
+  });
+
+  it('turns keyboard suggestions on and off', async () => {
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+    const group = screen.getByRole('group', { name: 'Подсказки клавиатуры' });
+
+    expect(within(group).getByRole('button', { name: 'Выкл' })).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(within(group).getByRole('button', { name: 'Вкл' }));
+    expect(useUIStore.getState().keyboardSuggestions).toBe(true);
+    expect(within(group).getByRole('button', { name: 'Вкл' })).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(within(group).getByRole('button', { name: 'Выкл' }));
+    expect(useUIStore.getState().keyboardSuggestions).toBe(false);
   });
 
   it('shows which version of the app is running', () => {

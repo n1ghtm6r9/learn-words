@@ -141,6 +141,10 @@ export const RUSSIAN_TRANSLATIONS: TranslationKeys = {
   languageLabel: 'Язык интерфейса',
   studyLanguageLabel: 'Язык изучения',
   studyLanguageHint: 'У каждого языка свой словарь и своё произношение',
+  keyboardSuggestionsLabel: 'Подсказки клавиатуры',
+  keyboardSuggestionsHint: 'Варианты слов и автоисправление, когда вы печатаете слово',
+  keyboardSuggestionsOn: 'Вкл',
+  keyboardSuggestionsOff: 'Выкл',
   appVersion: (version) => `Версия ${version}`,
   navHotkeyHint: (label, key) => `${label} — клавиша ${key}`,
 

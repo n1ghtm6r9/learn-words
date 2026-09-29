@@ -140,6 +140,10 @@ export interface TranslationKeys {
   languageLabel: string;
   studyLanguageLabel: string;
   studyLanguageHint: string;
+  keyboardSuggestionsLabel: string;
+  keyboardSuggestionsHint: string;
+  keyboardSuggestionsOn: string;
+  keyboardSuggestionsOff: string;
   appVersion: (version: string) => string;
   navHotkeyHint: (label: string, key: string) => string;
 

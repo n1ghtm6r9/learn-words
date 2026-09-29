@@ -16,6 +16,7 @@ import type { ParsedWordLine } from '@/lib/parsedWordLine.type';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { StudyLanguage } from '@/languages/studyLanguage.type';
 import { useUIStore } from '@/store/useUIStore';
+import { useKeyboardSuggestionProps } from '@/lib/useKeyboardSuggestionProps';
 
 interface BulkAddFormProps {
   onDone: () => void;
@@ -52,6 +53,7 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const t = useTranslation();
+  const keyboardSuggestionProps = useKeyboardSuggestionProps();
 
   const snapshot = useLiveQuery(
     async () => ({
@@ -103,9 +105,7 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
       <label className="flex flex-col gap-2 text-sm font-medium">
         {t.wordListLabel}
         <textarea
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
+          {...keyboardSuggestionProps}
           aria-label={t.wordListLabel}
           value={text}
           onChange={(e) => setText(e.target.value)}

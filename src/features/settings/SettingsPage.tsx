@@ -11,6 +11,7 @@ import { ThemeSection } from './ThemeSection';
 import { AccentColorSection } from './AccentColorSection';
 import { LanguageSection } from './LanguageSection';
 import { StudyLanguageSection } from './StudyLanguageSection';
+import { KeyboardSuggestionsSection } from './KeyboardSuggestionsSection';
 import { MIN_PHASE_REPEATS, MAX_PHASE_REPEATS } from '@/lib/phaseRepeatsRange';
 import { MIN_REVIEW_LIMIT, MAX_REVIEW_LIMIT } from '@/lib/reviewLimitRange';
 import { useNumberField } from './useNumberField';
@@ -92,6 +93,8 @@ export function SettingsPage() {
             className="tabular-nums"
           />
         </label>
+
+        <KeyboardSuggestionsSection />
 
         <div className="flex flex-col gap-2 text-sm font-medium">
           {t.organizeTitle}
