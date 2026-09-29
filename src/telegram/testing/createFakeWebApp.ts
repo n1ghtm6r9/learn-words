@@ -16,9 +16,6 @@ export function createFakeWebApp(colorScheme: 'light' | 'dark' = 'light') {
     onEvent: vi.fn((name: string, handler: () => void) => {
       handlers.set(name, [...(handlers.get(name) ?? []), handler]);
     }),
-    offEvent: vi.fn((name: string, handler: () => void) => {
-      handlers.set(name, (handlers.get(name) ?? []).filter((existing) => existing !== handler));
-    }),
     emit(name: string) {
       handlers.get(name)?.forEach((handler) => handler());
     },

@@ -5,7 +5,6 @@ import App from './App.tsx'
 import { startAccessGuard } from '@/cloud/startAccessGuard'
 import { startDuplicateMerging } from '@/cloud/startDuplicateMerging'
 import { migrateLegacyDatabases } from '@/db/legacy/migrateLegacyDatabases'
-import { followKeyboard } from '@/lib/followKeyboard'
 import { requestPersistentStorage } from '@/lib/requestPersistentStorage'
 import { followTelegramColorScheme } from '@/telegram/followTelegramColorScheme'
 import { useTelegramStore } from '@/telegram/useTelegramStore'
@@ -27,6 +26,5 @@ void Promise.all([loadTelegramWebApp(), migrateLegacyDatabases()]).then(([telegr
       <App />
     </StrictMode>,
   )
-  followKeyboard(telegram)
   if (telegram) startTelegramMiniApp(telegram)
 })

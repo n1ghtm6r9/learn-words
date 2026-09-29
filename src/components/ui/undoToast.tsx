@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Undo2 } from 'lucide-react';
+import { useGlideOnViewportResize } from '@/components/layout/useGlideOnViewportResize';
 import type { UndoToastState } from './undoToastState.type';
 
 const VISIBLE_MS = 5000;
@@ -13,6 +14,8 @@ interface UndoToastProps {
 }
 
 export function UndoToast({ toast, undoLabel, lifted, onDismiss }: UndoToastProps) {
+  const regionRef = useGlideOnViewportResize<HTMLDivElement>();
+
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(onDismiss, VISIBLE_MS);
@@ -21,10 +24,11 @@ export function UndoToast({ toast, undoLabel, lifted, onDismiss }: UndoToastProp
 
   return (
     <div
+      ref={regionRef}
       aria-live="polite"
       className={
         'pointer-events-none fixed inset-x-0 md:left-60 z-40 mx-auto w-full max-w-md px-3 transition-[bottom] duration-200 ' +
-        (lifted ? 'bottom-[calc(11rem+var(--safe-bottom))] md:bottom-28' : 'bottom-[calc(9.5rem+var(--safe-bottom))] md:bottom-8')
+        (lifted ? 'bottom-[calc(11rem+var(--safe-bottom)+var(--keyboard-inset))] md:bottom-28' : 'bottom-[calc(9.5rem+var(--safe-bottom)+var(--keyboard-inset))] md:bottom-8')
       }
     >
       <AnimatePresence>

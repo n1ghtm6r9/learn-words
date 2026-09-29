@@ -49,7 +49,6 @@ import { SelectionActionBar } from './SelectionActionBar';
 import { SelectionHeader } from './SelectionHeader';
 import { TagTargetSheet } from './TagTargetSheet';
 import { TagFilter } from './TagFilter';
-import { usePhoneSearchFocus } from './usePhoneSearchFocus';
 import { WordDetailsDialog } from './WordDetailsDialog';
 import { WordListSkeleton } from './WordListSkeleton';
 import { WordForm } from './WordForm';
@@ -70,7 +69,6 @@ export function WordList() {
   const data = snapshot?.db === db ? snapshot : undefined;
   const words = data?.words;
   const [search, setSearch] = useState('');
-  const searchFocus = usePhoneSearchFocus();
   const [folderFilter, setFolderFilter] = useState<string | null | 'all'>('all');
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -341,10 +339,9 @@ export function WordList() {
         <div className="sticky top-[69px] z-20 -mx-4 -mt-5 flex flex-col gap-3 bg-background px-4 pt-5 pb-3 md:top-0 md:-mx-8 md:-mt-8 md:px-8 md:pt-8">
           <div className="relative">
             <Search className="pointer-events-none absolute left-4 md:left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-            <Input id="word-search" placeholder={t.searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)} onFocus={searchFocus.onFocus} onBlur={searchFocus.onBlur} className="pl-11 md:pl-10" />
+            <Input id="word-search" placeholder={t.searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-11 md:pl-10" />
           </div>
 
-          {!searchFocus.active && (
           <div className="flex flex-col gap-2">
             <FolderBar
               folders={folders}
@@ -365,7 +362,6 @@ export function WordList() {
               }
             />
           </div>
-          )}
           {selecting ? (
             <SelectionHeader
               count={targets.length}
@@ -375,7 +371,7 @@ export function WordList() {
               }
               onExit={leaveSelection}
             />
-          ) : !searchFocus.active && (
+          ) : (
           <div className="flex items-center justify-between gap-2">
             <p className="min-w-0 truncate text-sm text-muted-foreground tabular-nums">
               {scopedTotal === 0

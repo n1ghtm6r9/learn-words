@@ -2,6 +2,7 @@ import { Suspense, useEffect, useLayoutEffect, useRef } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { Plus, Settings as SettingsIcon } from 'lucide-react';
 import { NavBar } from '@/components/layout/NavBar';
+import { useGlideOnViewportResize } from '@/components/layout/useGlideOnViewportResize';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { NewWordsSession } from '@/features/newWords/NewWordsSession';
 import { ReviewSession } from '@/features/review/ReviewSession';
@@ -13,13 +14,12 @@ import { LazySettingsPage } from '@/features/settings/lazySettingsPage';
 import { LazyLoginDialog } from '@/features/settings/login/lazyLoginDialog';
 import { getCloud } from '@/cloud/getCloud';
 import { TelegramLaunchDialogs } from '@/telegram/TelegramLaunchDialogs';
-import { useKeyboardStore } from '@/store/useKeyboardStore';
 import { useUIStore } from '@/store/useUIStore';
 import { applyAccentColor } from '@/lib/applyAccentColor';
 import { STUDY_LANGUAGE_PROFILES } from '@/languages/studyLanguageProfiles';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useGlobalHotkeys } from '@/lib/useGlobalHotkeys';
-import { useKeepFocusedFormAboveKeyboard } from '@/lib/useKeepFocusedFormAboveKeyboard';
+import { useTypingOnPhone } from '@/lib/useTypingOnPhone';
 import { preloadDialogs } from '@/lib/preloadDialogs';
 import { applyThemeColorMeta } from '@/lib/applyThemeColorMeta';
 import { DialogBodySkeleton } from '@/components/ui/dialogBodySkeleton';
@@ -42,10 +42,10 @@ function App() {
   const tagsOpen = useUIStore((s) => s.tagsOpen);
   const setTagsOpen = useUIStore((s) => s.setTagsOpen);
   const t = useTranslation();
-  const keyboardOpen = useKeyboardStore((s) => s.onScreen || s.expected);
+  const addWordButtonRef = useGlideOnViewportResize<HTMLButtonElement>();
+  const typingOnPhone = useTypingOnPhone();
   const cloud = getCloud();
   useGlobalHotkeys();
-  useKeepFocusedFormAboveKeyboard();
   const previousScreen = useRef(screen);
   const direction = SCREEN_ORDER.indexOf(screen) >= SCREEN_ORDER.indexOf(previousScreen.current) ? 1 : -1;
 
@@ -74,7 +74,7 @@ function App() {
 
   return (
     <MotionConfig reducedMotion="user">
-    <div className="flex min-h-screen flex-col overflow-x-clip pb-[calc(6rem+var(--safe-bottom)+var(--keyboard-inset))] text-foreground md:pb-0 md:pl-64">
+    <div className="flex min-h-screen flex-col overflow-x-clip pb-[calc(6rem+var(--safe-bottom))] text-foreground md:pb-0 md:pl-64">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border/60 bg-background px-5 pt-[max(0.75rem,var(--safe-top))] pb-3 md:fixed md:top-0 md:left-0 md:z-40 md:w-64 md:border-b-0 md:bg-transparent md:pt-5 md:pb-2">
         <div className="flex min-w-0 items-center gap-2">
           <h1 className="font-display text-lg">{t.appTitle}</h1>
@@ -113,9 +113,10 @@ function App() {
       </main>
 
       <AnimatePresence>
-        {!selectingWords && !keyboardOpen && (
+        {!selectingWords && !typingOnPhone && (
           <motion.button
             key="add-word"
+            ref={addWordButtonRef}
             type="button"
             aria-label={t.addWordButtonLabel}
             initial={{ opacity: 0, y: 18, scale: 0.92 }}

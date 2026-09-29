@@ -200,7 +200,7 @@ export function RecallCard({
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleCheck} data-keep-above-keyboard className="flex scroll-mt-24 scroll-mb-[calc(1rem+var(--keyboard-inset))] flex-col gap-3">
+          <form onSubmit={handleCheck} className="flex flex-col gap-3">
             <Input aria-label={t.wordInputLabel} {...keyboardSuggestionProps} enterKeyHint="done" value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="h-14 rounded-2xl text-lg font-mono md:h-12 md:rounded-xl" />
             <Button type="submit" size="lg">{t.checkAnswer}</Button>
           </form>

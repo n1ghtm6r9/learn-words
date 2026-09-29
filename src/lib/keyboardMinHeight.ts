@@ -1,1 +1,0 @@
-export const KEYBOARD_MIN_HEIGHT_PX = 120;
