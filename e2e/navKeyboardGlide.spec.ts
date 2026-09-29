@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { goToScreen } from './support/goToScreen';
 import { openApp } from './support/openApp';
 import { openTelegramApp } from './support/openTelegramApp';
+import { seedWords } from './support/seedWords';
 import { reportTelegramViewport } from './support/reportTelegramViewport';
 
 const FULL = { width: 390, height: 844 };
@@ -185,18 +186,39 @@ test.describe('bottom nav and the keyboard inside Telegram on iPhone', () => {
   });
 });
 
-test.describe('add-word button while typing', () => {
-  test('hides on a phone so it cannot cover the answer buttons', async ({ page, isMobile }) => {
+test.describe('add-word button and the keyboard', () => {
+  test.skip(({ isMobile }) => !isMobile, 'the on-screen keyboard exists only on a phone');
+
+  const addWord = (page: Page) => page.getByRole('button', { name: 'Добавить слово' });
+
+  test('stays on a study card whose answer field is focused without a keyboard', async ({ page }) => {
     await openApp(page);
+    await seedWords(page, [['apple', 'яблоко']]);
+
+    await goToScreen(page, 'Новые');
+    await page.getByLabel('Слово', { exact: true }).focus();
+    await page.waitForTimeout(800);
+
+    await expect(addWord(page)).toBeVisible();
+  });
+
+  test('steps aside while the keyboard is open inside Telegram', async ({ page }) => {
+    await page.setViewportSize(FULL);
+    await openTelegramApp(page);
     await goToScreen(page, 'Слова');
-    const addWord = page.getByRole('button', { name: 'Добавить слово' });
-    const search = page.locator('#word-search');
+    await page.locator('#word-search').tap();
+    await expect(addWord(page)).toBeVisible();
 
-    await search.click();
-    if (isMobile) await expect(addWord).toBeHidden();
-    else await expect(addWord).toBeVisible();
+    await reportTelegramViewport(page, WITH_KEYBOARD.height);
+    await expect(addWord(page)).toBeHidden();
 
-    await search.blur();
-    await expect(addWord).toBeVisible();
+    await page.setViewportSize(WITH_KEYBOARD);
+    await page.waitForTimeout(300);
+    await expect(addWord(page)).toBeHidden();
+
+    await page.locator('#word-search').blur();
+    await page.setViewportSize(FULL);
+    await reportTelegramViewport(page, FULL.height);
+    await expect(addWord(page)).toBeVisible();
   });
 });

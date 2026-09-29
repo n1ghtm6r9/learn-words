@@ -20,7 +20,7 @@ import { STUDY_LANGUAGE_PROFILES } from '@/languages/studyLanguageProfiles';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useGlobalHotkeys } from '@/lib/useGlobalHotkeys';
 import { useDismissKeyboardOnTapOutside } from '@/lib/useDismissKeyboardOnTapOutside';
-import { useTypingOnPhone } from '@/lib/useTypingOnPhone';
+import { useKeyboardOpenOnPhone } from '@/lib/useKeyboardOpenOnPhone';
 import { preloadDialogs } from '@/lib/preloadDialogs';
 import { applyThemeColorMeta } from '@/lib/applyThemeColorMeta';
 import { DialogBodySkeleton } from '@/components/ui/dialogBodySkeleton';
@@ -44,7 +44,7 @@ function App() {
   const setTagsOpen = useUIStore((s) => s.setTagsOpen);
   const t = useTranslation();
   const addWordButtonRef = useGlideOnViewportResize<HTMLButtonElement>();
-  const typingOnPhone = useTypingOnPhone();
+  const keyboardOpen = useKeyboardOpenOnPhone();
   const cloud = getCloud();
   useGlobalHotkeys();
   useDismissKeyboardOnTapOutside();
@@ -77,7 +77,7 @@ function App() {
   return (
     <MotionConfig reducedMotion="user">
     <div className="flex min-h-screen flex-col overflow-x-clip pb-[calc(6rem+var(--safe-bottom))] text-foreground md:pb-0 md:pl-64">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border/60 bg-background px-5 pt-[max(0.75rem,var(--safe-top))] pb-3 md:fixed md:top-0 md:left-0 md:z-40 md:w-64 md:border-b-0 md:bg-transparent md:pt-5 md:pb-2">
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/60 bg-background px-5 pt-[max(0.75rem,var(--safe-top))] pb-3 md:fixed md:top-0 md:left-0 md:w-64 md:border-b-0 md:bg-transparent md:pt-5 md:pb-2">
         <div className="flex min-w-0 items-center gap-2">
           <h1 className="font-display text-lg">{t.appTitle}</h1>
           <span
@@ -97,7 +97,7 @@ function App() {
           <SettingsIcon className="h-5 w-5" aria-hidden="true" />
         </button>
       </header>
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pt-5 pb-24 md:max-w-3xl md:px-8 md:pt-8 xl:max-w-5xl">
+      <main className="isolate mx-auto flex w-full max-w-md flex-1 flex-col px-4 pt-5 pb-24 md:max-w-3xl md:px-8 md:pt-8 xl:max-w-5xl">
         <AnimatePresence mode="wait">
           <motion.div
             key={screen}
@@ -115,7 +115,7 @@ function App() {
       </main>
 
       <AnimatePresence>
-        {!selectingWords && !typingOnPhone && (
+        {!selectingWords && !keyboardOpen && (
           <motion.button
             key="add-word"
             ref={addWordButtonRef}
