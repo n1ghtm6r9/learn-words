@@ -4,7 +4,6 @@ import { createFakeWebApp } from './testing/createFakeWebApp';
 
 vi.mock('./keepTelegramChromeInTheme', () => ({ keepTelegramChromeInTheme: vi.fn() }));
 vi.mock('./pullCloudOnActivation', () => ({ pullCloudOnActivation: vi.fn() }));
-vi.mock('./followTelegramKeyboard', () => ({ followTelegramKeyboard: vi.fn() }));
 
 describe('startTelegramMiniApp', () => {
   it('opens full height and keeps swipes inside the app', () => {
