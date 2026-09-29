@@ -15,8 +15,17 @@ async function clearVocabulary() {
 }
 
 async function exportFile(): Promise<string> {
-  const { theme, accentColor, language, studyLanguage, phaseARepeats, phaseBRepeats, reviewLimit, keyboardSuggestions } =
-    useUIStore.getState();
+  const {
+    theme,
+    accentColor,
+    language,
+    studyLanguage,
+    phaseARepeats,
+    phaseBRepeats,
+    reviewLimit,
+    keyboardSuggestions,
+    soundEffects,
+  } = useUIStore.getState();
   return JSON.stringify(
     buildExportPayload({
       words: await db.words.toArray(),
@@ -32,6 +41,7 @@ async function exportFile(): Promise<string> {
         phaseBRepeats,
         reviewLimit,
         keyboardSuggestions,
+        soundEffects,
       },
     }),
   );
@@ -75,6 +85,7 @@ describe('export and import round trip', () => {
       phaseBRepeats: 5,
       reviewLimit: 25,
       keyboardSuggestions: true,
+      soundEffects: false,
     });
   });
 
@@ -100,6 +111,7 @@ describe('export and import round trip', () => {
       phaseBRepeats: 3,
       reviewLimit: 40,
       keyboardSuggestions: false,
+      soundEffects: true,
     });
     await applyImportPayload(parseImportPayload(file), {
       importWords: true,
@@ -115,6 +127,7 @@ describe('export and import round trip', () => {
       phaseBRepeats: 5,
       reviewLimit: 25,
       keyboardSuggestions: true,
+      soundEffects: false,
     });
   });
 

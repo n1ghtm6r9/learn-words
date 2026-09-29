@@ -87,6 +87,7 @@ describe('buildExportPayload', () => {
       phaseBRepeats: 4,
       reviewLimit: 40,
       keyboardSuggestions: true,
+      soundEffects: false,
     };
 
     const payload = buildExportPayload({ settings });

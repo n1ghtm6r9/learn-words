@@ -8,6 +8,7 @@ import { CountUpNumber } from '@/features/study/CountUpNumber';
 import { ProgressBar } from '@/features/study/ProgressBar';
 import { accuracyPercent } from '@/lib/accuracyPercent';
 import { confettiColors } from '@/lib/confettiColors';
+import { playSound } from '@/lib/playSound';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ReviewStatTile } from './ReviewStatTile';
 
@@ -27,6 +28,7 @@ export function ReviewSummary({ correct, almost, wrong, onFinish }: ReviewSummar
 
   useEffect(() => {
     void confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 }, colors: confettiColors() });
+    playSound('finish');
   }, []);
 
   return (

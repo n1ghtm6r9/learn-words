@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CountUpNumber } from '@/features/study/CountUpNumber';
 import { confettiColors } from '@/lib/confettiColors';
+import { playSound } from '@/lib/playSound';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface NewWordsSummaryProps {
@@ -18,6 +19,7 @@ export function NewWordsSummary({ learnedCount, onFinish }: NewWordsSummaryProps
 
   useEffect(() => {
     void confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 }, colors: confettiColors() });
+    playSound('finish');
   }, []);
 
   return (

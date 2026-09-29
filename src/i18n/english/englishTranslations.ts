@@ -145,6 +145,10 @@ export const ENGLISH_TRANSLATIONS: TranslationKeys = {
   keyboardSuggestionsHint: 'Word predictions and autocorrect while you type a word',
   keyboardSuggestionsOn: 'On',
   keyboardSuggestionsOff: 'Off',
+  soundEffectsLabel: 'Sounds',
+  soundEffectsHint: 'Correct answers and mistakes',
+  soundEffectsOn: 'On',
+  soundEffectsOff: 'Off',
   appVersion: (version) => `Version ${version}`,
   navHotkeyHint: (label, key) => `${label} — key ${key}`,
 

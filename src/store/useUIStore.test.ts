@@ -14,6 +14,7 @@ describe('useUIStore', () => {
       phaseARepeats: 3,
       phaseBRepeats: 3,
       keyboardSuggestions: false,
+      soundEffects: true,
     });
     window.localStorage.clear();
   });
@@ -79,5 +80,15 @@ describe('useUIStore', () => {
     useUIStore.getState().setKeyboardSuggestions(false);
     expect(useUIStore.getState().keyboardSuggestions).toBe(false);
     expect(window.localStorage.getItem('keyboardSuggestions')).toBe('off');
+  });
+
+  it('setSoundEffects turns sounds on and off and persists the choice to localStorage', () => {
+    useUIStore.getState().setSoundEffects(false);
+    expect(useUIStore.getState().soundEffects).toBe(false);
+    expect(window.localStorage.getItem('soundEffects')).toBe('off');
+
+    useUIStore.getState().setSoundEffects(true);
+    expect(useUIStore.getState().soundEffects).toBe(true);
+    expect(window.localStorage.getItem('soundEffects')).toBe('on');
   });
 });

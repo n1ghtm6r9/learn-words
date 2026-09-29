@@ -23,9 +23,28 @@ function exportFileName(studyLanguage: StudyLanguage): string {
 }
 
 function currentSettingsSnapshot() {
-  const { theme, accentColor, language, studyLanguage, phaseARepeats, phaseBRepeats, reviewLimit, keyboardSuggestions } =
-    useUIStore.getState();
-  return { theme, accentColor, language, studyLanguage, phaseARepeats, phaseBRepeats, reviewLimit, keyboardSuggestions };
+  const {
+    theme,
+    accentColor,
+    language,
+    studyLanguage,
+    phaseARepeats,
+    phaseBRepeats,
+    reviewLimit,
+    keyboardSuggestions,
+    soundEffects,
+  } = useUIStore.getState();
+  return {
+    theme,
+    accentColor,
+    language,
+    studyLanguage,
+    phaseARepeats,
+    phaseBRepeats,
+    reviewLimit,
+    keyboardSuggestions,
+    soundEffects,
+  };
 }
 
 const OBJECT_URL_RELEASE_MS = 60_000;

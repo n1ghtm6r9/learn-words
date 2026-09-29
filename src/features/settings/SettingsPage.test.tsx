@@ -17,6 +17,7 @@ describe('SettingsPage', () => {
       language: 'ru',
       studyLanguage: 'en',
       keyboardSuggestions: false,
+      soundEffects: true,
     });
   });
 
@@ -148,6 +149,21 @@ describe('SettingsPage', () => {
 
     await user.click(within(group).getByRole('button', { name: 'Выкл' }));
     expect(useUIStore.getState().keyboardSuggestions).toBe(false);
+  });
+
+  it('turns sounds off and on', async () => {
+    const user = userEvent.setup();
+    render(<SettingsPage />);
+    const group = screen.getByRole('group', { name: 'Звуки' });
+
+    expect(within(group).getByRole('button', { name: 'Вкл' })).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(within(group).getByRole('button', { name: 'Выкл' }));
+    expect(useUIStore.getState().soundEffects).toBe(false);
+    expect(within(group).getByRole('button', { name: 'Выкл' })).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(within(group).getByRole('button', { name: 'Вкл' }));
+    expect(useUIStore.getState().soundEffects).toBe(true);
   });
 
   it('shows which version of the app is running', () => {

@@ -9,6 +9,7 @@ import { letterDiff } from '@/lib/letterDiff';
 import { speedFactor } from '@/lib/responseSpeed';
 import { vibrateCorrect } from '@/lib/vibrateCorrect';
 import { vibrateWrong } from '@/lib/vibrateWrong';
+import { playSound } from '@/lib/playSound';
 import { AnswerDiff } from './AnswerDiff';
 import { DeleteWordButton } from './DeleteWordButton';
 import { CorrectMark } from './CorrectMark';
@@ -107,6 +108,7 @@ export function RecognitionCard({
       setCorrectSpeedFactor(speedFactor(timer.elapsedMs(), term.length));
       setShowCorrectFlash(true);
       vibrateCorrect();
+      playSound('correct');
       return;
     }
 
@@ -115,6 +117,7 @@ export function RecognitionCard({
       setOriginalAccuracy(matchAccuracy(input, term, studyLanguage));
     }
     vibrateWrong();
+    playSound('wrong');
     setError({ verdict, attempt: input });
   }
 

@@ -144,6 +144,10 @@ export interface TranslationKeys {
   keyboardSuggestionsHint: string;
   keyboardSuggestionsOn: string;
   keyboardSuggestionsOff: string;
+  soundEffectsLabel: string;
+  soundEffectsHint: string;
+  soundEffectsOn: string;
+  soundEffectsOff: string;
   appVersion: (version: string) => string;
   navHotkeyHint: (label: string, key: string) => string;
 

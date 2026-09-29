@@ -145,6 +145,10 @@ export const RUSSIAN_TRANSLATIONS: TranslationKeys = {
   keyboardSuggestionsHint: 'Варианты слов и автоисправление, когда вы печатаете слово',
   keyboardSuggestionsOn: 'Вкл',
   keyboardSuggestionsOff: 'Выкл',
+  soundEffectsLabel: 'Звуки',
+  soundEffectsHint: 'Правильные ответы и ошибки',
+  soundEffectsOn: 'Вкл',
+  soundEffectsOff: 'Выкл',
   appVersion: (version) => `Версия ${version}`,
   navHotkeyHint: (label, key) => `${label} — клавиша ${key}`,
 

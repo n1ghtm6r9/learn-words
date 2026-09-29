@@ -208,6 +208,7 @@ export async function applyImportPayload(
       phaseBRepeats,
       reviewLimit,
       keyboardSuggestions,
+      soundEffects,
     } = importedSettings;
     const store = useUIStore.getState();
     if (theme !== undefined) store.setTheme(theme);
@@ -218,6 +219,7 @@ export async function applyImportPayload(
     if (phaseBRepeats !== undefined) store.setPhaseBRepeats(phaseBRepeats);
     if (reviewLimit !== undefined) store.setReviewLimit(reviewLimit);
     if (keyboardSuggestions !== undefined) store.setKeyboardSuggestions(keyboardSuggestions);
+    if (soundEffects !== undefined) store.setSoundEffects(soundEffects);
     settingsApplied = true;
   }
 

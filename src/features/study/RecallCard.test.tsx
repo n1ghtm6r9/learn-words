@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { playSound } from '@/lib/playSound';
 import { RecallCard } from './RecallCard';
 import { useUIStore } from '@/store/useUIStore';
 
@@ -8,6 +9,8 @@ vi.mock('@/lib/tts', () => ({
   isSpeechSupported: () => true,
   speak: vi.fn(),
 }));
+
+vi.mock('@/lib/playSound', () => ({ playSound: vi.fn() }));
 
 describe('RecallCard', () => {
   it('keeps keyboard suggestions off in the answer field by default', () => {
@@ -259,5 +262,20 @@ describe('RecallCard', () => {
     expect(feedback).toHaveTextContent('Неверно. Правильное слово: cat');
     expect(feedback.querySelector('[data-diff]')).toBeNull();
     expect(screen.queryByTestId('answer-diff')).not.toBeInTheDocument();
+  });
+
+  it('plays a chime for a correct answer and a low tone for a mistake', async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<RecallCard translation="привет" expectedTerm="hello" onAnswer={vi.fn()} />);
+
+    await user.type(screen.getByLabelText('Слово'), 'hello');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+    expect(playSound).toHaveBeenLastCalledWith('correct');
+    unmount();
+
+    render(<RecallCard translation="кот" expectedTerm="cat" onAnswer={vi.fn()} />);
+    await user.type(screen.getByLabelText('Слово'), 'dog');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+    expect(playSound).toHaveBeenLastCalledWith('wrong');
   });
 });

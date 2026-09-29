@@ -1,12 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { playSound } from '@/lib/playSound';
 import { RecognitionCard } from './RecognitionCard';
 
 vi.mock('@/lib/tts', () => ({
   isSpeechSupported: () => true,
   speak: vi.fn(),
 }));
+
+vi.mock('@/lib/playSound', () => ({ playSound: vi.fn() }));
 
 describe('RecognitionCard', () => {
   it('shows both the word and the translation at once', () => {
@@ -148,5 +151,20 @@ describe('RecognitionCard', () => {
 
     await screen.findByTestId('feedback');
     expect(screen.queryByTestId('answer-diff')).not.toBeInTheDocument();
+  });
+
+  it('plays a chime for a correct answer and a low tone for a mistake', async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<RecognitionCard term="hello" translation="привет" onAnswer={vi.fn()} />);
+
+    await user.type(screen.getByLabelText('Слово'), 'hello');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+    expect(playSound).toHaveBeenLastCalledWith('correct');
+    unmount();
+
+    render(<RecognitionCard term="cat" translation="кот" onAnswer={vi.fn()} />);
+    await user.type(screen.getByLabelText('Слово'), 'dog');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+    expect(playSound).toHaveBeenLastCalledWith('wrong');
   });
 });

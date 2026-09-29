@@ -99,6 +99,10 @@ function parseSettings(rawSettings: unknown): Partial<Settings> | null {
     settings.keyboardSuggestions = candidate.keyboardSuggestions;
   }
 
+  if (typeof candidate.soundEffects === 'boolean') {
+    settings.soundEffects = candidate.soundEffects;
+  }
+
   return Object.keys(settings).length > 0 ? settings : null;
 }
 

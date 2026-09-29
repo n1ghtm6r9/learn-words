@@ -9,6 +9,7 @@ import { letterDiff } from '@/lib/letterDiff';
 import { speedFactor } from '@/lib/responseSpeed';
 import { vibrateCorrect } from '@/lib/vibrateCorrect';
 import { vibrateWrong } from '@/lib/vibrateWrong';
+import { playSound } from '@/lib/playSound';
 import { AnswerDiff } from './AnswerDiff';
 import { DeleteWordButton } from './DeleteWordButton';
 import { DiffLetters } from './DiffLetters';
@@ -109,6 +110,7 @@ export function RecallCard({
       setCorrectSpeedFactor(speedFactor(timer.elapsedMs(), expectedTerm.length));
       setShowCorrectFlash(true);
       vibrateCorrect();
+      playSound('correct');
       return;
     }
 
@@ -117,6 +119,7 @@ export function RecallCard({
       setOriginalAccuracy(matchAccuracy(input, expectedTerm, studyLanguage));
     }
     vibrateWrong();
+    playSound('wrong');
     setError({ verdict, correctAnswer: expectedTerm, attempt: input });
   }
 

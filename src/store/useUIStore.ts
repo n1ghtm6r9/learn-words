@@ -54,6 +54,9 @@ interface UIStore {
   keyboardSuggestions: boolean;
   setKeyboardSuggestions: (enabled: boolean) => void;
 
+  soundEffects: boolean;
+  setSoundEffects: (enabled: boolean) => void;
+
   lastUsedFolderId: string | null;
   setLastUsedFolderId: (folderId: string | null) => void;
 
@@ -99,6 +102,10 @@ function readInitialStudyLanguage(): StudyLanguage {
 
 function readInitialKeyboardSuggestions(): boolean {
   return safeGetItem('keyboardSuggestions') === 'on';
+}
+
+function readInitialSoundEffects(): boolean {
+  return safeGetItem('soundEffects') !== 'off';
 }
 
 function readLastUsedFolderId(language: StudyLanguage): string | null {
@@ -180,6 +187,12 @@ export const useUIStore = create<UIStore>((set) => ({
   setKeyboardSuggestions: (enabled) => {
     safeSetItem('keyboardSuggestions', enabled ? 'on' : 'off');
     set({ keyboardSuggestions: enabled });
+  },
+
+  soundEffects: readInitialSoundEffects(),
+  setSoundEffects: (enabled) => {
+    safeSetItem('soundEffects', enabled ? 'on' : 'off');
+    set({ soundEffects: enabled });
   },
 
   selectingWords: false,
