@@ -326,95 +326,97 @@ export function WordList() {
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveDrag(null)}
     >
-      <div className="flex flex-col gap-3">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-          <Input placeholder={t.searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
-        </div>
+      <div className="flex flex-col gap-4">
+        <div className="sticky top-[69px] z-20 -mx-4 -mt-5 flex flex-col gap-3 bg-background/95 px-4 pt-5 pb-3 backdrop-blur-xl md:top-0 md:-mx-8 md:-mt-8 md:px-8 md:pt-8">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-4 md:left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <Input placeholder={t.searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-11 md:pl-10" />
+          </div>
 
-        <div className="flex flex-col gap-2">
-          <FolderBar
-            folders={folders}
-            counts={byFolder}
-            value={folderFilter}
-            wordDragging={activeDrag?.type === 'word'}
-            onChange={setFolderFilter}
-          />
+          <div className="flex flex-col gap-2">
+            <FolderBar
+              folders={folders}
+              counts={byFolder}
+              value={folderFilter}
+              wordDragging={activeDrag?.type === 'word'}
+              onChange={setFolderFilter}
+            />
 
-          <TagFilter
-            tags={tags}
-            counts={byTag}
-            selected={tagFilter}
-            onToggle={(tagId) =>
-              setTagFilter((current) =>
-                current.includes(tagId) ? current.filter((id) => id !== tagId) : [...current, tagId],
-              )
-            }
-          />
+            <TagFilter
+              tags={tags}
+              counts={byTag}
+              selected={tagFilter}
+              onToggle={(tagId) =>
+                setTagFilter((current) =>
+                  current.includes(tagId) ? current.filter((id) => id !== tagId) : [...current, tagId],
+                )
+              }
+            />
+          </div>
+          {selecting ? (
+            <SelectionHeader
+              count={targets.length}
+              total={filtered.length}
+              onToggleAll={() =>
+                setSelectedIds(targets.length === filtered.length ? [] : filtered.map((word) => word.id!))
+              }
+              onExit={leaveSelection}
+            />
+          ) : (
+          <div className="flex items-center justify-between gap-2">
+            <p className="min-w-0 truncate font-mono text-sm text-muted-foreground">
+              {scopedTotal === 0
+                ? ''
+                : filtered.length === scopedTotal
+                  ? t.wordsTotal(scopedTotal)
+                  : t.wordsFiltered(filtered.length, scopedTotal)}
+            </p>
+            <div className="flex shrink-0 items-center gap-2">
+              {!selecting && filtered.length > 0 && (
+                <Button type="button" variant="outline" size="sm" onClick={() => setSelecting(true)}>
+                  <CheckSquare className="h-4 w-4" aria-hidden="true" />
+                  {t.selectWords}
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                aria-label={t.exportButtonLabel}
+                title={t.exportButtonLabel}
+                onClick={() => setExportOpen(true)}
+              >
+                <Download className="h-[18px] w-[18px]" aria-hidden="true" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                aria-label={t.importButtonLabel}
+                title={t.importButtonLabel}
+                onClick={() => setImportOpen(true)}
+              >
+                <Upload className="h-[18px] w-[18px]" aria-hidden="true" />
+              </Button>
+            </div>
+          </div>
+          )}
         </div>
 
         {deleteError && (
-          <p className="flex items-start gap-2 rounded-md bg-destructive/10 px-2.5 py-1.5 text-sm text-destructive">
+          <p className="flex items-start gap-2 rounded-xl bg-destructive/10 px-3.5 py-3 text-sm text-destructive">
             <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             {t.deleteError}
           </p>
         )}
 
         {bulkError && (
-          <p className="flex items-start gap-2 rounded-md bg-destructive/10 px-2.5 py-1.5 text-sm text-destructive">
+          <p className="flex items-start gap-2 rounded-xl bg-destructive/10 px-3.5 py-3 text-sm text-destructive">
             <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             {t.bulkActionFailed}
           </p>
         )}
 
-        {selecting ? (
-          <SelectionHeader
-            count={targets.length}
-            total={filtered.length}
-            onToggleAll={() =>
-              setSelectedIds(targets.length === filtered.length ? [] : filtered.map((word) => word.id!))
-            }
-            onExit={leaveSelection}
-          />
-        ) : (
-        <div className="flex items-center justify-between gap-2">
-          <p className="min-w-0 truncate font-mono text-xs text-muted-foreground">
-            {scopedTotal === 0
-              ? ''
-              : filtered.length === scopedTotal
-                ? t.wordsTotal(scopedTotal)
-                : t.wordsFiltered(filtered.length, scopedTotal)}
-          </p>
-          <div className="flex shrink-0 items-center gap-2">
-            {!selecting && filtered.length > 0 && (
-              <Button type="button" variant="outline" size="sm" onClick={() => setSelecting(true)}>
-                <CheckSquare className="h-3.5 w-3.5" aria-hidden="true" />
-                {t.selectWords}
-              </Button>
-            )}
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-sm"
-              aria-label={t.exportButtonLabel}
-              title={t.exportButtonLabel}
-              onClick={() => setExportOpen(true)}
-            >
-              <Download className="h-3.5 w-3.5" aria-hidden="true" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-sm"
-              aria-label={t.importButtonLabel}
-              title={t.importButtonLabel}
-              onClick={() => setImportOpen(true)}
-            >
-              <Upload className="h-3.5 w-3.5" aria-hidden="true" />
-            </Button>
-          </div>
-        </div>
-        )}
 
         {filtered.length === 0 ? (
           <p className="text-sm text-muted-foreground">

@@ -20,7 +20,7 @@ export function AccentColorSection() {
   };
 
   return (
-    <div className="flex flex-col gap-1.5 text-sm">
+    <div className="flex flex-col gap-2 text-sm font-medium">
       {t.accentColorLabel}
       <div className="flex gap-2.5">
         {ACCENT_OPTIONS.map((color) => {
@@ -34,12 +34,12 @@ export function AccentColorSection() {
               aria-pressed={selected}
               onClick={() => setAccentColor(color)}
               className={cn(
-                'flex h-8 w-8 items-center justify-center rounded-full ring-2 ring-offset-2 ring-offset-card transition-shadow',
+                'flex h-11 w-11 items-center justify-center rounded-full ring-2 ring-offset-2 ring-offset-card transition-shadow',
                 selected ? 'ring-foreground' : 'ring-transparent',
               )}
               style={{ backgroundColor: preset.swatch }}
             >
-              {selected && <Check className="h-4 w-4 text-white" aria-hidden="true" />}
+              {selected && <Check className="h-5 w-5 text-white" aria-hidden="true" />}
             </button>
           );
         })}

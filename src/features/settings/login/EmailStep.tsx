@@ -30,7 +30,7 @@ export function EmailStep({ alerts, pending, onSubmit, onCancel }: StepProps) {
       <DialogTitle>{t.signInTitle}</DialogTitle>
       <DialogDescription>{t.signInEmailHint}</DialogDescription>
       <form onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1.5 text-sm">
+        <label className="flex flex-col gap-2 text-sm font-medium">
           {t.emailLabel}
           <Input
             aria-label={t.emailLabel}

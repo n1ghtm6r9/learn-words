@@ -17,7 +17,7 @@ export function GuestAccount({ onSignIn }: GuestAccountProps) {
           {t.signIn}
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground">{t.accountGuestHint}</p>
+      <p className="text-sm text-muted-foreground">{t.accountGuestHint}</p>
     </>
   );
 }

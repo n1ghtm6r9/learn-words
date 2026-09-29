@@ -36,7 +36,7 @@ export function WordDetailsDialog({ word, folder, tagNames, onOpenChange }: Word
         {word && (
           <dl className="flex flex-col gap-3 text-sm">
             <div className="flex flex-col gap-1">
-              <dt className="text-xs text-muted-foreground">{t.detailsTerm}</dt>
+              <dt className="text-sm text-muted-foreground">{t.detailsTerm}</dt>
               <dd className="flex items-start gap-2">
                 <span className="font-mono text-base font-medium break-words">{word.term}</span>
                 {isSpeechSupported() && (
@@ -53,29 +53,29 @@ export function WordDetailsDialog({ word, folder, tagNames, onOpenChange }: Word
             </div>
 
             <div className="flex flex-col gap-1">
-              <dt className="text-xs text-muted-foreground">{t.detailsTranslation}</dt>
+              <dt className="text-sm text-muted-foreground">{t.detailsTranslation}</dt>
               <dd className="break-words">{word.translation}</dd>
             </div>
 
             <div className="flex flex-col gap-1">
-              <dt className="text-xs text-muted-foreground">{t.detailsKind}</dt>
+              <dt className="text-sm text-muted-foreground">{t.detailsKind}</dt>
               <dd>{word.kind === 'phrase' ? t.phraseTag : t.wordTag}</dd>
             </div>
 
             <div className="flex flex-col gap-1">
-              <dt className="text-xs text-muted-foreground">{t.folderLabel}</dt>
+              <dt className="text-sm text-muted-foreground">{t.folderLabel}</dt>
               <dd>
                 <FolderOptionLabel folder={folder} />
               </dd>
             </div>
 
             <div className="flex flex-col gap-1">
-              <dt className="text-xs text-muted-foreground">{t.tagsLabel}</dt>
+              <dt className="text-sm text-muted-foreground">{t.tagsLabel}</dt>
               <dd>{tagNames && tagNames.length > 0 ? tagNames.join(', ') : t.noTags}</dd>
             </div>
 
             <div className="flex flex-col gap-1">
-              <dt className="text-xs text-muted-foreground">{t.detailsStatus}</dt>
+              <dt className="text-sm text-muted-foreground">{t.detailsStatus}</dt>
               <dd>
                 {word.stage === 'new'
                   ? t.detailsStatusLearning(word.learningPhase === 'A' ? 1 : 2)
@@ -86,34 +86,34 @@ export function WordDetailsDialog({ word, folder, tagNames, onOpenChange }: Word
             {word.stage === 'review' && (
               <>
                 <div className="flex flex-col gap-1">
-                  <dt className="text-xs text-muted-foreground">{t.detailsRating}</dt>
+                  <dt className="text-sm text-muted-foreground">{t.detailsRating}</dt>
                   <dd className="font-mono">{effectiveRating(word, Date.now()).toFixed(2)}</dd>
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <dt className="text-xs text-muted-foreground">{t.detailsInterval}</dt>
+                  <dt className="text-sm text-muted-foreground">{t.detailsInterval}</dt>
                   <dd className="font-mono">{t.intervalDays(Math.round(word.stability))}</dd>
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <dt className="text-xs text-muted-foreground">{t.detailsNextReview}</dt>
+                  <dt className="text-sm text-muted-foreground">{t.detailsNextReview}</dt>
                   <dd>{nextReviewText(word, t.detailsNeverReviewed, language)}</dd>
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <dt className="text-xs text-muted-foreground">{t.detailsDifficulty}</dt>
+                  <dt className="text-sm text-muted-foreground">{t.detailsDifficulty}</dt>
                   <dd className="font-mono">{word.difficulty.toFixed(1)}</dd>
                 </div>
               </>
             )}
 
             <div className="flex flex-col gap-1">
-              <dt className="text-xs text-muted-foreground">{t.detailsStreak}</dt>
+              <dt className="text-sm text-muted-foreground">{t.detailsStreak}</dt>
               <dd className="font-mono">{word.stage === 'new' ? word.phaseStreak : word.reviewStreak}</dd>
             </div>
 
             <div className="flex flex-col gap-1">
-              <dt className="text-xs text-muted-foreground">{t.detailsLastReviewed}</dt>
+              <dt className="text-sm text-muted-foreground">{t.detailsLastReviewed}</dt>
               <dd>
                 {word.lastReviewedAt == null
                   ? t.detailsNeverReviewed
@@ -122,7 +122,7 @@ export function WordDetailsDialog({ word, folder, tagNames, onOpenChange }: Word
             </div>
 
             <div className="flex flex-col gap-1">
-              <dt className="text-xs text-muted-foreground">{t.detailsAdded}</dt>
+              <dt className="text-sm text-muted-foreground">{t.detailsAdded}</dt>
               <dd>{formatDateTime(word.createdAt, language)}</dd>
             </div>
           </dl>

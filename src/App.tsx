@@ -49,14 +49,14 @@ function App() {
   }, [language, t.appTitle]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background pb-[calc(5rem+var(--safe-bottom))] text-foreground">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/90 px-4 py-3 backdrop-blur">
+    <div className="flex min-h-screen flex-col bg-background pb-[calc(6rem+var(--safe-bottom))] text-foreground md:pb-0 md:pl-64">
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border/60 bg-background/85 px-5 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3 backdrop-blur-xl md:fixed md:top-0 md:left-0 md:z-40 md:w-64 md:border-b-0 md:bg-transparent md:pt-5 md:pb-2 md:backdrop-blur-none">
         <div className="flex min-w-0 items-center gap-2">
-          <h1 className="font-mono text-base font-semibold tracking-tight">{t.appTitle}</h1>
+          <h1 className="font-mono text-lg font-semibold tracking-tight">{t.appTitle}</h1>
           <span
             role="img"
             aria-label={`${t.studyLanguageLabel}: ${STUDY_LANGUAGE_PROFILES[studyLanguage].name}`}
-            className="rounded-full bg-secondary px-1.5 py-0.5 font-mono text-[10px] font-medium tracking-wide text-muted-foreground uppercase"
+            className="rounded-full bg-primary/10 px-2 py-0.5 font-mono text-[11px] font-semibold tracking-wide text-primary uppercase"
           >
             {studyLanguage}
           </span>
@@ -65,12 +65,12 @@ function App() {
           type="button"
           aria-label={t.settingsButtonLabel}
           onClick={() => setSettingsOpen(true)}
-          className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          className="flex h-11 w-11 md:h-9 md:w-9 items-center justify-center rounded-full bg-secondary/70 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground active:scale-95"
         >
-          <SettingsIcon className="h-[18px] w-[18px]" aria-hidden="true" />
+          <SettingsIcon className="h-5 w-5" aria-hidden="true" />
         </button>
       </header>
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col p-4">
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pt-5 pb-4 md:max-w-3xl md:px-8 md:pt-8 md:pb-24">
         <AnimatePresence mode="wait">
           <motion.div
             key={screen}
@@ -93,9 +93,10 @@ function App() {
           aria-label={t.addWordButtonLabel}
           whileTap={{ scale: 0.92 }}
           onClick={() => setAddWordOpen(true)}
-          className="fixed right-4 bottom-[calc(5rem+var(--safe-bottom))] z-20 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
+          className="fixed right-4 bottom-[calc(6.25rem+var(--safe-bottom))] z-20 flex h-16 w-16 items-center justify-center gap-2 rounded-[1.4rem] bg-primary text-primary-foreground shadow-xl shadow-primary/35 transition-colors hover:bg-primary/90 md:right-8 md:bottom-8 md:h-12 md:w-auto md:rounded-xl md:px-5 md:text-sm md:font-medium"
         >
-          <Plus className="h-6 w-6" aria-hidden="true" />
+          <Plus className="h-7 w-7 md:h-5 md:w-5" strokeWidth={2.4} aria-hidden="true" />
+          <span className="hidden md:inline">{t.addWordCta}</span>
         </motion.button>
       )}
 

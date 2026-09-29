@@ -11,7 +11,7 @@ import { createFlowSortingStrategy } from './createFlowSortingStrategy';
 import { folderChipClass } from './folderChipClass';
 import { folderDragId } from './folderDragId';
 
-const CHIP_GAP_PX = 6;
+const CHIP_GAP_PX = 8;
 
 interface FolderBarProps {
   folders: Folder[];
@@ -44,9 +44,9 @@ export function FolderBar({ folders, counts, value, wordDragging, onChange }: Fo
     <div
       ref={containerRef}
       className={cn(
-        'flex flex-wrap gap-1.5',
+        'flex flex-wrap gap-2',
         wordDragging &&
-          'sticky top-14 z-30 -mx-1 rounded-lg border border-primary/40 bg-card/95 p-1.5 shadow-lg backdrop-blur',
+          'sticky top-[76px] md:top-4 z-30 -mx-1 rounded-2xl border border-primary/40 bg-card/95 p-1.5 shadow-lg backdrop-blur',
       )}
     >
       {!wordDragging && (
@@ -80,9 +80,9 @@ export function FolderBar({ folders, counts, value, wordDragging, onChange }: Fo
           type="button"
           aria-label={t.manageFolders}
           onClick={() => setFoldersOpen(true)}
-          className="flex shrink-0 items-center gap-1 rounded-full border border-dashed border-border px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary"
+          className="flex min-h-10 min-w-10 md:min-h-8 md:min-w-8 shrink-0 items-center justify-center gap-1 rounded-full border border-dashed border-border px-3 text-muted-foreground transition-colors hover:bg-secondary"
         >
-          <Settings2 className="h-3 w-3" aria-hidden="true" />
+          <Settings2 className="h-4 w-4" aria-hidden="true" />
         </button>
       )}
     </div>

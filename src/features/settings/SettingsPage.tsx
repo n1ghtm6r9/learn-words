@@ -45,7 +45,7 @@ export function SettingsPage() {
         <LanguageSection />
         <StudyLanguageSection />
 
-        <div className="flex flex-col gap-1.5 text-sm">
+        <div className="flex flex-col gap-2 text-sm font-medium">
           {t.organizeTitle}
           <div className="flex gap-2">
             <Button
@@ -77,7 +77,7 @@ export function SettingsPage() {
       </div>
 
       <div className="flex flex-col gap-4 py-5">
-        <label className="flex flex-col gap-1.5 text-sm">
+        <label className="flex flex-col gap-2 text-sm font-medium">
           {t.phaseARepeatsLabel}
           <Input
             aria-label={t.phaseARepeatsLabel}
@@ -91,7 +91,7 @@ export function SettingsPage() {
           />
         </label>
 
-        <label className="flex flex-col gap-1.5 text-sm">
+        <label className="flex flex-col gap-2 text-sm font-medium">
           {t.phaseBRepeatsLabel}
           <Input
             aria-label={t.phaseBRepeatsLabel}
@@ -105,7 +105,7 @@ export function SettingsPage() {
           />
         </label>
 
-        <label className="flex flex-col gap-1.5 text-sm">
+        <label className="flex flex-col gap-2 text-sm font-medium">
           {t.reviewLimitLabel}
           <Input
             aria-label={t.reviewLimitLabel}

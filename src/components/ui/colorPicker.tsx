@@ -51,7 +51,7 @@ export function ColorPicker({ value, label, colorLabel, onChange, glyph }: Color
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger
         aria-label={`${label}: ${colorLabel(value)}`}
-        className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-background transition-transform outline-none hover:scale-105 focus-visible:ring-3 focus-visible:ring-ring/50 data-[popup-open]:scale-90"
+        className="relative flex h-12 w-12 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full border border-border bg-background transition-transform outline-none hover:scale-105 focus-visible:ring-3 focus-visible:ring-ring/50 data-[popup-open]:scale-90"
       >
         {glyph ? (
           glyph(value)

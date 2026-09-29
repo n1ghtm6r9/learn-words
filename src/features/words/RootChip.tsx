@@ -26,9 +26,9 @@ export function RootChip({ count, active, wordDragging, onSelect }: RootChipProp
       onClick={onSelect}
       className={folderChipClass(active, wordDragging && isOver, wordDragging)}
     >
-      <FolderMinus className="h-3 w-3" aria-hidden="true" />
+      <FolderMinus className="h-3.5 w-3.5" aria-hidden="true" />
       {t.noFolder}
-      <span className="font-mono text-[10px] opacity-70">{count}</span>
+      <span className="font-mono text-xs opacity-70">{count}</span>
     </button>
   );
 }

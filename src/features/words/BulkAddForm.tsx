@@ -99,7 +99,7 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1.5 text-sm">
+      <label className="flex flex-col gap-2 text-sm font-medium">
         {t.wordListLabel}
         <textarea
           aria-label={t.wordListLabel}
@@ -153,7 +153,7 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
       {invalidLines.length > 0 && (
         <ul className="flex max-h-32 flex-col gap-1.5 overflow-y-auto">
           {invalidLines.map((line, i) => (
-            <li key={i} className="flex items-start gap-2 rounded-md bg-destructive/10 px-2.5 py-1.5 text-sm text-destructive">
+            <li key={i} className="flex items-start gap-2 rounded-xl bg-destructive/10 px-3.5 py-3 text-sm text-destructive">
               <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
               <span className="min-w-0 break-words">
                 {t.parseErrorPrefix} <span className="font-mono">{line}</span>
@@ -164,13 +164,13 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
       )}
 
       {saveError && (
-        <p className="flex items-start gap-2 rounded-md bg-destructive/10 px-2.5 py-1.5 text-sm text-destructive">
+        <p className="flex items-start gap-2 rounded-xl bg-destructive/10 px-3.5 py-3 text-sm text-destructive">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           {t.bulkSaveError}
         </p>
       )}
 
-      <Button type="button" onClick={() => void handleSaveAll()} disabled={valid.length === 0 || isSaving}>
+      <Button type="button" size="lg" onClick={() => void handleSaveAll()} disabled={valid.length === 0 || isSaving}>
         {t.saveAll}
       </Button>
     </div>

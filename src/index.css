@@ -56,11 +56,11 @@
 
 :root {
     --safe-bottom: max(env(safe-area-inset-bottom), var(--tg-safe-area-inset-bottom, 0px));
-    --background: oklch(0.97 0.012 95);
+    --background: oklch(0.965 0.014 95);
     --foreground: oklch(0.24 0.03 265);
-    --card: oklch(0.995 0.006 95);
+    --card: oklch(0.998 0.004 95);
     --card-foreground: oklch(0.24 0.03 265);
-    --popover: oklch(0.995 0.006 95);
+    --popover: oklch(0.998 0.004 95);
     --popover-foreground: oklch(0.24 0.03 265);
     --primary: oklch(0.42 0.08 250);
     --primary-foreground: oklch(0.98 0.01 95);
@@ -84,7 +84,7 @@
     --chart-3: oklch(0.439 0 0);
     --chart-4: oklch(0.371 0 0);
     --chart-5: oklch(0.269 0 0);
-    --radius: 0.5rem;
+    --radius: 0.875rem;
     --sidebar: oklch(0.985 0 0);
     --sidebar-foreground: oklch(0.145 0 0);
     --sidebar-primary: oklch(0.205 0 0);
@@ -93,6 +93,12 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+}
+
+@media (min-width: 768px) {
+    :root {
+        --radius: 0.625rem;
+    }
 }
 
 .dark {
@@ -139,7 +145,15 @@
     @apply border-border outline-ring/50;
     }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+    }
+  button, [role='button'], a, input, select {
+    touch-action: manipulation;
+    }
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 25%, transparent);
     }
   html {
     @apply font-sans;

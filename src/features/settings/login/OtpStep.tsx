@@ -21,7 +21,7 @@ export function OtpStep({ alerts, pending, onSubmit, onCancel }: StepProps) {
         className="flex flex-col gap-4"
       >
         <CloudAlertList alerts={alerts} />
-        <label className="flex flex-col gap-1.5 text-sm">
+        <label className="flex flex-col gap-2 text-sm font-medium">
           {t.otpLabel}
           <Input
             aria-label={t.otpLabel}

@@ -13,11 +13,11 @@ export function StepActions({ submitLabel, busy, cancelLabel, onCancel, destruct
   return (
     <div className="flex gap-2">
       {cancelLabel && (
-        <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>
+        <Button type="button" size="lg" variant="outline" className="flex-1" onClick={onCancel}>
           {cancelLabel}
         </Button>
       )}
-      <Button type="submit" variant={destructive ? 'destructive' : 'default'} className="flex-1" disabled={busy}>
+      <Button type="submit" size="lg" variant={destructive ? 'destructive' : 'default'} className="flex-1" disabled={busy}>
         {busy && <LoaderCircle className="animate-spin" aria-hidden="true" />}
         {submitLabel}
       </Button>

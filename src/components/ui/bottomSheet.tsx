@@ -16,19 +16,19 @@ export function BottomSheet({ open, onOpenChange, title, children }: BottomSheet
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/20 duration-200 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
+        <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/30 duration-200 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
         <DialogPrimitive.Popup
           data-slot="bottom-sheet"
-          className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[80dvh] w-full max-w-md flex-col rounded-t-2xl bg-popover pb-[var(--safe-bottom)] text-popover-foreground shadow-2xl ring-1 ring-foreground/10 outline-none duration-200 data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom"
+          className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[80dvh] w-full max-w-md flex-col rounded-t-3xl md:bottom-6 md:rounded-3xl md:max-w-sm bg-popover pb-[var(--safe-bottom)] text-popover-foreground shadow-2xl ring-1 ring-foreground/10 outline-none duration-200 data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom"
         >
           <div className="flex justify-center pt-2.5 pb-1" aria-hidden="true">
             <span className="h-1 w-10 rounded-full bg-muted-foreground/25" />
           </div>
-          <div className="flex items-center justify-between gap-2 px-4 pb-2">
-            <DialogPrimitive.Title className="text-base font-semibold">{title}</DialogPrimitive.Title>
+          <div className="flex items-center justify-between gap-2 px-5 pb-2">
+            <DialogPrimitive.Title className="text-lg font-semibold tracking-tight">{title}</DialogPrimitive.Title>
             <DialogPrimitive.Close
               aria-label={t.close}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
             >
               <XIcon className="h-4 w-4" />
             </DialogPrimitive.Close>

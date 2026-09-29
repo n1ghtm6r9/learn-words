@@ -23,7 +23,7 @@ export function AccountSection({ cloud }: AccountSectionProps) {
   }
 
   return (
-    <div className="flex flex-col gap-1.5 text-sm">
+    <div className="flex flex-col gap-2 text-sm font-medium">
       {t.accountLabel}
       {user?.isLoggedIn ? (
         <SignedInAccount user={user} syncState={syncState} onSignOut={() => startFlow(() => cloud.logout())} />

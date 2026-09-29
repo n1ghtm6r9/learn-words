@@ -91,7 +91,7 @@ export function OrganizeRow({
 
   if (confirmingDelete) {
     return (
-      <li ref={setNodeRef} style={style} className="flex flex-col gap-2 bg-destructive/5 px-3 py-2.5">
+      <li ref={setNodeRef} style={style} className="flex flex-col gap-2 bg-destructive/5 px-4 py-3.5">
         <p role="alert" className="flex items-start gap-2 text-sm">
           {marker}
           <span>{confirmText}</span>
@@ -114,7 +114,7 @@ export function OrganizeRow({
       style={style}
       data-reorder-id={id}
       className={cn(
-        'relative flex items-center gap-2 bg-card px-3 py-2',
+        'relative flex min-h-16 md:min-h-12 items-center gap-2 bg-card px-3.5 py-2',
         isDragging && 'z-10 bg-secondary/60 [&>*]:opacity-30',
       )}
     >
@@ -123,14 +123,14 @@ export function OrganizeRow({
         {...attributes}
         {...listeners}
         aria-label={t.reorderHandle(name)}
-        className="flex h-7 w-5 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground/60 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 active:cursor-grabbing"
+        className="flex h-10 w-6 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground/60 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 active:cursor-grabbing"
       >
-        <GripVertical className="h-3.5 w-3.5" aria-hidden="true" />
+        <GripVertical className="h-4 w-4" aria-hidden="true" />
       </span>
       <span className="flex min-w-0 flex-1 items-center gap-2">
         {marker}
-        <span className="min-w-0 truncate text-sm">{name}</span>
-        <span className="shrink-0 font-mono text-xs text-muted-foreground">{count}</span>
+        <span className="min-w-0 truncate text-base font-medium">{name}</span>
+        <span className="shrink-0 font-mono text-sm text-muted-foreground">{count}</span>
       </span>
 
       <span className="flex shrink-0 items-center">
@@ -142,7 +142,7 @@ export function OrganizeRow({
           onClick={startEditing}
           className="text-muted-foreground hover:text-foreground"
         >
-          <Pencil className="h-3.5 w-3.5" />
+          <Pencil />
         </Button>
         <Button
           type="button"
@@ -152,7 +152,7 @@ export function OrganizeRow({
           onClick={() => setConfirmingDelete(true)}
           className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
         >
-          <Trash2 className="h-3.5 w-3.5" />
+          <Trash2 />
         </Button>
       </span>
     </li>

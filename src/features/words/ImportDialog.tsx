@@ -82,7 +82,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
       <DialogContent>
         <DialogTitle>{t.importDialogTitle}</DialogTitle>
         <div className="flex flex-col gap-4">
-          <label className="flex flex-col gap-1.5 text-sm">
+          <label className="flex flex-col gap-2 text-sm font-medium">
             {t.importFileLabel}
             <input
               type="file"
@@ -161,11 +161,11 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
               )}
 
               {importResult ? (
-                <Button type="button" onClick={() => handleOpenChange(false)} autoFocus>
+                <Button type="button" size="lg" onClick={() => handleOpenChange(false)} autoFocus>
                   {t.done}
                 </Button>
               ) : (
-                <Button type="button" onClick={() => void handleImport()} disabled={!canImport || isImporting}>
+                <Button type="button" size="lg" onClick={() => void handleImport()} disabled={!canImport || isImporting}>
                   {t.importConfirmButton}
                 </Button>
               )}

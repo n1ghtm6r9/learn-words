@@ -47,9 +47,9 @@ export function SelectionActionBar({ disabled, onMove, onAddTag, onRemoveTag, on
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 24, opacity: 0 }}
       transition={{ type: 'spring', stiffness: 520, damping: 38 }}
-      className="fixed inset-x-0 bottom-[calc(5.25rem+var(--safe-bottom))] z-30 mx-auto w-full max-w-md px-3"
+      className="fixed inset-x-0 bottom-[calc(6.25rem+var(--safe-bottom))] z-30 mx-auto md:left-60 md:bottom-6 w-full max-w-md px-3"
     >
-      <div className="grid grid-cols-4 gap-1 rounded-2xl border border-border/80 bg-card/95 p-1.5 shadow-xl backdrop-blur">
+      <div className="grid grid-cols-4 gap-1 rounded-3xl border border-border/80 bg-card/95 p-2 shadow-2xl backdrop-blur-xl">
         {actions.map((action) => (
           <button
             key={action.key}
@@ -57,7 +57,7 @@ export function SelectionActionBar({ disabled, onMove, onAddTag, onRemoveTag, on
             disabled={disabled}
             onClick={action.onClick}
             className={cn(
-              'flex flex-col items-center gap-1 rounded-xl px-1 py-2 text-[11px] leading-tight font-medium transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
+              'flex flex-col items-center min-h-16 justify-center gap-1 rounded-2xl px-1 py-2 text-xs md:min-h-14 md:rounded-xl leading-tight font-medium transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50',
               action.danger ? 'text-destructive hover:bg-destructive/10' : 'text-foreground hover:bg-secondary',
               disabled && 'pointer-events-none opacity-35',
             )}

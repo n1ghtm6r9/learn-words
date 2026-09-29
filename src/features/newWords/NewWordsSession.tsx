@@ -154,9 +154,9 @@ export function NewWordsSession() {
       return <NewWordsSummary learnedCount={learnedCount} onFinish={() => setScreen('review')} />;
     }
     return (
-      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border p-8 text-center">
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
         <p className="text-sm text-muted-foreground">{t.noNewWords}</p>
-        <Button type="button" onClick={() => setAddWordOpen(true)}>
+        <Button type="button" size="lg" onClick={() => setAddWordOpen(true)}>
           {t.addWordCta}
         </Button>
       </div>
@@ -166,15 +166,15 @@ export function NewWordsSession() {
   const current = pool.find((w) => w.id === currentId) ?? pool[0];
 
   return (
-    <div className="flex flex-1 flex-col justify-center gap-4">
-      <p className="text-right font-mono text-xs text-muted-foreground">{t.remainingWords(pool.length)}</p>
+    <div className="flex flex-1 flex-col justify-center gap-4 md:mx-auto md:w-full md:max-w-xl">
+      <p className="text-right font-mono text-sm text-muted-foreground">{t.remainingWords(pool.length)}</p>
       {saveFailed && (
-        <p role="alert" className="rounded-md bg-destructive/10 px-2.5 py-1.5 text-sm text-destructive">
+        <p role="alert" className="rounded-xl bg-destructive/10 px-3.5 py-3 text-sm text-destructive">
           {t.answerSaveError}
         </p>
       )}
       {deleteFailed && (
-        <p role="alert" className="rounded-md bg-destructive/10 px-2.5 py-1.5 text-sm text-destructive">
+        <p role="alert" className="rounded-xl bg-destructive/10 px-3.5 py-3 text-sm text-destructive">
           {t.deleteError}
         </p>
       )}

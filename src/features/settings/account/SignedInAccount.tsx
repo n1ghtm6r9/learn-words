@@ -25,7 +25,7 @@ export function SignedInAccount({ user, syncState, onSignOut }: SignedInAccountP
         </Button>
       </div>
       <LicenseHint license={user.license} syncLicense={syncState?.license} />
-      <p className="text-xs text-muted-foreground">{t.signOutHint}</p>
+      <p className="text-sm text-muted-foreground">{t.signOutHint}</p>
     </>
   );
 }

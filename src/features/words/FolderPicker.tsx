@@ -35,7 +35,7 @@ export function FolderPicker({ folders, value, onChange, onCreate }: FolderPicke
   }
 
   return (
-    <div className="flex flex-col gap-1.5 text-sm">
+    <div className="flex flex-col gap-2 text-sm font-medium">
       {t.folderLabel}
 
       {draft === null ? (
@@ -63,9 +63,9 @@ export function FolderPicker({ folders, value, onChange, onCreate }: FolderPicke
                 setColor(LABEL_COLORS[folders.length % LABEL_COLORS.length]);
                 setDraft('');
               }}
-              className="flex w-fit items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-secondary"
+              className="flex min-h-10 w-fit items-center gap-1.5 rounded-full border border-dashed border-border px-4 py-1.5 md:min-h-8 md:px-3 md:py-1 text-sm text-muted-foreground transition-colors hover:bg-secondary"
             >
-              <Plus className="h-2.5 w-2.5" aria-hidden="true" />
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               {t.newFolder}
             </button>
           )}
@@ -114,7 +114,7 @@ export function FolderPicker({ folders, value, onChange, onCreate }: FolderPicke
               <Check className="h-3.5 w-3.5" />
             </Button>
           </div>
-          {isDuplicate && <p className="text-xs text-destructive">{t.duplicateFolderName}</p>}
+          {isDuplicate && <p className="text-sm text-destructive">{t.duplicateFolderName}</p>}
         </div>
       )}
     </div>

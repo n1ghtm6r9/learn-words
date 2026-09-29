@@ -23,8 +23,8 @@ export function UndoToast({ toast, undoLabel, lifted, onDismiss }: UndoToastProp
     <div
       aria-live="polite"
       className={
-        'pointer-events-none fixed inset-x-0 z-40 mx-auto w-full max-w-md px-3 transition-[bottom] duration-200 ' +
-        (lifted ? 'bottom-[calc(11rem+var(--safe-bottom))]' : 'bottom-[calc(9.5rem+var(--safe-bottom))]')
+        'pointer-events-none fixed inset-x-0 md:left-60 z-40 mx-auto w-full max-w-md px-3 transition-[bottom] duration-200 ' +
+        (lifted ? 'bottom-[calc(11rem+var(--safe-bottom))] md:bottom-28' : 'bottom-[calc(9.5rem+var(--safe-bottom))] md:bottom-8')
       }
     >
       <AnimatePresence>
@@ -36,7 +36,7 @@ export function UndoToast({ toast, undoLabel, lifted, onDismiss }: UndoToastProp
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 16, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 520, damping: 36 }}
-            className="pointer-events-auto flex items-center gap-3 rounded-xl bg-foreground px-4 py-3 text-sm text-background shadow-xl"
+            className="pointer-events-auto flex items-center gap-3 rounded-2xl bg-foreground px-4 py-3.5 text-[15px] text-background shadow-xl"
           >
             <span className="min-w-0 flex-1">{toast.message}</span>
             {toast.undo && (
@@ -46,7 +46,7 @@ export function UndoToast({ toast, undoLabel, lifted, onDismiss }: UndoToastProp
                   toast.undo?.();
                   onDismiss();
                 }}
-                className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 font-semibold text-background transition-colors hover:bg-background/15"
+                className="flex shrink-0 items-center gap-1 rounded-xl px-3 py-2 font-semibold text-background transition-colors hover:bg-background/15"
               >
                 <Undo2 className="h-4 w-4" aria-hidden="true" />
                 {undoLabel}

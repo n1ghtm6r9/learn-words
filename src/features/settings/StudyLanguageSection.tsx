@@ -10,7 +10,7 @@ export function StudyLanguageSection() {
   const t = useTranslation();
 
   return (
-    <div className="flex flex-col gap-1.5 text-sm">
+    <div className="flex flex-col gap-2 text-sm font-medium">
       {t.studyLanguageLabel}
       <div role="group" aria-label={t.studyLanguageLabel} className="flex gap-2">
         {STUDY_LANGUAGES.map((language) => (
@@ -25,7 +25,7 @@ export function StudyLanguageSection() {
           </Button>
         ))}
       </div>
-      <p className="text-xs text-muted-foreground">{t.studyLanguageHint}</p>
+      <p className="text-sm text-muted-foreground">{t.studyLanguageHint}</p>
     </div>
   );
 }

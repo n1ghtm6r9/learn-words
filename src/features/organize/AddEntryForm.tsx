@@ -42,7 +42,7 @@ export function AddEntryForm({
   }
 
   return (
-    <div className="flex flex-col gap-1 px-3 py-2">
+    <div className="flex flex-col gap-1 px-3.5 py-3">
       <div className="flex items-center gap-2">
         <ColorPicker value={color} label={t.labelColorsTitle} colorLabel={t.labelColorName} onChange={setPicked} glyph={glyph} />
         <Input
@@ -57,15 +57,15 @@ export function AddEntryForm({
         <Button
           type="button"
           variant="outline"
-          size="icon-sm"
+          size="icon"
           aria-label={submitLabel}
           disabled={name === '' || isDuplicate}
           onClick={submit}
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus />
         </Button>
       </div>
-      {isDuplicate && <p className="text-xs text-destructive">{duplicateMessage}</p>}
+      {isDuplicate && <p className="text-sm text-destructive">{duplicateMessage}</p>}
     </div>
   );
 }

@@ -163,7 +163,7 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1.5 text-sm">
+      <label className="flex flex-col gap-2 text-sm font-medium">
         {t.wordInputLabel}
         <Input
           aria-label={t.wordInputLabel}
@@ -179,13 +179,13 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
       </label>
 
       {duplicate && (
-        <p className="flex items-start gap-2 rounded-md bg-status-learning/10 p-2.5 text-sm text-status-learning">
+        <p className="flex items-start gap-2 rounded-xl bg-status-learning/10 px-3.5 py-3 text-sm text-status-learning">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           {t.duplicateWarning}
         </p>
       )}
 
-      <label className="flex flex-col gap-1.5 text-sm">
+      <label className="flex flex-col gap-2 text-sm font-medium">
         {t.translationInputLabel}
         <Input
           aria-label={t.translationInputLabel}
@@ -222,20 +222,20 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
       />
 
       {invalid && (
-        <p role="alert" className="flex items-start gap-2 rounded-md bg-destructive/10 p-2.5 text-sm text-destructive">
+        <p role="alert" className="flex items-start gap-2 rounded-xl bg-destructive/10 px-3.5 py-3 text-sm text-destructive">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           {t.wordFormInvalid}
         </p>
       )}
 
       {saveError && (
-        <p role="alert" className="flex items-start gap-2 rounded-md bg-destructive/10 p-2.5 text-sm text-destructive">
+        <p role="alert" className="flex items-start gap-2 rounded-xl bg-destructive/10 px-3.5 py-3 text-sm text-destructive">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           {t.wordFormSaveError}
         </p>
       )}
 
-      <Button type="submit" disabled={isSaving}>
+      <Button type="submit" size="lg" disabled={isSaving}>
         {duplicate ? t.saveAnyway : t.save}
       </Button>
     </form>

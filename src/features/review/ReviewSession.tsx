@@ -138,16 +138,16 @@ export function ReviewSession() {
 
     if (queue.length === 0) {
       return scoped ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border p-8 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
           <p className="text-sm text-muted-foreground">{t.noReviewsInScope}</p>
           <Button type="button" variant="outline" onClick={resetFilters}>
             {t.resetFilters}
           </Button>
         </div>
       ) : (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border p-8 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
           <p className="text-sm text-muted-foreground">{t.noReviewsYet}</p>
-          <Button type="button" onClick={() => setScreen('newWords')}>
+          <Button type="button" size="lg" onClick={() => setScreen('newWords')}>
             {t.goToNewWords}
           </Button>
         </div>
@@ -156,9 +156,9 @@ export function ReviewSession() {
 
     if (index >= queue.length) {
       return (
-        <div className="flex flex-1 flex-col justify-center gap-4">
+        <div className="flex flex-1 flex-col justify-center gap-4 md:mx-auto md:w-full md:max-w-xl">
           {saveFailed && (
-            <p role="alert" className="rounded-md bg-destructive/10 px-2.5 py-1.5 text-sm text-destructive">
+            <p role="alert" className="rounded-xl bg-destructive/10 px-3.5 py-3 text-sm text-destructive">
               {t.answerSaveError}
             </p>
           )}
@@ -175,12 +175,12 @@ export function ReviewSession() {
     const current = queue[index];
 
     return (
-      <div className="flex flex-1 flex-col justify-center gap-4">
-        <p className="text-right font-mono text-xs text-muted-foreground">
+      <div className="flex flex-1 flex-col justify-center gap-4 md:mx-auto md:w-full md:max-w-xl">
+        <p className="text-right font-mono text-sm text-muted-foreground">
           {sessionMeta(t, index, queue.length, current)}
         </p>
         {saveFailed && (
-          <p role="alert" className="rounded-md bg-destructive/10 px-2.5 py-1.5 text-sm text-destructive">
+          <p role="alert" className="rounded-xl bg-destructive/10 px-3.5 py-3 text-sm text-destructive">
             {t.answerSaveError}
           </p>
         )}

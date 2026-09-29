@@ -39,7 +39,7 @@ export function FolderChip({ folder, count, active, wordDragging, onSelect }: Fo
     >
       <FolderGlyph color={folder.color} />
       {folder.name}
-      <span className="font-mono text-[10px] opacity-70">{count}</span>
+      <span className="font-mono text-xs opacity-70">{count}</span>
     </button>
   );
 }

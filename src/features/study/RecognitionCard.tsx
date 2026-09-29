@@ -116,15 +116,15 @@ export function RecognitionCard({
   const displayedStreak = originalVerdict === 'wrong' ? 0 : (currentStreak ?? 0);
 
   return (
-    <div className={`${CARD_CLASS} flex flex-col gap-6 p-6`}>
+    <div className={`${CARD_CLASS} flex flex-col gap-7 p-6 pb-7 md:gap-6 md:p-8`}>
       <div className="flex flex-col gap-3">
         {showProgress && <PhaseProgressDots current={displayedStreak} total={requiredStreak ?? 0} />}
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1">
-            <span className="font-mono text-2xl leading-tight font-semibold tracking-tight text-balance">
+            <span className="font-mono text-3xl leading-tight font-semibold tracking-tight text-balance">
               {term}
             </span>
-            <span className="text-sm text-muted-foreground text-balance">{translation}</span>
+            <span className="text-lg text-muted-foreground text-balance">{translation}</span>
           </div>
           <span className="flex shrink-0 items-center gap-0.5">
             {isSpeechSupported() && (
@@ -132,9 +132,9 @@ export function RecognitionCard({
                 type="button"
                 aria-label={t.speak}
                 onClick={() => speak(term)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
+                className="flex h-11 w-11 md:h-9 md:w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/15 active:scale-95"
               >
-                <Volume2 className="h-[18px] w-[18px]" />
+                <Volume2 className="h-5 w-5" />
               </button>
             )}
             {onDelete && <DeleteWordButton onDelete={onDelete} />}
@@ -144,23 +144,23 @@ export function RecognitionCard({
 
       <div className="flex min-h-32 flex-col justify-center">
         {showCorrectFlash ? (
-          <p role="status" data-testid="feedback" className={`text-base font-medium ${FEEDBACK_COLOR.correct}`}>
+          <p role="status" data-testid="feedback" className={`text-lg font-semibold ${FEEDBACK_COLOR.correct}`}>
             {t.feedbackCorrect}
           </p>
         ) : error ? (
           <div className="flex flex-col gap-3">
-            <p role="status" data-testid="feedback" className={`text-sm font-medium ${FEEDBACK_COLOR[error.verdict]}`}>
+            <p role="status" data-testid="feedback" className={`text-base font-semibold ${FEEDBACK_COLOR[error.verdict]}`}>
               {errorFeedbackText(t, error.verdict)}
             </p>
-            <p className="text-xs text-muted-foreground">{t.retryPrompt}</p>
-            <Button type="button" onClick={handleRetry} autoFocus>
+            <p className="text-sm text-muted-foreground">{t.retryPrompt}</p>
+            <Button type="button" size="lg" onClick={handleRetry} autoFocus>
               {t.retryButton}
             </Button>
           </div>
         ) : (
           <form onSubmit={handleCheck} className="flex flex-col gap-3">
-            <Input aria-label={t.wordInputLabel} value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="font-mono" />
-            <Button type="submit">{t.checkAnswer}</Button>
+            <Input aria-label={t.wordInputLabel} value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="h-14 rounded-2xl text-lg font-mono md:h-12 md:rounded-xl" />
+            <Button type="submit" size="lg">{t.checkAnswer}</Button>
           </form>
         )}
       </div>

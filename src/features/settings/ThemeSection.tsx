@@ -8,7 +8,7 @@ export function ThemeSection() {
   const t = useTranslation();
 
   return (
-    <div className="flex flex-col gap-1.5 text-sm">
+    <div className="flex flex-col gap-2 text-sm font-medium">
       {t.themeLabel}
       <div className="flex gap-2">
         <Button type="button" variant={theme === 'light' ? 'default' : 'outline'} size="sm" onClick={() => setTheme('light')}>

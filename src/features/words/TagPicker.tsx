@@ -35,7 +35,7 @@ export function TagPicker({ tags, selected, onToggle, onCreate }: TagPickerProps
   }
 
   return (
-    <div className="flex flex-col gap-1.5 text-sm">
+    <div className="flex flex-col gap-2 text-sm font-medium">
       {t.tagsLabel}
       <div className="flex flex-wrap items-center gap-1.5">
         {tags.map((tag) => {
@@ -47,10 +47,10 @@ export function TagPicker({ tags, selected, onToggle, onCreate }: TagPickerProps
               aria-pressed={active}
               onClick={() => onToggle(tag.id!)}
               className={cn(
-                'flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs transition-colors',
+                'flex min-h-10 items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm md:min-h-8 md:px-3 md:py-1 transition-colors',
                 active
-                  ? 'border-primary bg-primary/10 text-foreground'
-                  : 'border-border text-muted-foreground hover:bg-secondary',
+                  ? 'border-primary bg-primary/12 font-medium text-foreground'
+                  : 'border-border bg-card text-muted-foreground hover:bg-secondary',
               )}
             >
               <TagGlyph color={tag.color} />
@@ -67,9 +67,9 @@ export function TagPicker({ tags, selected, onToggle, onCreate }: TagPickerProps
                 setColor(LABEL_COLORS[tags.length % LABEL_COLORS.length]);
                 setDraft('');
               }}
-              className="flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-secondary"
+              className="flex min-h-10 items-center gap-1.5 rounded-full border border-dashed border-border px-4 py-1.5 md:min-h-8 md:px-3 md:py-1 text-sm text-muted-foreground transition-colors hover:bg-secondary"
             >
-              <Plus className="h-2.5 w-2.5" aria-hidden="true" />
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               {t.newTag}
             </button>
           ) : (
@@ -119,7 +119,7 @@ export function TagPicker({ tags, selected, onToggle, onCreate }: TagPickerProps
             </div>
           ))}
       </div>
-      {isDuplicate && <p className="text-xs text-destructive">{t.duplicateTagName}</p>}
+      {isDuplicate && <p className="text-sm text-destructive">{t.duplicateTagName}</p>}
     </div>
   );
 }

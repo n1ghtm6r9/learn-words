@@ -19,7 +19,7 @@ export function TagFilter({ tags, counts, selected, onToggle }: TagFilterProps) 
   if (tags.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap gap-2">
       {tags.map((tag) => {
         const active = selected.includes(tag.id!);
         return (
@@ -29,15 +29,15 @@ export function TagFilter({ tags, counts, selected, onToggle }: TagFilterProps) 
             aria-pressed={active}
             onClick={() => onToggle(tag.id!)}
             className={cn(
-              'flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs transition-colors',
+              'flex shrink-0 items-center min-h-10 gap-1.5 rounded-full border px-4 py-1.5 text-sm md:min-h-8 md:px-3 md:py-1 transition-colors',
               active
-                ? 'border-primary bg-primary/10 text-foreground'
-                : 'border-border text-muted-foreground hover:bg-secondary',
+                ? 'border-primary bg-primary/12 font-medium text-foreground'
+                : 'border-border bg-card text-muted-foreground hover:bg-secondary',
             )}
           >
             <TagGlyph color={tag.color} />
             {tag.name}
-            <span className="font-mono text-[10px] opacity-70">{counts.get(tag.id!) ?? 0}</span>
+            <span className="font-mono text-xs opacity-70">{counts.get(tag.id!) ?? 0}</span>
           </button>
         );
       })}
@@ -45,9 +45,9 @@ export function TagFilter({ tags, counts, selected, onToggle }: TagFilterProps) 
         type="button"
         aria-label={t.manageTags}
         onClick={() => setTagsOpen(true)}
-        className="flex shrink-0 items-center rounded-full border border-dashed border-border px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-secondary"
+        className="flex min-h-10 min-w-10 md:min-h-8 md:min-w-8 shrink-0 items-center justify-center rounded-full border border-dashed border-border px-3 text-muted-foreground transition-colors hover:bg-secondary"
       >
-        <Settings2 className="h-3 w-3" aria-hidden="true" />
+        <Settings2 className="h-4 w-4" aria-hidden="true" />
       </button>
     </div>
   );

@@ -117,11 +117,11 @@ export function RecallCard({
   const displayedStreak = originalVerdict === 'wrong' ? 0 : (currentStreak ?? 0);
 
   return (
-    <div className={`${CARD_CLASS} flex flex-col gap-6 p-6`}>
+    <div className={`${CARD_CLASS} flex flex-col gap-7 p-6 pb-7 md:gap-6 md:p-8`}>
       <div className="flex flex-col gap-3">
         {showProgress && <PhaseProgressDots current={displayedStreak} total={requiredStreak ?? 0} />}
         <div className="flex items-start justify-between gap-3">
-          <span className="text-2xl leading-snug font-semibold text-balance">{translation}</span>
+          <span className="text-3xl leading-snug font-semibold tracking-tight text-balance">{translation}</span>
           {onDelete && <DeleteWordButton onDelete={onDelete} />}
         </div>
       </div>
@@ -129,7 +129,7 @@ export function RecallCard({
       <div className="flex min-h-32 flex-col justify-center">
         {showCorrectFlash ? (
           <div className="flex items-center gap-2">
-            <p role="status" data-testid="feedback" className={`text-base font-medium ${FEEDBACK_COLOR.correct}`}>
+            <p role="status" data-testid="feedback" className={`text-lg font-semibold ${FEEDBACK_COLOR.correct}`}>
               {t.feedbackCorrect}
             </p>
             {isSpeechSupported() && (
@@ -137,16 +137,16 @@ export function RecallCard({
                 type="button"
                 aria-label={t.speak}
                 onClick={() => speak(expectedTerm)}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
+                className="flex h-11 w-11 md:h-9 md:w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/15 active:scale-95"
               >
-                <Volume2 className="h-4 w-4" />
+                <Volume2 className="h-5 w-5" />
               </button>
             )}
           </div>
         ) : error ? (
           <div className="flex flex-col gap-3">
             <div className="flex items-start gap-2">
-              <p role="status" data-testid="feedback" className={`text-sm ${FEEDBACK_COLOR[error.verdict]}`}>
+              <p role="status" data-testid="feedback" className={`text-base ${FEEDBACK_COLOR[error.verdict]}`}>
                 {errorFeedbackLabel(t, error.verdict)}{' '}
                 <span className="font-mono font-semibold">{error.correctAnswer}</span>
               </p>
@@ -155,21 +155,21 @@ export function RecallCard({
                   type="button"
                   aria-label={t.speak}
                   onClick={() => speak(expectedTerm)}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
+                  className="flex h-11 w-11 md:h-9 md:w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary/15 active:scale-95"
                 >
-                  <Volume2 className="h-4 w-4" />
+                  <Volume2 className="h-5 w-5" />
                 </button>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">{t.retryPrompt}</p>
-            <Button type="button" onClick={handleRetry} autoFocus>
+            <p className="text-sm text-muted-foreground">{t.retryPrompt}</p>
+            <Button type="button" size="lg" onClick={handleRetry} autoFocus>
               {t.retryButton}
             </Button>
           </div>
         ) : (
           <form onSubmit={handleCheck} className="flex flex-col gap-3">
-            <Input aria-label={t.wordInputLabel} value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="font-mono" />
-            <Button type="submit">{t.checkAnswer}</Button>
+            <Input aria-label={t.wordInputLabel} value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="h-14 rounded-2xl text-lg font-mono md:h-12 md:rounded-xl" />
+            <Button type="submit" size="lg">{t.checkAnswer}</Button>
           </form>
         )}
       </div>

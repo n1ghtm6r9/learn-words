@@ -10,7 +10,7 @@ export function LanguageSection() {
   const t = useTranslation();
 
   return (
-    <div className="flex flex-col gap-1.5 text-sm">
+    <div className="flex flex-col gap-2 text-sm font-medium">
       {t.languageLabel}
       <div role="group" aria-label={t.languageLabel} className="flex gap-2">
         {UI_LANGUAGES.map((uiLanguage) => (

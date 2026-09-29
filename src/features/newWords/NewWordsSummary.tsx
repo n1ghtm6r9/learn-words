@@ -19,11 +19,11 @@ export function NewWordsSummary({ learnedCount, onFinish }: NewWordsSummaryProps
   }, []);
 
   return (
-    <Card className="flex flex-col items-center gap-4 p-6 text-center">
-      <PartyPopper className="h-7 w-7 text-status-mastered" aria-hidden="true" />
-      <h2 className="text-lg font-semibold">{t.newWordsGraduated}</h2>
+    <Card className="flex flex-col items-center gap-5 p-8 text-center">
+      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-status-mastered/15"><PartyPopper className="h-8 w-8 text-status-mastered" aria-hidden="true" /></span>
+      <h2 className="text-2xl font-semibold tracking-tight">{t.newWordsGraduated}</h2>
       <p className="font-mono text-sm text-muted-foreground">{t.learnedCount(learnedCount)}</p>
-      <Button type="button" onClick={onFinish} className="w-full">
+      <Button type="button" size="lg" onClick={onFinish} className="w-full">
         {t.done}
       </Button>
     </Card>

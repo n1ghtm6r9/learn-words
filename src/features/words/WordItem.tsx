@@ -59,7 +59,7 @@ export function WordItem({
     <li
       ref={rowRef}
       className={cn(
-        'flex items-center gap-2 px-3 py-2.5 transition-colors',
+        'flex items-center gap-2 px-3.5 py-3.5 transition-colors md:py-2.5',
         dragging && 'bg-secondary/60 [&>*]:opacity-30',
         selectable && selected && 'bg-primary/12',
       )}
@@ -69,9 +69,9 @@ export function WordItem({
           ref={dragHandle.ref}
           {...dragHandle.props}
           aria-label={`${t.moveToFolder} ${word.term}`}
-          className="flex h-7 w-5 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground/60 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 active:cursor-grabbing"
+          className="flex h-10 w-6 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground/60 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 active:cursor-grabbing"
         >
-          <GripVertical className="h-3.5 w-3.5" aria-hidden="true" />
+          <GripVertical className="h-4 w-4" aria-hidden="true" />
         </span>
       )}
       {selectable && (
@@ -82,7 +82,7 @@ export function WordItem({
           aria-label={word.term}
           onClick={onToggleSelected}
           className={cn(
-            'flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md border-2 transition-all',
+            'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 transition-all',
             selected
               ? 'scale-100 border-primary bg-primary text-primary-foreground'
               : 'border-muted-foreground/35 hover:border-primary/60',
@@ -95,13 +95,13 @@ export function WordItem({
         type="button"
         aria-label={`${t.openWordDetails}: ${word.term}`}
         onClick={selectable ? onToggleSelected : onOpenDetails}
-        className="flex min-w-0 flex-1 items-center gap-3 rounded-md text-left transition-colors hover:bg-secondary/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+        className="flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left transition-colors hover:bg-secondary/50 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
       >
-        <span className="flex w-8 shrink-0 flex-col items-center gap-1">
+        <span className="flex w-9 shrink-0 flex-col items-center gap-1.5">
           <span
             aria-hidden="true"
             className={cn(
-              'h-2 w-2 rounded-full',
+              'h-2.5 w-2.5 rounded-full',
               color ? RATING_DOT_CLASS[color] : 'border-[1.5px] border-muted-foreground/60',
             )}
           />
@@ -112,7 +112,7 @@ export function WordItem({
               <span className="sr-only">{t.ratingSrLabel}</span>
               <span
                 className={cn(
-                  'font-mono text-[12px] leading-none font-semibold tabular-nums',
+                  'font-mono text-[13px] leading-none font-semibold tabular-nums',
                   RATING_TEXT_CLASS[color!],
                 )}
               >
@@ -124,24 +124,24 @@ export function WordItem({
 
         <span className="min-w-0 flex-1">
           <span className="flex items-baseline gap-1.5">
-            <span className="min-w-0 truncate font-mono text-[15px] font-medium">{word.term}</span>
+            <span className="min-w-0 truncate font-mono text-base font-semibold">{word.term}</span>
             {word.kind === 'phrase' && (
-              <span className="shrink-0 text-[10px] text-muted-foreground/70">{t.phraseTag}</span>
+              <span className="shrink-0 text-xs text-muted-foreground/80">{t.phraseTag}</span>
             )}
           </span>
-          <span className="block truncate text-[13px] text-muted-foreground">{word.translation}</span>
+          <span className="block truncate text-sm text-muted-foreground">{word.translation}</span>
           {(folder || (tags && tags.length > 0)) && (
-            <span className="mt-0.5 flex items-center gap-2 overflow-hidden">
+            <span className="mt-1 flex items-center gap-3 overflow-hidden">
               {folder && (
-                <span className="flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground/80">
-                  <FolderGlyph color={folder.color} className="h-3 w-3" />
+                <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground/90">
+                  <FolderGlyph color={folder.color} className="h-3.5 w-3.5" />
                   {folder.name}
                 </span>
               )}
               {tags?.map((tag) => (
                 <span
                   key={tag.id}
-                  className="flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground/80"
+                  className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground/90"
                 >
                   <TagGlyph color={tag.color} />
                   {tag.name}
@@ -175,7 +175,7 @@ export function WordItem({
               onClick={() => speak(word.term)}
               className="text-muted-foreground hover:text-primary"
             >
-              <Volume2 className="h-3.5 w-3.5" />
+              <Volume2 />
             </Button>
           )}
           <Button
@@ -186,7 +186,7 @@ export function WordItem({
             onClick={onEdit}
             className="text-muted-foreground hover:text-foreground"
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil />
           </Button>
           <Button
             type="button"
@@ -196,7 +196,7 @@ export function WordItem({
             onClick={() => setConfirmingDelete(true)}
             className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 />
           </Button>
         </div>
       )}
