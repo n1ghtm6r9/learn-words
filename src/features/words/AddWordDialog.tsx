@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { SegmentedControl } from '@/components/ui/segmentedControl';
 import { useTranslation } from '@/i18n/useTranslation';
 import { WordForm } from './WordForm';
 import { BulkAddForm } from './BulkAddForm';
@@ -16,14 +16,14 @@ export function AddWordDialog({ onDone }: AddWordDialogProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex gap-2">
-        <Button type="button" variant={mode === 'single' ? 'default' : 'outline'} size="sm" onClick={() => setMode('single')}>
-          {t.singleWordMode}
-        </Button>
-        <Button type="button" variant={mode === 'bulk' ? 'default' : 'outline'} size="sm" onClick={() => setMode('bulk')}>
-          {t.bulkMode}
-        </Button>
-      </div>
+      <SegmentedControl<Mode>
+        value={mode}
+        onChange={setMode}
+        options={[
+          { value: 'single', label: t.singleWordMode },
+          { value: 'bulk', label: t.bulkMode },
+        ]}
+      />
 
       {mode === 'single' ? <WordForm mode="create" onDone={onDone} /> : <BulkAddForm onDone={onDone} />}
     </div>

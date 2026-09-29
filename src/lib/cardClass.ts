@@ -1,1 +1,1 @@
-export const CARD_CLASS = 'rounded-2xl border border-border/70 bg-card shadow-[0_1px_2px_oklch(0.24_0.03_265/0.05),0_6px_20px_-8px_oklch(0.24_0.03_265/0.10)]';
+export const CARD_CLASS = 'rounded-2xl border border-border/70 bg-card shadow-[0_1px_2px_color-mix(in_oklch,var(--foreground)_6%,transparent),0_12px_30px_-14px_color-mix(in_oklch,var(--foreground)_22%,transparent)]';

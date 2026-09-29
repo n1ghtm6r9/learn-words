@@ -1,6 +1,7 @@
-import { Button } from '@/components/ui/button';
+import { SegmentedControl } from '@/components/ui/segmentedControl';
 import { STUDY_LANGUAGE_PROFILES } from '@/languages/studyLanguageProfiles';
 import { STUDY_LANGUAGES } from '@/languages/studyLanguages';
+import type { StudyLanguage } from '@/languages/studyLanguage.type';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 
@@ -12,20 +13,13 @@ export function StudyLanguageSection() {
   return (
     <div className="flex flex-col gap-2 text-sm font-medium">
       {t.studyLanguageLabel}
-      <div role="group" aria-label={t.studyLanguageLabel} className="flex gap-2">
-        {STUDY_LANGUAGES.map((language) => (
-          <Button
-            key={language}
-            type="button"
-            variant={studyLanguage === language ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setStudyLanguage(language)}
-          >
-            {STUDY_LANGUAGE_PROFILES[language].name}
-          </Button>
-        ))}
-      </div>
-      <p className="text-sm text-muted-foreground">{t.studyLanguageHint}</p>
+      <SegmentedControl<StudyLanguage>
+        label={t.studyLanguageLabel}
+        value={studyLanguage}
+        onChange={setStudyLanguage}
+        options={STUDY_LANGUAGES.map((language) => ({ value: language, label: STUDY_LANGUAGE_PROFILES[language].name }))}
+      />
+      <p className="text-sm font-normal text-muted-foreground">{t.studyLanguageHint}</p>
     </div>
   );
 }

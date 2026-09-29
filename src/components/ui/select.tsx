@@ -14,7 +14,7 @@ function SelectTrigger({ className, children, ...props }: SelectPrimitive.Trigge
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       className={cn(
-        "flex h-12 w-full items-center justify-between gap-2 rounded-xl border border-input bg-card px-3.5 py-2 text-base md:h-10 md:text-sm transition-colors outline-none select-none hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 dark:bg-input/30",
+        "flex h-12 w-full items-center justify-between gap-2 rounded-xl border border-input bg-card px-3.5 py-2 text-base ring-3 ring-transparent md:h-10 md:text-sm transition-[border-color,box-shadow,background-color] duration-200 ease-out outline-none select-none hover:bg-muted/50 focus-visible:border-ring focus-visible:ring-ring/20 data-[popup-open]:border-ring data-[popup-open]:ring-ring/20 disabled:pointer-events-none disabled:opacity-50 dark:bg-input/30",
         className
       )}
       {...props}
@@ -34,11 +34,11 @@ function SelectValue(props: SelectPrimitive.Value.Props) {
 function SelectContent({ className, children, ...props }: SelectPrimitive.Popup.Props) {
   return (
     <SelectPrimitive.Portal>
-      <SelectPrimitive.Positioner sideOffset={4} className="z-50 outline-none">
+      <SelectPrimitive.Positioner sideOffset={6} alignItemWithTrigger={false} className="z-50 outline-none">
         <SelectPrimitive.Popup
           data-slot="select-content"
           className={cn(
-            "max-h-[min(24rem,var(--available-height))] min-w-[var(--anchor-width)] overflow-y-auto rounded-2xl border border-border bg-popover p-1.5 text-popover-foreground shadow-xl outline-none data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+            "max-h-[min(24rem,var(--available-height))] min-w-[var(--anchor-width)] overflow-y-auto rounded-2xl border border-border bg-popover p-1.5 text-popover-foreground shadow-xl outline-none data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fill-mode-forwards data-closed:fade-out-0",
             className
           )}
           {...props}

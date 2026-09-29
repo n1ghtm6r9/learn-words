@@ -3,8 +3,9 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { DndContext, MeasuringStrategy, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
 import { AnimatePresence } from 'motion/react';
 import { arrayMove } from '@dnd-kit/sortable';
-import { CheckSquare, Download, Search, TriangleAlert, Upload } from 'lucide-react';
+import { CheckSquare, Download, ListChecks, Search, SearchX, TriangleAlert, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/emptyState';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useDb } from '@/db/useDb';
@@ -35,20 +36,21 @@ import { normalizeTerm } from '@/lib/normalizeTerm';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
-import { ExportDialog } from './ExportDialog';
 import { DraggableWordItem } from './DraggableWordItem';
 import type { DragPayload } from './dragPayload.type';
 import { FolderBar } from './FolderBar';
 import { FolderChipPreview } from './FolderChipPreview';
 import { folderBarCollision } from './folderBarCollision';
 import { WordDragPreview } from './WordDragPreview';
-import { ImportDialog } from './ImportDialog';
+import { LazyExportDialog } from './LazyExportDialog';
+import { LazyImportDialog } from './LazyImportDialog';
 import { FolderTargetSheet } from './FolderTargetSheet';
 import { SelectionActionBar } from './SelectionActionBar';
 import { SelectionHeader } from './SelectionHeader';
 import { TagTargetSheet } from './TagTargetSheet';
 import { TagFilter } from './TagFilter';
 import { WordDetailsDialog } from './WordDetailsDialog';
+import { WordListSkeleton } from './WordListSkeleton';
 import { WordForm } from './WordForm';
 
 export function WordList() {
@@ -70,6 +72,7 @@ export function WordList() {
   const [folderFilter, setFolderFilter] = useState<string | null | 'all'>('all');
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const setAddWordOpen = useUIStore((s) => s.setAddWordOpen);
   const selecting = useUIStore((s) => s.selectingWords);
   const setSelecting = useUIStore((s) => s.setSelectingWords);
   const [editingWord, setEditingWord] = useState<Word | null>(null);
@@ -113,6 +116,12 @@ export function WordList() {
   useEffect(() => {
     setSelectedIds([]);
   }, [folderFilter, tagFilter]);
+
+  useEffect(() => {
+    if (selecting) return;
+    setSelectedIds([]);
+    setSheet(null);
+  }, [selecting]);
 
   const usable = useMemo(() => (words ?? []).filter(isUsableWord), [words]);
   const linksByWord = useMemo(() => tagsByWord(data?.links ?? []), [data?.links]);
@@ -314,7 +323,7 @@ export function WordList() {
   }
 
   if (!words) {
-    return <p className="text-sm text-muted-foreground">{t.loading}</p>;
+    return <WordListSkeleton />;
   }
 
   return (
@@ -330,7 +339,7 @@ export function WordList() {
         <div className="sticky top-[69px] z-20 -mx-4 -mt-5 flex flex-col gap-3 bg-background/95 px-4 pt-5 pb-3 backdrop-blur-xl md:top-0 md:-mx-8 md:-mt-8 md:px-8 md:pt-8">
           <div className="relative">
             <Search className="pointer-events-none absolute left-4 md:left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-            <Input placeholder={t.searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-11 md:pl-10" />
+            <Input id="word-search" placeholder={t.searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-11 md:pl-10" />
           </div>
 
           <div className="flex flex-col gap-2">
@@ -364,7 +373,7 @@ export function WordList() {
             />
           ) : (
           <div className="flex items-center justify-between gap-2">
-            <p className="min-w-0 truncate font-mono text-sm text-muted-foreground">
+            <p className="min-w-0 truncate text-sm text-muted-foreground tabular-nums">
               {scopedTotal === 0
                 ? ''
                 : filtered.length === scopedTotal
@@ -419,30 +428,43 @@ export function WordList() {
 
 
         {filtered.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {scopedTotal === 0 && search === '' ? t.noWordsYet : t.nothingFound}
-          </p>
+          scopedTotal === 0 && search === '' ? (
+            <EmptyState
+              icon={ListChecks}
+              message={t.noWordsYet}
+              action={{ label: t.addWordCta, onClick: () => setAddWordOpen(true) }}
+            />
+          ) : (
+            <EmptyState icon={SearchX} message={t.nothingFound} />
+          )
         ) : (
-          <ul className={cn(CARD_CLASS, 'divide-y divide-border/70 overflow-hidden')}>
-            {filtered.map((word) => (
-              <DraggableWordItem
-                key={word.id}
-                word={word}
-                folder={word.folderId == null ? undefined : folderById.get(word.folderId)}
-                tags={(linksByWord.get(word.id!) ?? []).map((id) => tagById.get(id)).filter((tag) => tag != null)}
-                selectable={selecting}
-                selected={selectedIds.includes(word.id!)}
-                onToggleSelected={() =>
-                  setSelectedIds((current) =>
-                    current.includes(word.id!) ? current.filter((id) => id !== word.id) : [...current, word.id!],
-                  )
-                }
-                onEdit={() => setEditingWord(word)}
-                onDelete={() => void handleDelete(word.id)}
-                onOpenDetails={() => setDetailsWord(word)}
-              />
-            ))}
-          </ul>
+          <div>
+            <ul
+              className={cn(
+                CARD_CLASS,
+                'stagger-list divide-y divide-border/70 overflow-hidden xl:grid xl:grid-cols-2 xl:gap-px xl:divide-y-0 xl:bg-border/70 xl:[&>li:last-child:nth-child(odd)]:col-span-2',
+              )}
+            >
+              {filtered.map((word) => (
+                <DraggableWordItem
+                  key={word.id}
+                  word={word}
+                  folder={word.folderId == null ? undefined : folderById.get(word.folderId)}
+                  tags={(linksByWord.get(word.id!) ?? []).map((id) => tagById.get(id)).filter((tag) => tag != null)}
+                  selectable={selecting}
+                  selected={selectedIds.includes(word.id!)}
+                  onToggleSelected={() =>
+                    setSelectedIds((current) =>
+                      current.includes(word.id!) ? current.filter((id) => id !== word.id) : [...current, word.id!],
+                    )
+                  }
+                  onEdit={() => setEditingWord(word)}
+                  onDelete={() => void handleDelete(word.id)}
+                  onOpenDetails={() => setDetailsWord(word)}
+                />
+              ))}
+            </ul>
+          </div>
         )}
 
         {selecting && <div className="h-24" aria-hidden="true" />}
@@ -500,8 +522,8 @@ export function WordList() {
           onOpenChange={(open) => !open && setDetailsWord(null)}
         />
 
-        <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
-        <ImportDialog open={importOpen} onOpenChange={setImportOpen} />
+        <LazyExportDialog open={exportOpen} onOpenChange={setExportOpen} />
+        <LazyImportDialog open={importOpen} onOpenChange={setImportOpen} />
       </div>
       <DragOverlayPortal>{renderDragPreview()}</DragOverlayPortal>
     </DndContext>

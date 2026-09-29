@@ -1,5 +1,6 @@
 import { BottomSheet } from '@/components/ui/bottomSheet';
 import { SheetOption } from '@/components/ui/sheetOption';
+import type { SheetOptionCoverage } from '@/components/ui/sheetOptionCoverage.type';
 import type { LabelColor } from '@/db/labelColor.type';
 import type { Tag } from '@/db/tag.type';
 import { LABEL_COLORS } from '@/lib/labelColors';
@@ -37,6 +38,12 @@ export function TagTargetSheet({
     return have > 0 ? t.tagOnSome(have, selectedCount) : undefined;
   }
 
+  function coverageFor(tagId: string): SheetOptionCoverage {
+    const have = coverage.get(tagId) ?? 0;
+    if (have === 0) return 'none';
+    return have === selectedCount ? 'all' : 'some';
+  }
+
   return (
     <BottomSheet
       open={open}
@@ -52,6 +59,7 @@ export function TagTargetSheet({
           icon={<TagGlyph color={tag.color} className="text-base leading-none" />}
           label={tag.name}
           hint={hintFor(tag.id!)}
+          coverage={coverageFor(tag.id!)}
           disabled={mode === 'add' && (coverage.get(tag.id!) ?? 0) === selectedCount}
           onClick={() => onPick(tag.id!)}
         />

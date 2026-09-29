@@ -58,6 +58,12 @@ export function ReviewFilters({
   }
 
   const draggedFolder = folders.find((folder) => folder.id === draggedFolderId);
+  const reviewableFolders = folders.filter(
+    (folder) => (folderCounts.get(folder.id!) ?? 0) > 0 || folderFilter === folder.id,
+  );
+  const reviewableTags = tags.filter((tag) => (tagCounts.get(tag.id!) ?? 0) > 0 || tagFilter.includes(tag.id!));
+
+  if (reviewableFolders.length === 0 && reviewableTags.length === 0) return null;
 
   return (
     <div className="flex flex-col gap-2">
@@ -69,13 +75,17 @@ export function ReviewFilters({
         onDragEnd={handleDragEnd}
         onDragCancel={() => setDraggedFolderId(null)}
       >
-        <FolderBar
-          folders={folders}
-          counts={folderCounts}
-          value={folderFilter}
-          wordDragging={false}
-          onChange={onFolderFilterChange}
-        />
+        {reviewableFolders.length > 0 && (
+          <FolderBar
+            folders={reviewableFolders}
+            counts={folderCounts}
+            value={folderFilter}
+            wordDragging={false}
+            manageable={false}
+            hideEmptyRoot
+            onChange={onFolderFilterChange}
+          />
+        )}
         <DragOverlayPortal>
           {draggedFolder ? (
             <FolderChipPreview folder={draggedFolder} count={folderCounts.get(draggedFolder.id!) ?? 0} />
@@ -84,9 +94,10 @@ export function ReviewFilters({
       </DndContext>
 
       <TagFilter
-        tags={tags}
+        tags={reviewableTags}
         counts={tagCounts}
         selected={tagFilter}
+        manageable={false}
         onToggle={(tagId) =>
           onTagFilterChange(tagFilter.includes(tagId) ? tagFilter.filter((id) => id !== tagId) : [...tagFilter, tagId])
         }

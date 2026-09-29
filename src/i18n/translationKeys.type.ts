@@ -13,9 +13,13 @@ export interface TranslationKeys {
   loading: string;
   noNewWords: string;
   addWordCta: string;
-  remainingWords: (count: number) => string;
+  learnedProgress: (learned: number, total: number) => string;
+  sessionProgressLabel: string;
   newWordsGraduated: string;
   learnedCount: (count: number) => string;
+  statLearnedWords: string;
+  statDueNow: string;
+  startReview: string;
   done: string;
 
   noReviewsYet: string;
@@ -36,6 +40,7 @@ export interface TranslationKeys {
   statCorrect: string;
   statAlmost: string;
   statWrong: string;
+  accuracyLabel: string;
 
   wordInputLabel: string;
   checkAnswer: string;
@@ -44,6 +49,8 @@ export interface TranslationKeys {
   recallFeedbackWrong: string;
   recognitionFeedbackAlmost: string;
   recognitionFeedbackWrong: string;
+  yourAnswerLabel: string;
+  correctSpellingLabel: string;
   speak: string;
   retryPrompt: string;
   retryButton: string;
@@ -130,12 +137,15 @@ export interface TranslationKeys {
   studyLanguageLabel: string;
   studyLanguageHint: string;
   appVersion: (version: string) => string;
+  navHotkeyHint: (label: string, key: string) => string;
 
   navOrganize: string;
   organizeTitle: string;
   backToWords: string;
   manageFolders: string;
   manageTags: string;
+  showAllChips: string;
+  showLessChips: string;
   foldersSectionTitle: string;
   tagsSectionTitle: string;
   folderLabel: string;
@@ -193,6 +203,9 @@ export interface TranslationKeys {
   dbBlockedMessage: string;
 
   accountLabel: string;
+  settingsAppearanceTitle: string;
+  settingsLanguagesTitle: string;
+  settingsLearningTitle: string;
   accountGuestHint: string;
   signedIn: string;
   signOut: string;
@@ -220,6 +233,9 @@ export interface TranslationKeys {
   signOutConfirmTitle: string;
   signOutAnyway: string;
   alertInvalidOtp: string;
+  alertNoConnection: string;
+  chooseFile: string;
+  noFileChosen: string;
   alertInvalidEmail: string;
   alertLicenseLimit: string;
   alertNoSeats: string;

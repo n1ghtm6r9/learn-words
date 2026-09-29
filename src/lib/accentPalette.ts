@@ -14,23 +14,23 @@ interface AccentPreset {
 
 export const ACCENT_PALETTE: Record<AccentColor, AccentPreset> = {
   blue: {
-    swatch: 'oklch(0.55 0.09 250)',
-    light: { primary: 'oklch(0.42 0.08 250)', primaryForeground: 'oklch(0.98 0.01 95)', ring: 'oklch(0.42 0.08 250)' },
-    dark: { primary: 'oklch(0.68 0.1 250)', primaryForeground: 'oklch(0.15 0.02 265)', ring: 'oklch(0.68 0.1 250)' },
+    swatch: 'oklch(0.58 0.2 277)',
+    light: { primary: 'oklch(0.5 0.22 277)', primaryForeground: 'oklch(0.985 0.005 275)', ring: 'oklch(0.5 0.22 277)' },
+    dark: { primary: 'oklch(0.72 0.17 277)', primaryForeground: 'oklch(0.16 0.04 277)', ring: 'oklch(0.72 0.17 277)' },
   },
   green: {
-    swatch: 'oklch(0.55 0.09 175)',
-    light: { primary: 'oklch(0.42 0.08 175)', primaryForeground: 'oklch(0.98 0.01 95)', ring: 'oklch(0.42 0.08 175)' },
-    dark: { primary: 'oklch(0.68 0.1 175)', primaryForeground: 'oklch(0.15 0.02 265)', ring: 'oklch(0.68 0.1 175)' },
+    swatch: 'oklch(0.58 0.2 165)',
+    light: { primary: 'oklch(0.5 0.22 165)', primaryForeground: 'oklch(0.985 0.005 275)', ring: 'oklch(0.5 0.22 165)' },
+    dark: { primary: 'oklch(0.72 0.17 165)', primaryForeground: 'oklch(0.16 0.04 277)', ring: 'oklch(0.72 0.17 165)' },
   },
   purple: {
-    swatch: 'oklch(0.55 0.09 310)',
-    light: { primary: 'oklch(0.42 0.08 310)', primaryForeground: 'oklch(0.98 0.01 95)', ring: 'oklch(0.42 0.08 310)' },
-    dark: { primary: 'oklch(0.68 0.1 310)', primaryForeground: 'oklch(0.15 0.02 265)', ring: 'oklch(0.68 0.1 310)' },
+    swatch: 'oklch(0.58 0.2 335)',
+    light: { primary: 'oklch(0.5 0.22 335)', primaryForeground: 'oklch(0.985 0.005 275)', ring: 'oklch(0.5 0.22 335)' },
+    dark: { primary: 'oklch(0.72 0.17 335)', primaryForeground: 'oklch(0.16 0.04 277)', ring: 'oklch(0.72 0.17 335)' },
   },
   orange: {
-    swatch: 'oklch(0.55 0.09 55)',
-    light: { primary: 'oklch(0.42 0.08 55)', primaryForeground: 'oklch(0.98 0.01 95)', ring: 'oklch(0.42 0.08 55)' },
-    dark: { primary: 'oklch(0.68 0.1 55)', primaryForeground: 'oklch(0.15 0.02 265)', ring: 'oklch(0.68 0.1 55)' },
+    swatch: 'oklch(0.58 0.2 48)',
+    light: { primary: 'oklch(0.5 0.22 48)', primaryForeground: 'oklch(0.985 0.005 275)', ring: 'oklch(0.5 0.22 48)' },
+    dark: { primary: 'oklch(0.72 0.17 48)', primaryForeground: 'oklch(0.16 0.04 277)', ring: 'oklch(0.72 0.17 48)' },
   },
 };

@@ -1,17 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
   <defs>
     <linearGradient id="t4" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#33628f"/>
-      <stop offset="1" stop-color="#1a2e4c"/>
+      <stop offset="0" stop-color="#666bf3"/>
+      <stop offset="1" stop-color="#3a30b5"/>
     </linearGradient>
   </defs>
   <rect width="32" height="32" rx="7" ry="7" fill="url(#t4)"/>
-  <rect x="6.5" y="8" width="14" height="17" rx="2.6" ry="2.6" fill="#e3ad4b" transform="rotate(-16 16 16)"/>
+  <rect x="6.5" y="8" width="14" height="17" rx="2.6" ry="2.6" fill="#ffd84a" transform="rotate(-16 16 16)"/>
   <rect x="10" y="6.5" width="15.5" height="19" rx="2.8" ry="2.8" fill="#fffdf9"/>
-  <g fill="#1a2e4c">
+  <g fill="#3a30b5">
     <path d="M16.6 9.4 H18.9 L15.05 20.2 H12.75 Z"/>
     <path d="M16.6 9.4 H18.9 L22.75 20.2 H20.45 Z"/>
     <rect x="15.1" y="16.1" width="5.3" height="2" rx="1" ry="1"/>
   </g>
-  <rect x="14.4" y="21.6" width="6.7" height="1.9" rx=".95" ry=".95" fill="#d2a249"/>
+  <rect x="14.4" y="21.6" width="6.7" height="1.9" rx=".95" ry=".95" fill="#f3ba26"/>
 </svg>

@@ -1,5 +1,6 @@
 import { resolveText, type DXCAlert } from 'dexie-cloud-addon';
 import type { TranslationKeys } from '@/i18n/translationKeys.type';
+import { isConnectionFailure } from './isConnectionFailure';
 
 export function cloudAlertText(alert: DXCAlert, t: TranslationKeys): string {
   switch (alert.messageCode) {
@@ -21,6 +22,8 @@ export function cloudAlertText(alert: DXCAlert, t: TranslationKeys): string {
       return t.alertOtpSent;
     case 'LOGOUT_CONFIRMATION':
       return t.alertUnsyncedChanges(Number(alert.messageParams.numUnsyncedChanges));
+    case 'GENERIC_ERROR':
+      return isConnectionFailure(alert.message) ? t.alertNoConnection : resolveText(alert);
     default:
       return resolveText(alert);
   }

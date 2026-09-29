@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import confetti from 'canvas-confetti';
+import { motion } from 'motion/react';
 import { PartyPopper } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { CountUpNumber } from '@/features/study/CountUpNumber';
 import { confettiColors } from '@/lib/confettiColors';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -20,9 +22,22 @@ export function NewWordsSummary({ learnedCount, onFinish }: NewWordsSummaryProps
 
   return (
     <Card className="flex flex-col items-center gap-5 p-8 text-center">
-      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-status-mastered/15"><PartyPopper className="h-8 w-8 text-status-mastered" aria-hidden="true" /></span>
-      <h2 className="text-2xl font-semibold tracking-tight">{t.newWordsGraduated}</h2>
-      <p className="font-mono text-sm text-muted-foreground">{t.learnedCount(learnedCount)}</p>
+      <motion.span
+        initial={{ scale: 0, rotate: -40 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: 'spring', stiffness: 380, damping: 14, delay: 0.1 }}
+        className="flex h-20 w-20 items-center justify-center rounded-full bg-marker text-marker-foreground shadow-[0_12px_28px_-10px_var(--marker)]"
+      >
+        <PartyPopper className="h-9 w-9" aria-hidden="true" />
+      </motion.span>
+      <h2 className="font-display text-xl font-semibold text-balance">{t.newWordsGraduated}</h2>
+      <div className="flex w-full flex-col items-center gap-1.5 rounded-2xl bg-secondary px-4 py-4">
+        <span className="sr-only">{t.learnedCount(learnedCount)}</span>
+        <p aria-hidden="true" className="font-display text-4xl leading-none font-semibold tabular-nums">
+          <CountUpNumber value={learnedCount} delay={0.25} />
+        </p>
+        <p aria-hidden="true" className="text-xs text-muted-foreground">{t.statLearnedWords}</p>
+      </div>
       <Button type="button" size="lg" onClick={onFinish} className="w-full">
         {t.done}
       </Button>

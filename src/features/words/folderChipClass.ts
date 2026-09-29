@@ -6,7 +6,7 @@ export function folderChipClass(active: boolean, isTarget: boolean, wordDragging
     isTarget
       ? 'scale-105 border-primary bg-primary/20 text-foreground'
       : active
-        ? 'border-primary bg-primary/12 font-medium text-foreground'
+        ? 'border-primary bg-primary font-medium text-primary-foreground'
         : wordDragging
           ? 'border-dashed border-border text-muted-foreground'
           : 'border-border bg-card text-muted-foreground hover:bg-secondary',

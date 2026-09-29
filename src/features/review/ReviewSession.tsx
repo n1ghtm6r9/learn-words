@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Button } from '@/components/ui/button';
+import { BookOpen, SearchX } from 'lucide-react';
+import { EmptyState } from '@/components/ui/emptyState';
+import { StudyCardSkeleton } from '@/features/study/StudyCardSkeleton';
+import { SessionProgress } from '@/features/study/SessionProgress';
 import { useDb } from '@/db/useDb';
 import { isUsableWord } from '@/db/isUsableWord';
 import type { Word } from '@/db/word.type';
@@ -12,17 +15,12 @@ import { isDue } from '@/lib/isDue';
 import { tagCounts } from '@/lib/tagCounts';
 import { tagsByWord } from '@/lib/tagsByWord';
 import type { MatchVerdict } from '@/lib/fuzzyMatch';
-import type { TranslationKeys } from '@/i18n/translationKeys.type';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 import { RecallCard } from '@/features/study/RecallCard';
+import { StudyDeck } from '@/features/study/StudyDeck';
 import { ReviewFilters } from './ReviewFilters';
 import { ReviewSummary } from './ReviewSummary';
-
-function sessionMeta(t: TranslationKeys, index: number, total: number, word: Word): string {
-  const progress = t.reviewProgress(index + 1, total);
-  return isDue(word, Date.now()) ? progress : `${progress} · ${t.aheadOfSchedule}`;
-}
 
 interface Counters {
   correct: number;
@@ -133,24 +131,22 @@ export function ReviewSession() {
 
   function renderBody() {
     if (queue === null) {
-      return <p className="text-sm text-muted-foreground">{t.loading}</p>;
+      return <StudyCardSkeleton />;
     }
 
     if (queue.length === 0) {
       return scoped ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
-          <p className="text-sm text-muted-foreground">{t.noReviewsInScope}</p>
-          <Button type="button" variant="outline" onClick={resetFilters}>
-            {t.resetFilters}
-          </Button>
-        </div>
+        <EmptyState
+          icon={SearchX}
+          message={t.noReviewsInScope}
+          action={{ label: t.resetFilters, onClick: resetFilters, variant: 'outline' }}
+        />
       ) : (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
-          <p className="text-sm text-muted-foreground">{t.noReviewsYet}</p>
-          <Button type="button" size="lg" onClick={() => setScreen('newWords')}>
-            {t.goToNewWords}
-          </Button>
-        </div>
+        <EmptyState
+          icon={BookOpen}
+          message={t.noReviewsYet}
+          action={{ label: t.goToNewWords, onClick: () => setScreen('newWords') }}
+        />
       );
     }
 
@@ -175,21 +171,26 @@ export function ReviewSession() {
     const current = queue[index];
 
     return (
-      <div className="flex flex-1 flex-col justify-center gap-4 md:mx-auto md:w-full md:max-w-xl">
-        <p className="text-right font-mono text-sm text-muted-foreground">
-          {sessionMeta(t, index, queue.length, current)}
-        </p>
+      <div className="flex flex-1 flex-col justify-start gap-4 md:mx-auto md:w-full md:max-w-xl md:justify-center">
+        <SessionProgress
+          done={index}
+          total={queue.length}
+          label={t.reviewProgress(index + 1, queue.length)}
+          note={isDue(current, Date.now()) ? undefined : t.aheadOfSchedule}
+        />
         {saveFailed && (
           <p role="alert" className="rounded-xl bg-destructive/10 px-3.5 py-3 text-sm text-destructive">
             {t.answerSaveError}
           </p>
         )}
+        <StudyDeck remaining={queue.length - index} cardKey={String(current.id)}>
         <RecallCard
           key={current.id}
           translation={current.translation}
           expectedTerm={current.term}
           onAnswer={(verdict, accuracy, speedFactor) => void handleAnswer(current, verdict, accuracy, speedFactor)}
         />
+        </StudyDeck>
       </div>
     );
   }

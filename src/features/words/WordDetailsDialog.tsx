@@ -44,7 +44,7 @@ export function WordDetailsDialog({ word, folder, tagNames, onOpenChange }: Word
                     type="button"
                     aria-label={t.speak}
                     onClick={() => speak(word.term)}
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
+                    className="flex h-10 w-10 shrink-0 md:h-7 md:w-7 -my-2 md:-my-0.5 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/10"
                   >
                     <Volume2 className="h-4 w-4" />
                   </button>
@@ -87,12 +87,12 @@ export function WordDetailsDialog({ word, folder, tagNames, onOpenChange }: Word
               <>
                 <div className="flex flex-col gap-1">
                   <dt className="text-sm text-muted-foreground">{t.detailsRating}</dt>
-                  <dd className="font-mono">{effectiveRating(word, Date.now()).toFixed(2)}</dd>
+                  <dd className="tabular-nums">{effectiveRating(word, Date.now()).toFixed(2)}</dd>
                 </div>
 
                 <div className="flex flex-col gap-1">
                   <dt className="text-sm text-muted-foreground">{t.detailsInterval}</dt>
-                  <dd className="font-mono">{t.intervalDays(Math.round(word.stability))}</dd>
+                  <dd className="tabular-nums">{t.intervalDays(Math.round(word.stability))}</dd>
                 </div>
 
                 <div className="flex flex-col gap-1">
@@ -102,14 +102,14 @@ export function WordDetailsDialog({ word, folder, tagNames, onOpenChange }: Word
 
                 <div className="flex flex-col gap-1">
                   <dt className="text-sm text-muted-foreground">{t.detailsDifficulty}</dt>
-                  <dd className="font-mono">{word.difficulty.toFixed(1)}</dd>
+                  <dd className="tabular-nums">{word.difficulty.toFixed(1)}</dd>
                 </div>
               </>
             )}
 
             <div className="flex flex-col gap-1">
               <dt className="text-sm text-muted-foreground">{t.detailsStreak}</dt>
-              <dd className="font-mono">{word.stage === 'new' ? word.phaseStreak : word.reviewStreak}</dd>
+              <dd className="tabular-nums">{word.stage === 'new' ? word.phaseStreak : word.reviewStreak}</dd>
             </div>
 
             <div className="flex flex-col gap-1">

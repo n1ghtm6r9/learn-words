@@ -1,6 +1,8 @@
+import { useRef } from 'react';
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import { XIcon } from 'lucide-react';
 import { Dialog } from '@/components/ui/dialog';
+import { useSheetDrag } from '@/components/ui/useSheetDrag';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface BottomSheetProps {
@@ -12,26 +14,31 @@ interface BottomSheetProps {
 
 export function BottomSheet({ open, onOpenChange, title, children }: BottomSheetProps) {
   const t = useTranslation();
+  const actionsRef = useRef<DialogPrimitive.Root.Actions | null>(null);
+  const { popupRef, backdropRef } = useSheetDrag(() => actionsRef.current?.close());
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} actionsRef={actionsRef}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/30 duration-200 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
+        <DialogPrimitive.Backdrop ref={backdropRef} data-slot="bottom-sheet-backdrop" className="fixed inset-0 z-50 bg-black/30 duration-200 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fill-mode-forwards data-closed:fade-out-0" />
         <DialogPrimitive.Popup
+          ref={popupRef}
           data-slot="bottom-sheet"
-          className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[80dvh] w-full max-w-md flex-col rounded-t-3xl md:bottom-6 md:rounded-3xl md:max-w-sm bg-popover pb-[var(--safe-bottom)] text-popover-foreground shadow-2xl ring-1 ring-foreground/10 outline-none duration-200 data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom"
+          className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[80dvh] md:max-h-[70dvh] w-full max-w-md flex-col rounded-t-3xl md:bottom-6 md:rounded-3xl md:max-w-sm bg-popover pb-[var(--safe-bottom)] text-popover-foreground shadow-2xl ring-1 ring-foreground/10 outline-none duration-200 data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:fill-mode-forwards data-closed:slide-out-to-bottom"
         >
-          <div className="flex justify-center pt-2.5 pb-1" aria-hidden="true">
-            <span className="h-1 w-10 rounded-full bg-muted-foreground/25" />
-          </div>
-          <div className="flex items-center justify-between gap-2 px-5 pb-2">
-            <DialogPrimitive.Title className="text-lg font-semibold tracking-tight">{title}</DialogPrimitive.Title>
-            <DialogPrimitive.Close
-              aria-label={t.close}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            >
-              <XIcon className="h-4 w-4" />
-            </DialogPrimitive.Close>
+          <div data-sheet-handle className="shrink-0 max-md:touch-none">
+            <div className="flex justify-center pt-2.5 pb-1 md:hidden" aria-hidden="true">
+              <span className="h-1 w-10 rounded-full bg-muted-foreground/25" />
+            </div>
+            <div className="flex items-center justify-between gap-2 px-5 pb-2 md:pt-4">
+              <DialogPrimitive.Title className="font-display min-w-0 text-lg leading-tight tracking-tight break-words text-balance md:text-base">{title}</DialogPrimitive.Title>
+              <DialogPrimitive.Close
+                aria-label={t.close}
+                className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              >
+                <XIcon className="h-4 w-4" />
+              </DialogPrimitive.Close>
+            </div>
           </div>
           <div className="flex flex-col overflow-y-auto overscroll-contain px-2 pb-3">{children}</div>
         </DialogPrimitive.Popup>

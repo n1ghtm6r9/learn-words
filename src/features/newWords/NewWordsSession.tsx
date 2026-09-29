@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Button } from '@/components/ui/button';
+import { StudyCardSkeleton } from '@/features/study/StudyCardSkeleton';
+import { SessionProgress } from '@/features/study/SessionProgress';
+import { sessionStepProgress } from '@/lib/sessionStepProgress';
 import { useDb } from '@/db/useDb';
 import { isUsableWord } from '@/db/isUsableWord';
 import { deleteWordCascade } from '@/db/deleteWordCascade';
@@ -12,6 +14,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 import { RecognitionCard } from '@/features/study/RecognitionCard';
 import { RecallCard } from '@/features/study/RecallCard';
+import { StudyDeck } from '@/features/study/StudyDeck';
+import { NewWordsEmptyState } from './NewWordsEmptyState';
 import { NewWordsSummary } from './NewWordsSummary';
 
 function pickRandomId(words: Word[], excludeId: string | null): string | null {
@@ -34,7 +38,6 @@ export function NewWordsSession() {
   const phaseBRepeats = useUIStore((s) => s.phaseBRepeats);
   const setScreen = useUIStore((s) => s.setScreen);
   const addWordOpen = useUIStore((s) => s.addWordOpen);
-  const setAddWordOpen = useUIStore((s) => s.setAddWordOpen);
   const t = useTranslation();
 
   useEffect(() => {
@@ -146,28 +149,27 @@ export function NewWordsSession() {
   }
 
   if (pool === null) {
-    return <p className="text-sm text-muted-foreground">{t.loading}</p>;
+    return <StudyCardSkeleton />;
   }
 
   if (pool.length === 0) {
     if (learnedCount > 0) {
-      return <NewWordsSummary learnedCount={learnedCount} onFinish={() => setScreen('review')} />;
+      return (
+        <div className="flex flex-1 flex-col justify-center md:mx-auto md:w-full md:max-w-xl">
+          <NewWordsSummary learnedCount={learnedCount} onFinish={() => setScreen('review')} />
+        </div>
+      );
     }
-    return (
-      <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
-        <p className="text-sm text-muted-foreground">{t.noNewWords}</p>
-        <Button type="button" size="lg" onClick={() => setAddWordOpen(true)}>
-          {t.addWordCta}
-        </Button>
-      </div>
-    );
+    return <NewWordsEmptyState />;
   }
 
   const current = pool.find((w) => w.id === currentId) ?? pool[0];
+  const sessionTotal = learnedCount + pool.length;
+  const steps = sessionStepProgress(pool, learnedCount, phaseARepeats, phaseBRepeats);
 
   return (
-    <div className="flex flex-1 flex-col justify-center gap-4 md:mx-auto md:w-full md:max-w-xl">
-      <p className="text-right font-mono text-sm text-muted-foreground">{t.remainingWords(pool.length)}</p>
+    <div className="flex flex-1 flex-col justify-start gap-4 md:mx-auto md:w-full md:max-w-xl md:justify-center">
+      <SessionProgress done={steps.done} total={steps.total} label={t.learnedProgress(learnedCount, sessionTotal)} />
       {saveFailed && (
         <p role="alert" className="rounded-xl bg-destructive/10 px-3.5 py-3 text-sm text-destructive">
           {t.answerSaveError}
@@ -178,6 +180,7 @@ export function NewWordsSession() {
           {t.deleteError}
         </p>
       )}
+      <StudyDeck remaining={pool.length} cardKey={`${current.id}-${current.learningPhase}-${turn}`}>
       {current.learningPhase === 'A' ? (
         <RecognitionCard
           key={`${current.id}-A-${turn}`}
@@ -199,6 +202,7 @@ export function NewWordsSession() {
           onDelete={() => void handleDelete(current)}
         />
       )}
+      </StudyDeck>
     </div>
   );
 }

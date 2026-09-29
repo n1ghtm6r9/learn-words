@@ -35,6 +35,7 @@ export function FolderTargetSheet({
         icon={<FolderMinus className="h-5 w-5 text-muted-foreground" aria-hidden="true" />}
         label={t.noFolder}
         hint={sharedFolder === null ? t.allHereAlready : String(counts.get(null) ?? 0)}
+        coverage={sharedFolder === null ? 'all' : 'none'}
         disabled={sharedFolder === null}
         onClick={() => onPick(null)}
       />
@@ -44,6 +45,7 @@ export function FolderTargetSheet({
           icon={<FolderGlyph color={folder.color} className="h-5 w-5" />}
           label={folder.name}
           hint={sharedFolder === folder.id ? t.allHereAlready : String(counts.get(folder.id!) ?? 0)}
+          coverage={sharedFolder === folder.id ? 'all' : 'none'}
           disabled={sharedFolder === folder.id}
           onClick={() => onPick(folder.id!)}
         />

@@ -130,7 +130,7 @@ export function OrganizeRow({
       <span className="flex min-w-0 flex-1 items-center gap-2">
         {marker}
         <span className="min-w-0 truncate text-base font-medium">{name}</span>
-        <span className="shrink-0 font-mono text-sm text-muted-foreground">{count}</span>
+        <span className="shrink-0 text-sm text-muted-foreground tabular-nums">{count}</span>
       </span>
 
       <span className="flex shrink-0 items-center">

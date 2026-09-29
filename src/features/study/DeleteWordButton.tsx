@@ -32,7 +32,7 @@ export function DeleteWordButton({ onDelete }: DeleteWordButtonProps) {
       type="button"
       aria-label={t.delete}
       onClick={() => setConfirming(true)}
-      className="flex h-11 w-11 md:h-9 md:w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+      className="flex h-11 w-11 md:h-9 md:w-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive active:scale-95"
     >
       <Trash2 className="h-5 w-5" />
     </button>

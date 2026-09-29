@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RecallCard } from './RecallCard';
 
@@ -209,5 +209,33 @@ describe('RecallCard', () => {
     await user.click(screen.getByRole('button', { name: 'Повторить' }));
 
     expect(screen.getByText('Прогресс: 2 из 3')).toBeInTheDocument();
+  });
+
+  it('on a near miss highlights the missing letter in the correct word and shows what was typed', async () => {
+    const user = userEvent.setup();
+    render(<RecallCard translation="яблоко" expectedTerm="apple" onAnswer={vi.fn()} />);
+
+    await user.type(screen.getByLabelText('Слово'), 'aple');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+
+    const feedback = await screen.findByTestId('feedback');
+    expect(feedback).toHaveTextContent('Почти! Правильное слово: apple');
+    expect(feedback.querySelector('[data-diff="missing"]')).toHaveTextContent('p');
+    const diff = screen.getByTestId('answer-diff');
+    expect(within(diff).getByText('Вы ввели')).toBeInTheDocument();
+    expect(diff).toHaveTextContent('aple');
+  });
+
+  it('keeps the plain correct word and no comparison for a clearly wrong answer', async () => {
+    const user = userEvent.setup();
+    render(<RecallCard translation="кот" expectedTerm="cat" onAnswer={vi.fn()} />);
+
+    await user.type(screen.getByLabelText('Слово'), 'dog');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+
+    const feedback = await screen.findByTestId('feedback');
+    expect(feedback).toHaveTextContent('Неверно. Правильное слово: cat');
+    expect(feedback.querySelector('[data-diff]')).toBeNull();
+    expect(screen.queryByTestId('answer-diff')).not.toBeInTheDocument();
   });
 });

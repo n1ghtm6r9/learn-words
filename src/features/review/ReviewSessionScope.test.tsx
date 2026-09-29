@@ -102,17 +102,35 @@ describe('ReviewSession folder and tag filter', () => {
   });
 
   it('explains an empty filter and offers to show everything again', async () => {
-    await db.folders.add({ name: 'empty', color: 'blue', order: 1 });
-    await db.words.add(reviewWord({ term: 'hello', translation: 'привет' }));
+    const workId = await db.folders.add({ name: 'work', color: 'blue', order: 1 });
+    const tagId = await db.tags.add({ name: 'verbs', color: 'green', order: 1 });
+    await db.words.add(reviewWord({ term: 'meeting', translation: 'встреча', folderId: workId }));
+    const runId = await db.words.add(reviewWord({ term: 'run', translation: 'бежать' }));
+    await db.wordTags.add({ wordId: runId, tagId });
 
     render(<ReviewSession />);
-    await screen.findByText('привет');
+    await screen.findByText(/1 из 2/);
 
-    await userEvent.click(screen.getByRole('button', { name: /empty/ }));
+    await userEvent.click(screen.getByRole('button', { name: /work/ }));
+    await userEvent.click(screen.getByRole('button', { name: /verbs/ }));
     expect(await screen.findByText('В выбранной папке и тегах пока нечего повторять.')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Показать все' }));
-    expect(await screen.findByText('привет')).toBeInTheDocument();
+    expect(await screen.findByText(/1 из 2/)).toBeInTheDocument();
+  });
+
+  it('offers only folders and tags that have words to review, without management buttons', async () => {
+    const workId = await db.folders.add({ name: 'work', color: 'blue', order: 1 });
+    await db.folders.add({ name: 'untouched', color: 'green', order: 2 });
+    await db.words.add(reviewWord({ term: 'meeting', translation: 'встреча', folderId: workId }));
+
+    render(<ReviewSession />);
+    await screen.findByText('встреча');
+
+    expect(screen.getByRole('button', { name: /work/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /untouched/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Без папки/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Управление папками' })).not.toBeInTheDocument();
   });
 
   it('keeps the chosen folder when the screen is left and opened again', async () => {

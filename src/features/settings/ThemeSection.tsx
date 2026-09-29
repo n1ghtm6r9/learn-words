@@ -1,5 +1,6 @@
-import { Button } from '@/components/ui/button';
+import { SegmentedControl } from '@/components/ui/segmentedControl';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { Theme } from '@/store/theme.type';
 import { useUIStore } from '@/store/useUIStore';
 
 export function ThemeSection() {
@@ -10,14 +11,15 @@ export function ThemeSection() {
   return (
     <div className="flex flex-col gap-2 text-sm font-medium">
       {t.themeLabel}
-      <div className="flex gap-2">
-        <Button type="button" variant={theme === 'light' ? 'default' : 'outline'} size="sm" onClick={() => setTheme('light')}>
-          {t.themeLight}
-        </Button>
-        <Button type="button" variant={theme === 'dark' ? 'default' : 'outline'} size="sm" onClick={() => setTheme('dark')}>
-          {t.themeDark}
-        </Button>
-      </div>
+      <SegmentedControl<Theme>
+        label={t.themeLabel}
+        value={theme}
+        onChange={setTheme}
+        options={[
+          { value: 'light', label: t.themeLight },
+          { value: 'dark', label: t.themeDark },
+        ]}
+      />
     </div>
   );
 }

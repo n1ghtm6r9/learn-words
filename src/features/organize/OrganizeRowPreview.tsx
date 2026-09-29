@@ -14,7 +14,7 @@ export function OrganizeRowPreview({ name, count, marker }: OrganizeRowPreviewPr
       </span>
       {marker}
       <span className="min-w-0 truncate text-sm font-medium">{name}</span>
-      <span className="shrink-0 font-mono text-xs text-muted-foreground">{count}</span>
+      <span className="shrink-0 text-sm text-muted-foreground tabular-nums">{count}</span>
     </div>
   );
 }

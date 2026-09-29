@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { FormAlert } from '@/components/ui/formAlert';
 import { Input } from '@/components/ui/input';
 import { useDb } from '@/db/useDb';
 import { createWord } from '@/db/createWord';
@@ -162,11 +162,15 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
       <label className="flex flex-col gap-2 text-sm font-medium">
         {t.wordInputLabel}
         <Input
           aria-label={t.wordInputLabel}
+          autoCapitalize="none"
+          autoCorrect="off"
+          autoComplete="off"
+          spellCheck={false}
           value={term}
           maxLength={200}
           onChange={(e) => {
@@ -174,16 +178,12 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
             scheduleDuplicateCheck(e.target.value);
           }}
           required
+          aria-invalid={duplicate || (invalid && !HAS_MEANINGFUL_CHARACTER.test(term)) || undefined}
           className="font-mono"
         />
       </label>
 
-      {duplicate && (
-        <p className="flex items-start gap-2 rounded-xl bg-status-learning/10 px-3.5 py-3 text-sm text-status-learning">
-          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          {t.duplicateWarning}
-        </p>
-      )}
+      {duplicate && <FormAlert tone="warning">{t.duplicateWarning}</FormAlert>}
 
       <label className="flex flex-col gap-2 text-sm font-medium">
         {t.translationInputLabel}
@@ -197,7 +197,7 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
             setSaveError(false);
           }}
           required
-          className="font-mono"
+          aria-invalid={(invalid && translation.trim() === '') || undefined}
         />
       </label>
 
@@ -221,19 +221,9 @@ export function WordForm({ mode, word, onDone }: WordFormProps) {
         }
       />
 
-      {invalid && (
-        <p role="alert" className="flex items-start gap-2 rounded-xl bg-destructive/10 px-3.5 py-3 text-sm text-destructive">
-          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          {t.wordFormInvalid}
-        </p>
-      )}
+      {invalid && <FormAlert tone="error">{t.wordFormInvalid}</FormAlert>}
 
-      {saveError && (
-        <p role="alert" className="flex items-start gap-2 rounded-xl bg-destructive/10 px-3.5 py-3 text-sm text-destructive">
-          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          {t.wordFormSaveError}
-        </p>
-      )}
+      {saveError && <FormAlert tone="error">{t.wordFormSaveError}</FormAlert>}
 
       <Button type="submit" size="lg" disabled={isSaving}>
         {duplicate ? t.saveAnyway : t.save}

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { FormAlert } from '@/components/ui/formAlert';
 import { useDb } from '@/db/useDb';
 import { createWord } from '@/db/createWord';
 import { appendTag } from '@/db/appendTag';
@@ -102,12 +103,15 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
       <label className="flex flex-col gap-2 text-sm font-medium">
         {t.wordListLabel}
         <textarea
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           aria-label={t.wordListLabel}
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={8}
           placeholder={t.wordListPlaceholder(studyLanguage)}
-          className="w-full rounded-lg border border-input bg-transparent p-2.5 font-mono text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="w-full resize-y rounded-xl border border-input bg-card px-3.5 py-3 font-mono text-base ring-3 ring-transparent transition-[border-color,box-shadow] duration-200 ease-out outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/40 md:text-sm dark:bg-input/30"
         />
       </label>
 
@@ -134,7 +138,7 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
       {valid.length > 0 && (
         <ul className="flex max-h-48 flex-col gap-1.5 overflow-y-auto">
           {valid.map((line, i) => (
-            <li key={i} className="flex items-center gap-2 rounded-md bg-secondary px-2.5 py-1.5 text-sm">
+            <li key={i} className="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm">
               <span className="min-w-0 shrink truncate font-mono font-medium">{line.term}</span>
               <span className="shrink-0 text-muted-foreground">—</span>
               <span className="min-w-0 shrink truncate text-muted-foreground">{line.translation}</span>
@@ -143,12 +147,7 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
         </ul>
       )}
 
-      {duplicateCount > 0 && (
-        <p className="flex items-start gap-2 rounded-md bg-status-learning/10 px-2.5 py-1.5 text-sm text-status-learning">
-          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          {t.bulkDuplicatesSkipped(duplicateCount)}
-        </p>
-      )}
+      {duplicateCount > 0 && <FormAlert tone="warning">{t.bulkDuplicatesSkipped(duplicateCount)}</FormAlert>}
 
       {invalidLines.length > 0 && (
         <ul className="flex max-h-32 flex-col gap-1.5 overflow-y-auto">
@@ -163,12 +162,7 @@ export function BulkAddForm({ onDone }: BulkAddFormProps) {
         </ul>
       )}
 
-      {saveError && (
-        <p className="flex items-start gap-2 rounded-xl bg-destructive/10 px-3.5 py-3 text-sm text-destructive">
-          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-          {t.bulkSaveError}
-        </p>
-      )}
+      {saveError && <FormAlert tone="error">{t.bulkSaveError}</FormAlert>}
 
       <Button type="button" size="lg" onClick={() => void handleSaveAll()} disabled={valid.length === 0 || isSaving}>
         {t.saveAll}

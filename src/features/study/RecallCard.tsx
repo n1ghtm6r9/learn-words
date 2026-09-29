@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { Volume2 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { CARD_CLASS } from '@/lib/cardClass';
 import { matchAccuracy, matchAnswer, type MatchVerdict } from '@/lib/fuzzyMatch';
+import { letterDiff } from '@/lib/letterDiff';
 import { speedFactor } from '@/lib/responseSpeed';
+import { vibrateCorrect } from '@/lib/vibrateCorrect';
+import { vibrateWrong } from '@/lib/vibrateWrong';
+import { AnswerDiff } from './AnswerDiff';
 import { DeleteWordButton } from './DeleteWordButton';
+import { DiffLetters } from './DiffLetters';
+import { CorrectMark } from './CorrectMark';
 import { PhaseProgressDots } from './PhaseProgressDots';
 import { useVisibleElapsedTimer } from '@/lib/useVisibleElapsedTimer';
 import { isSpeechSupported } from '@/lib/tts';
@@ -15,6 +22,7 @@ import { useUIStore } from '@/store/useUIStore';
 import type { TranslationKeys } from '@/i18n/translationKeys.type';
 
 const CORRECT_FLASH_MS = 500;
+const LONG_TRANSLATION_LENGTH = 16;
 
 export interface RecallCardProps {
   translation: string;
@@ -30,6 +38,7 @@ type ErrorVerdict = Exclude<MatchVerdict, 'correct'>;
 interface ErrorFeedback {
   verdict: ErrorVerdict;
   correctAnswer: string;
+  attempt: string;
 }
 
 const FEEDBACK_COLOR: Record<MatchVerdict, string> = {
@@ -97,6 +106,7 @@ export function RecallCard({
       setError(null);
       setCorrectSpeedFactor(speedFactor(timer.elapsedMs(), expectedTerm.length));
       setShowCorrectFlash(true);
+      vibrateCorrect();
       return;
     }
 
@@ -104,7 +114,8 @@ export function RecallCard({
       setOriginalVerdict(verdict);
       setOriginalAccuracy(matchAccuracy(input, expectedTerm, studyLanguage));
     }
-    setError({ verdict, correctAnswer: expectedTerm });
+    vibrateWrong();
+    setError({ verdict, correctAnswer: expectedTerm, attempt: input });
   }
 
   function handleRetry() {
@@ -115,20 +126,34 @@ export function RecallCard({
 
   const showProgress = requiredStreak != null && requiredStreak > 0;
   const displayedStreak = originalVerdict === 'wrong' ? 0 : (currentStreak ?? 0);
+  const almostDiff = error?.verdict === 'almost' ? letterDiff(error.attempt, error.correctAnswer) : null;
 
   return (
-    <div className={`${CARD_CLASS} flex flex-col gap-7 p-6 pb-7 md:gap-6 md:p-8`}>
+    <motion.div
+      initial={{ opacity: 0, y: 36, scale: 0.94, rotate: -1.6 }}
+      animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }}
+      transition={{ type: 'spring', stiffness: 340, damping: 26 }}
+      className={`${CARD_CLASS} flex flex-col gap-7 p-6 pb-7 transition-shadow duration-300 md:gap-6 md:p-8 ${showCorrectFlash ? 'ring-2 ring-status-mastered/70' : ''}`}
+    >
+      <motion.div
+        animate={{ x: error ? [0, -12, 11, -8, 6, -3, 0] : 0 }}
+        transition={{ duration: 0.45, ease: 'easeOut' }}
+        className="flex flex-col gap-7 md:gap-6"
+      >
       <div className="flex flex-col gap-3">
         {showProgress && <PhaseProgressDots current={displayedStreak} total={requiredStreak ?? 0} />}
         <div className="flex items-start justify-between gap-3">
-          <span className="text-3xl leading-snug font-semibold tracking-tight text-balance">{translation}</span>
+          <span className={`min-w-0 leading-snug font-semibold tracking-tight text-balance [overflow-wrap:anywhere] ${translation.length > LONG_TRANSLATION_LENGTH ? 'text-2xl' : 'text-3xl'}`}>
+            {translation}
+          </span>
           {onDelete && <DeleteWordButton onDelete={onDelete} />}
         </div>
       </div>
 
       <div className="flex min-h-32 flex-col justify-center">
         {showCorrectFlash ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <CorrectMark />
             <p role="status" data-testid="feedback" className={`text-lg font-semibold ${FEEDBACK_COLOR.correct}`}>
               {t.feedbackCorrect}
             </p>
@@ -148,7 +173,9 @@ export function RecallCard({
             <div className="flex items-start gap-2">
               <p role="status" data-testid="feedback" className={`text-base ${FEEDBACK_COLOR[error.verdict]}`}>
                 {errorFeedbackLabel(t, error.verdict)}{' '}
-                <span className="font-mono font-semibold">{error.correctAnswer}</span>
+                <span className="font-mono font-semibold">
+                  {almostDiff ? <DiffLetters parts={almostDiff.expected} tone="missing" /> : error.correctAnswer}
+                </span>
               </p>
               {isSpeechSupported() && (
                 <button
@@ -161,6 +188,7 @@ export function RecallCard({
                 </button>
               )}
             </div>
+            {almostDiff && <AnswerDiff attempt={almostDiff.attempt} />}
             <p className="text-sm text-muted-foreground">{t.retryPrompt}</p>
             <Button type="button" size="lg" onClick={handleRetry} autoFocus>
               {t.retryButton}
@@ -168,11 +196,12 @@ export function RecallCard({
           </div>
         ) : (
           <form onSubmit={handleCheck} className="flex flex-col gap-3">
-            <Input aria-label={t.wordInputLabel} value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="h-14 rounded-2xl text-lg font-mono md:h-12 md:rounded-xl" />
+            <Input aria-label={t.wordInputLabel} autoCapitalize="none" autoCorrect="off" autoComplete="off" spellCheck={false} enterKeyHint="done" value={input} onChange={(e) => setInput(e.target.value)} autoFocus className="h-14 rounded-2xl text-lg font-mono md:h-12 md:rounded-xl" />
             <Button type="submit" size="lg">{t.checkAnswer}</Button>
           </form>
         )}
       </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

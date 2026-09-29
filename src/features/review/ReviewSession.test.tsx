@@ -200,6 +200,27 @@ describe('ReviewSession', () => {
     expect(await screen.findByText(/1 из 2/)).toBeInTheDocument();
   });
 
+  it('shows the position in the queue with a progress bar and flags a word reviewed ahead of schedule', async () => {
+    await db.words.add(reviewWord({ term: 'fresh', translation: 'свежее', stability: 30, lastReviewedAt: Date.now() }));
+
+    render(<ReviewSession />);
+
+    expect(await screen.findByText('1 из 1')).toBeInTheDocument();
+    expect(screen.getByText('с опережением')).toBeInTheDocument();
+    const bar = screen.getByRole('progressbar', { name: 'Прогресс занятия' });
+    expect(bar).toHaveAttribute('aria-valuenow', '0');
+    expect(bar).toHaveAttribute('aria-valuemax', '1');
+  });
+
+  it('does not flag a word that is due', async () => {
+    await db.words.add(reviewWord({ term: 'hello', translation: 'привет' }));
+
+    render(<ReviewSession />);
+
+    expect(await screen.findByText('1 из 1')).toBeInTheDocument();
+    expect(screen.queryByText('с опережением')).not.toBeInTheDocument();
+  });
+
   it('sends a word nobody can hold on to back to relearning from scratch', async () => {
     const id = await db.words.add(
       reviewWord({

@@ -70,11 +70,12 @@ export function ColorPicker({ value, label, colorLabel, onChange, glyph }: Color
           align="center"
           sideOffset={({ anchor, positioner }) => -(anchor.height / 2 + positioner.height / 2)}
           collisionPadding={8}
+          collisionAvoidance={{ side: 'shift', align: 'shift', fallbackAxisSide: 'none' }}
           className="z-[70]"
         >
           <Popover.Popup
             initialFocus={() => petals.current[selectedIndex] ?? null}
-            className="relative rounded-full bg-popover/95 shadow-2xl ring-1 ring-border backdrop-blur outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-50 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-50 duration-150"
+            className="relative rounded-full bg-popover/95 shadow-2xl ring-1 ring-border backdrop-blur outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-50 data-closed:animate-out data-closed:fill-mode-forwards data-closed:fade-out-0 data-closed:zoom-out-50 duration-150"
             style={{ width: FLOWER_SIZE, height: FLOWER_SIZE }}
           >
             <div role="radiogroup" aria-label={label} className="absolute inset-0">

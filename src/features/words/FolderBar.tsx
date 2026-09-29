@@ -1,10 +1,12 @@
 import { useMemo, useRef } from 'react';
+import { useDndContext } from '@dnd-kit/core';
 import { SortableContext } from '@dnd-kit/sortable';
 import { Settings2 } from 'lucide-react';
 import type { Folder } from '@/db/folder.type';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
+import { CollapsibleChipRow } from './CollapsibleChipRow';
 import { FolderChip } from './FolderChip';
 import { RootChip } from './RootChip';
 import { createFlowSortingStrategy } from './createFlowSortingStrategy';
@@ -18,13 +20,24 @@ interface FolderBarProps {
   counts: Map<string | null, number>;
   value: string | null | 'all';
   wordDragging: boolean;
+  manageable?: boolean;
+  hideEmptyRoot?: boolean;
   onChange: (value: string | null | 'all') => void;
 }
 
-export function FolderBar({ folders, counts, value, wordDragging, onChange }: FolderBarProps) {
+export function FolderBar({
+  folders,
+  counts,
+  value,
+  wordDragging,
+  manageable = true,
+  hideEmptyRoot = false,
+  onChange,
+}: FolderBarProps) {
   const setFoldersOpen = useUIStore((s) => s.setFoldersOpen);
   const t = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
+  const { active } = useDndContext();
   const strategy = useMemo(
     () =>
       createFlowSortingStrategy(() => {
@@ -41,12 +54,15 @@ export function FolderBar({ folders, counts, value, wordDragging, onChange }: Fo
   );
 
   return (
-    <div
-      ref={containerRef}
-      className={cn(
-        'flex flex-wrap gap-2',
-        wordDragging &&
-          'sticky top-[76px] md:top-4 z-30 -mx-1 rounded-2xl border border-primary/40 bg-card/95 p-1.5 shadow-lg backdrop-blur',
+    <CollapsibleChipRow
+      innerRef={containerRef}
+      itemCount={folders.length}
+      forceExpanded={active != null}
+      expandedClassName={cn(
+        'relative z-30',
+        wordDragging
+          ? '-mx-1 rounded-2xl border border-primary/40 bg-card/95 p-1.5 shadow-lg backdrop-blur'
+          : 'rounded-2xl bg-card shadow-lg',
       )}
     >
       {!wordDragging && (
@@ -55,12 +71,14 @@ export function FolderBar({ folders, counts, value, wordDragging, onChange }: Fo
         </button>
       )}
 
-      <RootChip
-        count={counts.get(null) ?? 0}
-        active={value === null}
-        wordDragging={wordDragging}
-        onSelect={() => onChange(null)}
-      />
+      {!(hideEmptyRoot && value !== null && (counts.get(null) ?? 0) === 0) && (
+        <RootChip
+          count={counts.get(null) ?? 0}
+          active={value === null}
+          wordDragging={wordDragging}
+          onSelect={() => onChange(null)}
+        />
+      )}
 
       <SortableContext items={folders.map((folder) => folderDragId(folder.id!))} strategy={strategy}>
         {folders.map((folder) => (
@@ -75,7 +93,7 @@ export function FolderBar({ folders, counts, value, wordDragging, onChange }: Fo
         ))}
       </SortableContext>
 
-      {!wordDragging && (
+      {manageable && !wordDragging && (
         <button
           type="button"
           aria-label={t.manageFolders}
@@ -85,6 +103,6 @@ export function FolderBar({ folders, counts, value, wordDragging, onChange }: Fo
           <Settings2 className="h-4 w-4" aria-hidden="true" />
         </button>
       )}
-    </div>
+    </CollapsibleChipRow>
   );
 }

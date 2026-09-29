@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
-import { defineConfig } from "vitest/config"
+import { configDefaults, defineConfig } from "vitest/config"
 
 const { version } = JSON.parse(readFileSync(path.resolve(__dirname, "package.json"), "utf-8"))
 
@@ -21,6 +21,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
+    exclude: [...configDefaults.exclude, "e2e/**"],
     env: {
       VITE_DEXIE_CLOUD_URL: "",
       VITE_ALLOWED_EMAIL_HASHES: "",

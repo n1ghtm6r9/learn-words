@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RecognitionCard } from './RecognitionCard';
 
@@ -109,5 +109,44 @@ describe('RecognitionCard', () => {
     render(<RecognitionCard term="hello" translation="привет" onAnswer={vi.fn()} />);
 
     expect(screen.queryByRole('button', { name: 'Удалить' })).not.toBeInTheDocument();
+  });
+
+  it('on a near miss shows the typed word next to the correct one with the differing letters marked', async () => {
+    const user = userEvent.setup();
+    render(<RecognitionCard term="apple" translation="яблоко" onAnswer={vi.fn()} />);
+
+    await user.type(screen.getByLabelText('Слово'), 'aple');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+
+    expect(await screen.findByTestId('feedback')).toHaveTextContent('Почти! Проверьте написание ещё раз.');
+    const diff = screen.getByTestId('answer-diff');
+    expect(within(diff).getByText('Вы ввели')).toBeInTheDocument();
+    expect(within(diff).getByText('Правильно')).toBeInTheDocument();
+    const missing = diff.querySelectorAll('[data-diff="missing"]');
+    expect(Array.from(missing, (mark) => mark.textContent)).toEqual(['p']);
+    expect(diff.querySelectorAll('[data-diff="extra"]')).toHaveLength(0);
+  });
+
+  it('marks a wrong letter in the attempt and the missing one in the word', async () => {
+    const user = userEvent.setup();
+    render(<RecognitionCard term="cat" translation="кот" onAnswer={vi.fn()} />);
+
+    await user.type(screen.getByLabelText('Слово'), 'cot');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+
+    const diff = await screen.findByTestId('answer-diff');
+    expect(diff.querySelector('[data-diff="extra"]')).toHaveTextContent('o');
+    expect(diff.querySelector('[data-diff="missing"]')).toHaveTextContent('a');
+  });
+
+  it('does not show the letter comparison for a clearly wrong answer', async () => {
+    const user = userEvent.setup();
+    render(<RecognitionCard term="cat" translation="кот" onAnswer={vi.fn()} />);
+
+    await user.type(screen.getByLabelText('Слово'), 'dog');
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+
+    await screen.findByTestId('feedback');
+    expect(screen.queryByTestId('answer-diff')).not.toBeInTheDocument();
   });
 });

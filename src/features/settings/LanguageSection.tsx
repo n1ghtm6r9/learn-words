@@ -1,5 +1,6 @@
-import { Button } from '@/components/ui/button';
+import { SegmentedControl } from '@/components/ui/segmentedControl';
 import { TRANSLATIONS } from '@/i18n/translations';
+import type { UiLanguage } from '@/i18n/uiLanguage.type';
 import { UI_LANGUAGES } from '@/i18n/uiLanguages';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
@@ -12,19 +13,12 @@ export function LanguageSection() {
   return (
     <div className="flex flex-col gap-2 text-sm font-medium">
       {t.languageLabel}
-      <div role="group" aria-label={t.languageLabel} className="flex gap-2">
-        {UI_LANGUAGES.map((uiLanguage) => (
-          <Button
-            key={uiLanguage}
-            type="button"
-            variant={language === uiLanguage ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setLanguage(uiLanguage)}
-          >
-            {TRANSLATIONS[uiLanguage].languageName}
-          </Button>
-        ))}
-      </div>
+      <SegmentedControl<UiLanguage>
+        label={t.languageLabel}
+        value={language}
+        onChange={setLanguage}
+        options={UI_LANGUAGES.map((uiLanguage) => ({ value: uiLanguage, label: TRANSLATIONS[uiLanguage].languageName }))}
+      />
     </div>
   );
 }

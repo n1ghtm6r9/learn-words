@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Check, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ColorPicker } from '@/components/ui/colorPicker';
+import { FieldError } from '@/components/ui/fieldError';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Folder } from '@/db/folder.type';
@@ -85,6 +86,7 @@ export function FolderPicker({ folders, value, onChange, onCreate }: FolderPicke
               aria-label={t.newFolder}
               placeholder={t.folderNamePlaceholder}
               value={draft}
+              aria-invalid={isDuplicate || undefined}
               maxLength={40}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {
@@ -114,7 +116,7 @@ export function FolderPicker({ folders, value, onChange, onCreate }: FolderPicke
               <Check className="h-3.5 w-3.5" />
             </Button>
           </div>
-          {isDuplicate && <p className="text-sm text-destructive">{t.duplicateFolderName}</p>}
+          {isDuplicate && <FieldError>{t.duplicateFolderName}</FieldError>}
         </div>
       )}
     </div>

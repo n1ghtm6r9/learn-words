@@ -1,6 +1,6 @@
-import type { DXCAlert } from 'dexie-cloud-addon';
+import type { FormAlertTone } from './formAlertTone.type';
 
-export const ALERT_TONE_CLASS: Record<DXCAlert['type'], string> = {
+export const FORM_ALERT_TONE_CLASS: Record<FormAlertTone, string> = {
   error: 'bg-destructive/10 text-destructive',
   warning: 'bg-status-learning/10 text-status-learning',
   info: 'bg-secondary text-secondary-foreground',

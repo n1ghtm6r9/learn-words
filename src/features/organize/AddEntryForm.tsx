@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ColorPicker } from '@/components/ui/colorPicker';
+import { FieldError } from '@/components/ui/fieldError';
 import { Input } from '@/components/ui/input';
 import type { LabelColor } from '@/db/labelColor.type';
 import { normalizeTerm } from '@/lib/normalizeTerm';
@@ -49,6 +50,7 @@ export function AddEntryForm({
           aria-label={placeholder}
           placeholder={placeholder}
           value={value}
+          aria-invalid={isDuplicate || undefined}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') submit();
@@ -65,7 +67,7 @@ export function AddEntryForm({
           <Plus />
         </Button>
       </div>
-      {isDuplicate && <p className="text-sm text-destructive">{duplicateMessage}</p>}
+      {isDuplicate && <FieldError>{duplicateMessage}</FieldError>}
     </div>
   );
 }

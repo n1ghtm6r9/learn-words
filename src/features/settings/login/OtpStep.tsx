@@ -29,6 +29,7 @@ export function OtpStep({ alerts, pending, onSubmit, onCancel }: StepProps) {
             autoComplete="one-time-code"
             required
             value={code}
+            aria-invalid={alerts.some((alert) => alert.type === 'error') || undefined}
             onChange={(e) => setCode(e.target.value)}
             className="font-mono tracking-widest"
           />

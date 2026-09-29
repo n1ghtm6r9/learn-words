@@ -85,15 +85,17 @@ export function FoldersDialog({ open, onOpenChange }: FoldersDialogProps) {
           {folders.length === 0 && (
             <li className="px-3 py-2 text-sm text-muted-foreground">{t.noFoldersYet}</li>
           )}
-          <AddEntryForm
-            placeholder={t.folderNamePlaceholder}
-            submitLabel={t.newFolder}
-            duplicateMessage={t.duplicateFolderName}
-            existingNames={folders.map((folder) => folder.name)}
-            defaultColor={LABEL_COLORS[folders.length % LABEL_COLORS.length]}
-            onAdd={(name, color) => void appendFolder(db, name, color)}
-            glyph={(color) => <FolderGlyph color={color} className="h-4.5 w-4.5" />}
-          />
+          <li>
+            <AddEntryForm
+              placeholder={t.folderNamePlaceholder}
+              submitLabel={t.newFolder}
+              duplicateMessage={t.duplicateFolderName}
+              existingNames={folders.map((folder) => folder.name)}
+              defaultColor={LABEL_COLORS[folders.length % LABEL_COLORS.length]}
+              onAdd={(name, color) => void appendFolder(db, name, color)}
+              glyph={(color) => <FolderGlyph color={color} className="h-4.5 w-4.5" />}
+            />
+          </li>
         </ul>
       </DialogContent>
     </Dialog>

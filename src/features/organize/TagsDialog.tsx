@@ -83,15 +83,17 @@ export function TagsDialog({ open, onOpenChange }: TagsDialogProps) {
             ))}
           </SortableRows>
           {tags.length === 0 && <li className="px-3 py-2 text-sm text-muted-foreground">{t.noTagsYet}</li>}
-          <AddEntryForm
-            placeholder={t.tagNamePlaceholder}
-            submitLabel={t.newTag}
-            duplicateMessage={t.duplicateTagName}
-            existingNames={tags.map((tag) => tag.name)}
-            defaultColor={LABEL_COLORS[tags.length % LABEL_COLORS.length]}
-            onAdd={(name, color) => void appendTag(db, name, color)}
-            glyph={(color) => <TagGlyph color={color} className="text-base leading-none" />}
-          />
+          <li>
+            <AddEntryForm
+              placeholder={t.tagNamePlaceholder}
+              submitLabel={t.newTag}
+              duplicateMessage={t.duplicateTagName}
+              existingNames={tags.map((tag) => tag.name)}
+              defaultColor={LABEL_COLORS[tags.length % LABEL_COLORS.length]}
+              onAdd={(name, color) => void appendTag(db, name, color)}
+              glyph={(color) => <TagGlyph color={color} className="text-base leading-none" />}
+            />
+          </li>
         </ul>
       </DialogContent>
     </Dialog>

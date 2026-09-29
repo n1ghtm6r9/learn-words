@@ -28,7 +28,7 @@ export function RootChip({ count, active, wordDragging, onSelect }: RootChipProp
     >
       <FolderMinus className="h-3.5 w-3.5" aria-hidden="true" />
       {t.noFolder}
-      <span className="font-mono text-xs opacity-70">{count}</span>
+      <span className="text-xs tabular-nums opacity-70">{count}</span>
     </button>
   );
 }

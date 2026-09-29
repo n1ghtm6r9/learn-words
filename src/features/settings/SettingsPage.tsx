@@ -5,6 +5,7 @@ import { APP_VERSION } from '@/lib/appVersion';
 import { getCloud } from '@/cloud/getCloud';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
+import { SettingsGroup } from './SettingsGroup';
 import { AccountSection } from './AccountSection';
 import { ThemeSection } from './ThemeSection';
 import { AccentColorSection } from './AccentColorSection';
@@ -32,22 +33,69 @@ export function SettingsPage() {
   const limit = useNumberField(reviewLimit, setReviewLimit, MIN_REVIEW_LIMIT, MAX_REVIEW_LIMIT);
 
   return (
-    <div className="flex flex-col divide-y divide-border">
+    <div className="flex flex-col gap-3">
       {cloud && (
-        <div className="pb-5">
+        <SettingsGroup title={t.accountLabel}>
           <AccountSection cloud={cloud} />
-        </div>
+        </SettingsGroup>
       )}
 
-      <div className="flex flex-col gap-4 py-5 first:pt-0">
+      <SettingsGroup title={t.settingsAppearanceTitle}>
         <ThemeSection />
         <AccentColorSection />
+      </SettingsGroup>
+
+      <SettingsGroup title={t.settingsLanguagesTitle}>
         <LanguageSection />
         <StudyLanguageSection />
+      </SettingsGroup>
+
+      <SettingsGroup title={t.settingsLearningTitle}>
+        <label className="flex flex-col gap-2 text-sm font-medium">
+          {t.phaseARepeatsLabel}
+          <Input
+            aria-label={t.phaseARepeatsLabel}
+            type="number"
+            min={MIN_PHASE_REPEATS}
+            max={MAX_PHASE_REPEATS}
+            value={phaseA.draft}
+            onChange={(e) => phaseA.setDraft(e.target.value)}
+            onBlur={phaseA.commit}
+            className="tabular-nums"
+          />
+        </label>
+
+        <label className="flex flex-col gap-2 text-sm font-medium">
+          {t.phaseBRepeatsLabel}
+          <Input
+            aria-label={t.phaseBRepeatsLabel}
+            type="number"
+            min={MIN_PHASE_REPEATS}
+            max={MAX_PHASE_REPEATS}
+            value={phaseB.draft}
+            onChange={(e) => phaseB.setDraft(e.target.value)}
+            onBlur={phaseB.commit}
+            className="tabular-nums"
+          />
+        </label>
+
+        <label className="flex flex-col gap-2 text-sm font-medium">
+          {t.reviewLimitLabel}
+          <Input
+            aria-label={t.reviewLimitLabel}
+            type="number"
+            min={MIN_REVIEW_LIMIT}
+            max={MAX_REVIEW_LIMIT}
+            value={limit.draft}
+            onChange={(e) => limit.setDraft(e.target.value)}
+            onBlur={limit.commit}
+            className="tabular-nums"
+          />
+        </label>
 
         <div className="flex flex-col gap-2 text-sm font-medium">
           {t.organizeTitle}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               type="button"
               variant="outline"
@@ -74,53 +122,9 @@ export function SettingsPage() {
             </Button>
           </div>
         </div>
-      </div>
+      </SettingsGroup>
 
-      <div className="flex flex-col gap-4 py-5">
-        <label className="flex flex-col gap-2 text-sm font-medium">
-          {t.phaseARepeatsLabel}
-          <Input
-            aria-label={t.phaseARepeatsLabel}
-            type="number"
-            min={MIN_PHASE_REPEATS}
-            max={MAX_PHASE_REPEATS}
-            value={phaseA.draft}
-            onChange={(e) => phaseA.setDraft(e.target.value)}
-            onBlur={phaseA.commit}
-            className="font-mono"
-          />
-        </label>
-
-        <label className="flex flex-col gap-2 text-sm font-medium">
-          {t.phaseBRepeatsLabel}
-          <Input
-            aria-label={t.phaseBRepeatsLabel}
-            type="number"
-            min={MIN_PHASE_REPEATS}
-            max={MAX_PHASE_REPEATS}
-            value={phaseB.draft}
-            onChange={(e) => phaseB.setDraft(e.target.value)}
-            onBlur={phaseB.commit}
-            className="font-mono"
-          />
-        </label>
-
-        <label className="flex flex-col gap-2 text-sm font-medium">
-          {t.reviewLimitLabel}
-          <Input
-            aria-label={t.reviewLimitLabel}
-            type="number"
-            min={MIN_REVIEW_LIMIT}
-            max={MAX_REVIEW_LIMIT}
-            value={limit.draft}
-            onChange={(e) => limit.setDraft(e.target.value)}
-            onBlur={limit.commit}
-            className="font-mono"
-          />
-        </label>
-      </div>
-
-      <p className="pt-5 text-center font-mono text-xs text-muted-foreground">{t.appVersion(APP_VERSION)}</p>
+      <p className="pt-1 text-center text-xs text-muted-foreground tabular-nums">{t.appVersion(APP_VERSION)}</p>
     </div>
   );
 }

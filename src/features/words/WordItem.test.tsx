@@ -36,6 +36,24 @@ describe('WordItem', () => {
     expect(screen.queryByText('Фраза')).not.toBeInTheDocument();
   });
 
+  it('marks the first of two steps for a new word in the recognition step, without a rating ring', () => {
+    const { container } = render(<WordItem word={baseWord()} onEdit={vi.fn()} onDelete={vi.fn()} onOpenDetails={vi.fn()} />);
+
+    const indicator = screen.getByTitle('Учится, шаг 1 из 2');
+    expect(indicator.querySelectorAll('[data-state=filled]')).toHaveLength(1);
+    expect(indicator.querySelectorAll('[data-state=empty]')).toHaveLength(1);
+    expect(container.querySelector('circle')).toBeNull();
+  });
+
+  it('marks both steps for a new word in the recall step', () => {
+    render(<WordItem word={baseWord({ learningPhase: 'B' })} onEdit={vi.fn()} onDelete={vi.fn()} onOpenDetails={vi.fn()} />);
+
+    const indicator = screen.getByTitle('Учится, шаг 2 из 2');
+    expect(screen.getByText('Учится, шаг 2 из 2')).toBeInTheDocument();
+    expect(indicator.querySelectorAll('[data-state=filled]')).toHaveLength(2);
+    expect(indicator.querySelectorAll('[data-state=empty]')).toHaveLength(0);
+  });
+
   it('shows the "Phrase" tag next to a phrase in the New stage', () => {
     render(<WordItem word={baseWord({ term: 'as soon as possible', kind: 'phrase' })} onEdit={vi.fn()} onDelete={vi.fn()} onOpenDetails={vi.fn()} />);
 
@@ -61,6 +79,26 @@ describe('WordItem', () => {
     expect(screen.getByText('90')).toBeInTheDocument();
     expect(screen.getByText('Рейтинг')).toBeInTheDocument();
     expect(screen.queryByText(/Учится/)).not.toBeInTheDocument();
+  });
+
+  it('draws the rating ring instead of the step marks for a word in review', () => {
+    const { container } = render(
+      <WordItem
+        word={baseWord({
+          stage: 'review',
+          learningPhase: 'B',
+          stability: 10,
+          lastReviewedAt: Date.now() - 10 * DAY_MS,
+        })}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onOpenDetails={vi.fn()}
+      />,
+    );
+
+    expect(container.querySelectorAll('circle')).toHaveLength(2);
+    expect(container.querySelector('[data-state=filled]')).toBeNull();
+    expect(screen.queryByTitle(/Учится/)).not.toBeInTheDocument();
   });
 
   it('shows the "Phrase" tag and rating together for a phrase in review', () => {

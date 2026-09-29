@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { FormAlert } from '@/components/ui/formAlert';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useDb } from '@/db/useDb';
 import { buildExportPayload } from '@/lib/buildExportPayload';
@@ -73,29 +74,30 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
       <DialogContent>
         <DialogTitle>{t.exportDialogTitle}</DialogTitle>
         <div className="flex flex-col gap-4">
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex min-h-11 items-center gap-3 text-sm md:min-h-8">
             <input
               type="checkbox"
               aria-label={t.exportIncludeWords}
               checked={includeWords}
               onChange={(e) => setIncludeWords(e.target.checked)}
-              className="h-4 w-4 shrink-0 rounded border border-input accent-primary"
+              className="h-5 w-5 shrink-0 rounded border border-input accent-primary md:h-4 md:w-4"
             />
             {t.exportIncludeWords}
           </label>
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex min-h-11 items-center gap-3 text-sm md:min-h-8">
             <input
               type="checkbox"
               aria-label={t.exportIncludeSettings}
               checked={includeSettings}
               onChange={(e) => setIncludeSettings(e.target.checked)}
-              className="h-4 w-4 shrink-0 rounded border border-input accent-primary"
+              className="h-5 w-5 shrink-0 rounded border border-input accent-primary md:h-4 md:w-4"
             />
             {t.exportIncludeSettings}
           </label>
-          {failed && <p className="text-sm text-destructive">{t.exportFailed}</p>}
+          {failed && <FormAlert tone="error">{t.exportFailed}</FormAlert>}
           <Button
             type="button"
+            size="lg"
             onClick={() => void handleExport()}
             disabled={(!includeWords && !includeSettings) || isExporting}
           >

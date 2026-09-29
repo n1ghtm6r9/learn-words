@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Check, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ColorPicker } from '@/components/ui/colorPicker';
+import { FieldError } from '@/components/ui/fieldError';
 import { Input } from '@/components/ui/input';
 import type { Tag } from '@/db/tag.type';
 import { normalizeTerm } from '@/lib/normalizeTerm';
@@ -49,7 +50,7 @@ export function TagPicker({ tags, selected, onToggle, onCreate }: TagPickerProps
               className={cn(
                 'flex min-h-10 items-center gap-1.5 rounded-full border px-4 py-1.5 text-sm md:min-h-8 md:px-3 md:py-1 transition-colors',
                 active
-                  ? 'border-primary bg-primary/12 font-medium text-foreground'
+                  ? 'border-transparent bg-marker font-medium text-marker-foreground'
                   : 'border-border bg-card text-muted-foreground hover:bg-secondary',
               )}
             >
@@ -87,6 +88,7 @@ export function TagPicker({ tags, selected, onToggle, onCreate }: TagPickerProps
                   aria-label={t.newTag}
                   placeholder={t.tagNamePlaceholder}
                   value={draft}
+                  aria-invalid={isDuplicate || undefined}
                   maxLength={40}
                   onChange={(e) => setDraft(e.target.value)}
                   onKeyDown={(e) => {
@@ -119,7 +121,7 @@ export function TagPicker({ tags, selected, onToggle, onCreate }: TagPickerProps
             </div>
           ))}
       </div>
-      {isDuplicate && <p className="text-sm text-destructive">{t.duplicateTagName}</p>}
+      {isDuplicate && <FieldError>{t.duplicateTagName}</FieldError>}
     </div>
   );
 }
