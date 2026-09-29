@@ -339,7 +339,7 @@ export function WordList() {
         <div className="sticky top-[69px] z-20 -mx-4 -mt-5 flex flex-col gap-3 bg-background px-4 pt-5 pb-3 md:top-0 md:-mx-8 md:-mt-8 md:px-8 md:pt-8">
           <div className="relative">
             <Search className="pointer-events-none absolute left-4 md:left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-            <Input id="word-search" placeholder={t.searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-11 md:pl-10" />
+            <Input id="word-search" placeholder={t.searchPlaceholder} value={search} onChange={(e) => setSearch(e.target.value)} enterKeyHint="search" onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} className="pl-11 md:pl-10" />
           </div>
 
           <div className="flex flex-col gap-2">

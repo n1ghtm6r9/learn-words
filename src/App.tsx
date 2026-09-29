@@ -19,6 +19,7 @@ import { applyAccentColor } from '@/lib/applyAccentColor';
 import { STUDY_LANGUAGE_PROFILES } from '@/languages/studyLanguageProfiles';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useGlobalHotkeys } from '@/lib/useGlobalHotkeys';
+import { useDismissKeyboardOnTapOutside } from '@/lib/useDismissKeyboardOnTapOutside';
 import { useTypingOnPhone } from '@/lib/useTypingOnPhone';
 import { preloadDialogs } from '@/lib/preloadDialogs';
 import { applyThemeColorMeta } from '@/lib/applyThemeColorMeta';
@@ -46,6 +47,7 @@ function App() {
   const typingOnPhone = useTypingOnPhone();
   const cloud = getCloud();
   useGlobalHotkeys();
+  useDismissKeyboardOnTapOutside();
   const previousScreen = useRef(screen);
   const direction = SCREEN_ORDER.indexOf(screen) >= SCREEN_ORDER.indexOf(previousScreen.current) ? 1 : -1;
 
