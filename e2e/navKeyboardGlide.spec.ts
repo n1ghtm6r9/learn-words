@@ -1,5 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
+import { goToScreen } from './support/goToScreen';
 import { openApp } from './support/openApp';
+import { openTelegramApp } from './support/openTelegramApp';
+import { reportTelegramViewport } from './support/reportTelegramViewport';
 
 const FULL = { width: 390, height: 844 };
 const WITH_KEYBOARD = { width: 390, height: 500 };
@@ -30,6 +33,32 @@ async function resizeAndCollectNavTops(page: Page, size: { width: number; height
   await page.setViewportSize(size);
   await page.waitForTimeout(800);
   return page.evaluate(() => (window as unknown as { navTops: number[] }).navTops);
+}
+
+async function reportAndCollectNavTops(page: Page, height: number): Promise<number[]> {
+  const tops = page.evaluate(
+    () =>
+      new Promise<number[]>((resolve) => {
+        const nav = document.querySelector('nav')!;
+        const collected: number[] = [];
+        window.addEventListener(
+          'keyboardinsetchange',
+          () => {
+            collected.push(nav.getBoundingClientRect().top);
+            const startedAt = performance.now();
+            const sample = () => {
+              collected.push(nav.getBoundingClientRect().top);
+              if (performance.now() - startedAt < 600) requestAnimationFrame(sample);
+              else resolve(collected);
+            };
+            requestAnimationFrame(sample);
+          },
+          { once: true },
+        );
+      }),
+  );
+  await reportTelegramViewport(page, height);
+  return tops;
 }
 
 async function navTop(page: Page): Promise<number> {
@@ -109,5 +138,65 @@ test.describe('bottom nav and the on-screen keyboard', () => {
     const after = await navTop(page);
 
     expect(tops[0]).toBeCloseTo(after, 0);
+  });
+});
+
+test.describe('bottom nav and the keyboard inside Telegram on iPhone', () => {
+  test.skip(({ isMobile }) => !isMobile, 'the bottom nav exists only on a phone');
+
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize(FULL);
+    await openTelegramApp(page);
+    await goToScreen(page, 'Слова');
+    await page.locator('#word-search').tap();
+  });
+
+  test('rises as soon as Telegram reports the keyboard, before the window shrinks', async ({ page }) => {
+    const before = await navTop(page);
+    const tops = await reportAndCollectNavTops(page, WITH_KEYBOARD.height);
+    const navBox = (await page.locator('nav').boundingBox())!;
+
+    expect(tops[0]).toBeCloseTo(before, 0);
+    expect(tops.some((top) => top < before - 40 && top > navBox.y + 40)).toBe(true);
+    expect(navBox.y + navBox.height).toBeCloseTo(WITH_KEYBOARD.height, 0);
+  });
+
+  test('stays put when Telegram shrinks the window later', async ({ page }) => {
+    await reportTelegramViewport(page, WITH_KEYBOARD.height);
+    await page.waitForTimeout(500);
+    const before = await navTop(page);
+    const tops = await resizeAndCollectNavTops(page, WITH_KEYBOARD);
+
+    for (const top of tops) expect(top).toBeCloseTo(before, 0);
+  });
+
+  test('goes back down when the keyboard closes', async ({ page }) => {
+    await reportTelegramViewport(page, WITH_KEYBOARD.height);
+    await page.setViewportSize(WITH_KEYBOARD);
+    await page.waitForTimeout(500);
+
+    await page.evaluate(() => (document.activeElement as HTMLElement).blur());
+    await page.setViewportSize(FULL);
+    await reportTelegramViewport(page, FULL.height);
+    await page.waitForTimeout(500);
+    const navBox = (await page.locator('nav').boundingBox())!;
+
+    expect(navBox.y + navBox.height).toBeCloseTo(FULL.height, 0);
+  });
+});
+
+test.describe('add-word button while typing', () => {
+  test('hides on a phone so it cannot cover the answer buttons', async ({ page, isMobile }) => {
+    await openApp(page);
+    await goToScreen(page, 'Слова');
+    const addWord = page.getByRole('button', { name: 'Добавить слово' });
+    const search = page.locator('#word-search');
+
+    await search.click();
+    if (isMobile) await expect(addWord).toBeHidden();
+    else await expect(addWord).toBeVisible();
+
+    await search.blur();
+    await expect(addWord).toBeVisible();
   });
 });

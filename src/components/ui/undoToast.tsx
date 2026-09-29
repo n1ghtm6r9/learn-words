@@ -28,7 +28,7 @@ export function UndoToast({ toast, undoLabel, lifted, onDismiss }: UndoToastProp
       aria-live="polite"
       className={
         'pointer-events-none fixed inset-x-0 md:left-60 z-40 mx-auto w-full max-w-md px-3 transition-[bottom] duration-200 ' +
-        (lifted ? 'bottom-[calc(11rem+var(--safe-bottom))] md:bottom-28' : 'bottom-[calc(9.5rem+var(--safe-bottom))] md:bottom-8')
+        (lifted ? 'bottom-[calc(11rem+var(--safe-bottom)+var(--keyboard-inset))] md:bottom-28' : 'bottom-[calc(9.5rem+var(--safe-bottom)+var(--keyboard-inset))] md:bottom-8')
       }
     >
       <AnimatePresence>

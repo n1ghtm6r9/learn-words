@@ -60,6 +60,7 @@
 :root {
     --safe-bottom: max(env(safe-area-inset-bottom), var(--tg-safe-area-inset-bottom, 0px));
     --safe-top: max(env(safe-area-inset-top), var(--tg-content-safe-area-inset-top, 0px));
+    --keyboard-inset: 0px;
     --grid-dot: color-mix(in oklch, var(--foreground) 14%, transparent);
     --background: oklch(0.968 0.01 275);
     --foreground: oklch(0.2 0.05 275);

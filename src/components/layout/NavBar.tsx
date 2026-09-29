@@ -18,7 +18,7 @@ export function NavBar() {
   ];
 
   return (
-    <nav ref={navRef} className="fixed inset-x-0 bottom-0 z-30 flex justify-around border-t border-border/60 bg-card/85 px-3 pt-2 pb-[calc(0.5rem+var(--safe-bottom))] backdrop-blur-xl md:inset-y-0 md:right-auto md:w-64 md:flex-col md:justify-start md:gap-1 md:border-t-0 md:border-r md:bg-card/90 md:px-3 md:pt-20 md:pb-4">
+    <nav ref={navRef} className="fixed inset-x-0 bottom-[var(--keyboard-inset)] z-30 flex justify-around border-t border-border/60 bg-card/85 px-3 pt-2 pb-[calc(0.5rem+var(--safe-bottom))] backdrop-blur-xl md:inset-y-0 md:right-auto md:w-64 md:flex-col md:justify-start md:gap-1 md:border-t-0 md:border-r md:bg-card/90 md:px-3 md:pt-20 md:pb-4">
       {items.map((item) => {
         const active = screen === item.screen;
         const Icon = item.icon;

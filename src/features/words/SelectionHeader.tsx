@@ -13,7 +13,7 @@ export function SelectionHeader({ count, total, onToggleAll, onExit }: Selection
   const allSelected = total > 0 && count === total;
 
   return (
-    <div className="sticky top-[69px] md:top-0 z-20 -mx-4 flex items-center gap-2 border-b border-border/70 bg-background/95 px-2 py-2 backdrop-blur-xl">
+    <div className="sticky top-[69px] md:top-0 z-20 -mx-4 flex items-center gap-2 border-b border-border/70 bg-background px-2 py-2">
       <button
         type="button"
         aria-label={t.exitSelection}
