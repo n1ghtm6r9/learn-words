@@ -30,8 +30,8 @@ is private: only pre-registered accounts are accepted.
 ## Getting started
 
 ```bash
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 ## Sync across devices
@@ -45,14 +45,14 @@ its own session once signed in.
    `dexie-cloud.json` and `dexie-cloud.key`, both git-ignored):
 
    ```bash
-   npx dexie-cloud create
+   bunx dexie-cloud create
    ```
 
 2. Allow the app origins:
 
    ```bash
-   npx dexie-cloud whitelist https://n1ghtm6r9.github.io
-   npx dexie-cloud whitelist http://localhost:5173
+   bunx dexie-cloud whitelist https://n1ghtm6r9.github.io
+   bunx dexie-cloud whitelist http://localhost:5173
    ```
 
 3. Optional — Google sign-in. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
@@ -71,7 +71,7 @@ its own session once signed in.
    their email:
 
    ```bash
-   npm run cloud:allow -- someone@gmail.com
+   bun run cloud:allow someone@gmail.com
    ```
 
 6. Put the values in `.env.production` (used by the deploy build; nothing in it is
@@ -112,11 +112,11 @@ App comes back to the front it pulls the latest changes from the cloud.
 ## Testing
 
 ```bash
-npm run test
+bun run test
 ```
 
 ## Building
 
 ```bash
-npm run build
+bun run build
 ```

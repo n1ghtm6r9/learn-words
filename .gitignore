@@ -27,6 +27,6 @@ dist-ssr
 /docs
 /PLAN.md
 
-# Dexie Cloud credentials created by `npx dexie-cloud create`
+# Dexie Cloud credentials created by `bunx dexie-cloud create`
 dexie-cloud.json
 dexie-cloud.key

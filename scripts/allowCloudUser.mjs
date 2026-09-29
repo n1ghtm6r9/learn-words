@@ -3,14 +3,14 @@ import { readFileSync } from 'node:fs';
 
 const email = process.argv[2]?.trim().toLowerCase();
 if (!email) {
-  console.error('Usage: npm run cloud:allow -- someone@example.com');
+  console.error('Usage: bun run cloud:allow someone@example.com');
   process.exit(1);
 }
 
 const { dbUrl } = JSON.parse(readFileSync('dexie-cloud.json', 'utf-8'));
 const keys = JSON.parse(readFileSync('dexie-cloud.key', 'utf-8'))[dbUrl];
 if (!dbUrl || !keys) {
-  console.error('Run `npx dexie-cloud create` (or `connect`) in this folder first.');
+  console.error('Run `bunx dexie-cloud create` (or `connect`) in this folder first.');
   process.exit(1);
 }
 
