@@ -49,6 +49,7 @@ import { SelectionActionBar } from './SelectionActionBar';
 import { SelectionHeader } from './SelectionHeader';
 import { TagTargetSheet } from './TagTargetSheet';
 import { TagFilter } from './TagFilter';
+import { useProgressiveCount } from './useProgressiveCount';
 import { WordDetailsDialog } from './WordDetailsDialog';
 import { WordListSkeleton } from './WordListSkeleton';
 import { WordForm } from './WordForm';
@@ -226,6 +227,7 @@ export function WordList() {
   }
 
   const visibleIds = useMemo(() => new Set(filtered.map((word) => word.id!)), [filtered]);
+  const renderedCount = useProgressiveCount(filtered.length);
   const targets = useMemo(() => selectedIds.filter((id) => visibleIds.has(id)), [selectedIds, visibleIds]);
 
   const sharedFolder = useMemo(() => {
@@ -445,7 +447,7 @@ export function WordList() {
                 'stagger-list divide-y divide-border/70 overflow-hidden xl:grid xl:grid-cols-2 xl:gap-px xl:divide-y-0 xl:bg-border/70 xl:[&>li:last-child:nth-child(odd)]:col-span-2',
               )}
             >
-              {filtered.map((word) => (
+              {filtered.slice(0, renderedCount).map((word) => (
                 <DraggableWordItem
                   key={word.id}
                   word={word}

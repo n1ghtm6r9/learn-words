@@ -1,8 +1,8 @@
-import { useRef, type ReactNode } from 'react';
-import { animate, motion, useDragControls, useMotionValue, useTransform, type PanInfo } from 'motion/react';
-import { Trash2, Volume2 } from 'lucide-react';
+import { useRef, useState, type ReactNode } from 'react';
+import { animate, motion, useDragControls, useMotionValue, useMotionValueEvent, type PanInfo } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { SWIPE_CONFIG } from './swipeConfig';
+import { SwipeReveal } from './SwipeReveal';
 
 interface SwipeableRowProps {
   enabled: boolean;
@@ -20,10 +20,8 @@ export function SwipeableRow({ enabled, canSpeak, onSwipeLeft, onSwipeRight, cla
   const swipedRef = useRef(false);
   const x = useMotionValue(0);
   const controls = useDragControls();
-  const speakOpacity = useTransform(x, [0, SWIPE_CONFIG.revealPx], [0, 1]);
-  const deleteOpacity = useTransform(x, [-SWIPE_CONFIG.revealPx, 0], [1, 0]);
-  const speakScale = useTransform(x, [0, SWIPE_CONFIG.triggerPx], [0.7, 1.15]);
-  const deleteScale = useTransform(x, [-SWIPE_CONFIG.triggerPx, 0], [1.15, 0.7]);
+  const [revealed, setRevealed] = useState(false);
+  useMotionValueEvent(x, 'change', (value) => setRevealed(value !== 0));
 
   function handleDragEnd(_: PointerEvent | MouseEvent | TouchEvent, info: PanInfo) {
     window.setTimeout(() => {
@@ -50,28 +48,7 @@ export function SwipeableRow({ enabled, canSpeak, onSwipeLeft, onSwipeRight, cla
 
   return (
     <>
-      {enabled && (
-        <>
-          <motion.div
-            aria-hidden="true"
-            style={{ opacity: speakOpacity }}
-            className="pointer-events-none absolute inset-0 flex items-center justify-start bg-primary pl-6 text-primary-foreground"
-          >
-            <motion.span style={{ scale: speakScale }} className="flex">
-              <Volume2 className="h-6 w-6" />
-            </motion.span>
-          </motion.div>
-          <motion.div
-            aria-hidden="true"
-            style={{ opacity: deleteOpacity }}
-            className="pointer-events-none absolute inset-0 flex items-center justify-end bg-destructive pr-6 text-white"
-          >
-            <motion.span style={{ scale: deleteScale }} className="flex">
-              <Trash2 className="h-6 w-6" />
-            </motion.span>
-          </motion.div>
-        </>
-      )}
+      {enabled && revealed && <SwipeReveal x={x} />}
       <motion.div
         ref={rowRef}
         drag={enabled ? 'x' : false}
