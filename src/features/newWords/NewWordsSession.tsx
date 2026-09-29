@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { Button } from '@/components/ui/button';
 import { useDb } from '@/db/useDb';
 import { isUsableWord } from '@/db/isUsableWord';
@@ -6,6 +7,7 @@ import { deleteWordCascade } from '@/db/deleteWordCascade';
 import type { Word } from '@/db/word.type';
 import type { MatchVerdict } from '@/lib/fuzzyMatch';
 import { DEFAULT_DIFFICULTY, INITIAL_STABILITY_DAYS } from '@/lib/memoryParams';
+import { syncSessionPool } from '@/lib/syncSessionPool';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useUIStore } from '@/store/useUIStore';
 import { RecognitionCard } from '@/features/study/RecognitionCard';
@@ -43,33 +45,22 @@ export function NewWordsSession() {
     setDeleteFailed(false);
   }, [db]);
 
-  useEffect(() => {
-    if (addWordOpen) return;
+  const stored = useLiveQuery(
+    async () => ({ db, words: (await db.words.where('stage').equals('new').toArray()).filter(isUsableWord) }),
+    [db],
+  );
+  const storedWords = stored?.db === db ? stored.words : undefined;
 
-    let cancelled = false;
-    void db.words
-      .where('stage')
-      .equals('new')
-      .toArray()
-      .then((rows) => {
-        if (cancelled) return;
-        const words = rows.filter(isUsableWord);
-        setPool((previous) => {
-          if (previous === null) return words;
-          const alreadyInSession = new Set(previous.map((w) => w.id));
-          const added = words.filter((w) => !alreadyInSession.has(w.id));
-          return added.length > 0 ? [...previous, ...added] : previous;
-        });
-        setCurrentId((previousId) =>
-          previousId != null && words.some((w) => w.id === previousId)
-            ? previousId
-            : pickRandomId(words, null),
-        );
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [db, addWordOpen]);
+  useEffect(() => {
+    if (addWordOpen || !storedWords) return;
+
+    setPool((previous) => syncSessionPool(previous, storedWords));
+    setCurrentId((previousId) =>
+      previousId != null && storedWords.some((w) => w.id === previousId)
+        ? previousId
+        : pickRandomId(storedWords, null),
+    );
+  }, [storedWords, addWordOpen]);
 
   function advanceTo(nextPool: Word[], justShownId: string) {
     setPool(nextPool);

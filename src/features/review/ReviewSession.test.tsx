@@ -253,3 +253,38 @@ describe('ReviewSession', () => {
     expect(screen.queryByRole('button', { name: 'Удалить' })).not.toBeInTheDocument();
   });
 });
+
+describe('ReviewSession when the store changes underneath', () => {
+  beforeEach(async () => {
+    await db.words.clear();
+    useUIStore.setState({ studyLanguage: 'en', screen: 'review', reviewLimit: DEFAULT_REVIEW_LIMIT });
+  });
+
+  it('builds the queue from words that land in the store before the review starts', async () => {
+    render(<ReviewSession />);
+    await screen.findByText(/нечего повторять/i);
+
+    await db.words.add(reviewWord({ term: 'hello', translation: 'привет' }));
+
+    expect(await screen.findByText('привет')).toBeInTheDocument();
+  });
+
+  it('keeps a started review as it is when more words arrive', async () => {
+    const terms: Record<string, string> = { привет: 'hello', кот: 'cat' };
+    await db.words.add(reviewWord({ term: 'hello', translation: 'привет' }));
+    await db.words.add(reviewWord({ term: 'cat', translation: 'кот', stability: 20 }));
+    const user = userEvent.setup();
+    render(<ReviewSession />);
+    await screen.findByText(/^1 из 2/);
+
+    const shownTranslation = screen.queryByText('привет') ? 'привет' : 'кот';
+    await user.type(screen.getByLabelText('Слово'), terms[shownTranslation]);
+    await user.click(screen.getByRole('button', { name: 'Проверить' }));
+    expect(await screen.findByText(/^2 из 2/)).toBeInTheDocument();
+
+    await db.words.add(reviewWord({ term: 'dog', translation: 'собака' }));
+    await new Promise((resolve) => setTimeout(resolve, 150));
+
+    expect(screen.getByText(/^2 из 2/)).toBeInTheDocument();
+  });
+});

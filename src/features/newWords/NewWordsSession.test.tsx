@@ -203,3 +203,33 @@ describe('NewWordsSession', () => {
     deleteSpy.mockRestore();
   });
 });
+
+describe('NewWordsSession when the store changes underneath', () => {
+  beforeEach(async () => {
+    await db.words.clear();
+    useUIStore.setState({ studyLanguage: 'en', phaseARepeats: 1, phaseBRepeats: 1, screen: 'newWords', addWordOpen: false });
+  });
+
+  it('shows words that land in the store while the screen is open', async () => {
+    render(<NewWordsSession />);
+    await screen.findByText('Нет новых слов — добавьте немного!');
+
+    await db.words.add(createWord('hello', 'привет'));
+
+    expect(await screen.findByText('hello')).toBeInTheDocument();
+  });
+
+  it('drops a waiting word that disappears from the store and keeps the shown one', async () => {
+    await db.words.add(createWord('cat', 'кот'));
+    await db.words.add(createWord('dog', 'собака'));
+    render(<NewWordsSession />);
+    expect(await screen.findByText('Осталось слов: 2')).toBeInTheDocument();
+
+    const shown = screen.queryByText('cat') ? 'cat' : 'dog';
+    const waiting = (await db.words.toArray()).find((word) => word.term !== shown);
+    await db.words.delete(waiting!.id!);
+
+    expect(await screen.findByText('Осталось слов: 1')).toBeInTheDocument();
+    expect(screen.getByText(shown)).toBeInTheDocument();
+  });
+});

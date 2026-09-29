@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Button } from '@/components/ui/button';
 import { useDb } from '@/db/useDb';
@@ -75,34 +75,35 @@ export function ReviewSession() {
     if (live.length !== tagFilter.length) setTagFilter(live);
   }, [scope, folders, tags, folderFilter, tagFilter, setFolderFilter, setTagFilter]);
 
+  const queueSettings = useMemo(
+    () => ({ folderId: folderFilter, tagIds: tagFilter, reviewLimit }),
+    [folderFilter, tagFilter, reviewLimit],
+  );
+  const queueBuiltForRef = useRef<typeof queueSettings | null>(null);
+  const reviewStartedRef = useRef(false);
+
   useEffect(() => {
+    reviewStartedRef.current = false;
     setQueue(null);
   }, [db]);
 
   useEffect(() => {
-    let cancelled = false;
-    void Promise.all([db.words.where('stage').equals('review').toArray(), db.wordTags.toArray()]).then(
-      ([words, links]) => {
-        if (cancelled) return;
-        const inScope = filterWordsByScope(
-          words.filter(isUsableWord),
-          { folderId: folderFilter, tagIds: tagFilter },
-          tagsByWord(links),
-        );
-        setQueue(buildReviewQueue(inScope, Date.now(), reviewLimit));
-        setIndex(0);
-        setCounters(EMPTY_COUNTERS);
-        setSaveFailed(false);
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, [db, reviewLimit, folderFilter, tagFilter]);
+    if (!scope) return;
+    if (reviewStartedRef.current && queueBuiltForRef.current === queueSettings) return;
+
+    queueBuiltForRef.current = queueSettings;
+    reviewStartedRef.current = false;
+    const inScope = filterWordsByScope(scope.reviewWords, queueSettings, tagsByWord(scope.links));
+    setQueue(buildReviewQueue(inScope, Date.now(), queueSettings.reviewLimit));
+    setIndex(0);
+    setCounters(EMPTY_COUNTERS);
+    setSaveFailed(false);
+  }, [scope, queueSettings]);
 
   async function handleAnswer(word: Word, verdict: MatchVerdict, accuracy: number, speedFactor: number) {
     if (isSubmitting) return;
     setIsSubmitting(true);
+    reviewStartedRef.current = true;
     const wordId = word.id;
     let persisted = true;
     if (wordId != null) {
