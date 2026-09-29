@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { FolderInput, Hash, Minus, Plus, Trash2 } from 'lucide-react';
+import { useGlideOnViewportResize } from '@/components/layout/useGlideOnViewportResize';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -25,6 +26,7 @@ function TagActionIcon({ sign }: { sign: 'plus' | 'minus' }) {
 
 export function SelectionActionBar({ disabled, onMove, onAddTag, onRemoveTag, onDelete }: SelectionActionBarProps) {
   const t = useTranslation();
+  const toolbarRef = useGlideOnViewportResize<HTMLDivElement>();
 
   const actions = [
     { key: 'move', label: t.actionToFolder, icon: <FolderInput className="h-5 w-5" aria-hidden="true" />, onClick: onMove },
@@ -41,6 +43,7 @@ export function SelectionActionBar({ disabled, onMove, onAddTag, onRemoveTag, on
 
   return (
     <motion.div
+      ref={toolbarRef}
       role="toolbar"
       aria-label={t.selectWords}
       initial={{ y: 24, opacity: 0 }}

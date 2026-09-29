@@ -2,6 +2,7 @@ import { Suspense, useEffect, useLayoutEffect, useRef } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { Plus, Settings as SettingsIcon } from 'lucide-react';
 import { NavBar } from '@/components/layout/NavBar';
+import { useGlideOnViewportResize } from '@/components/layout/useGlideOnViewportResize';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { NewWordsSession } from '@/features/newWords/NewWordsSession';
 import { ReviewSession } from '@/features/review/ReviewSession';
@@ -40,6 +41,7 @@ function App() {
   const tagsOpen = useUIStore((s) => s.tagsOpen);
   const setTagsOpen = useUIStore((s) => s.setTagsOpen);
   const t = useTranslation();
+  const addWordButtonRef = useGlideOnViewportResize<HTMLButtonElement>();
   const cloud = getCloud();
   useGlobalHotkeys();
   const previousScreen = useRef(screen);
@@ -112,6 +114,7 @@ function App() {
         {!selectingWords && (
           <motion.button
             key="add-word"
+            ref={addWordButtonRef}
             type="button"
             aria-label={t.addWordButtonLabel}
             initial={{ opacity: 0, y: 18, scale: 0.92 }}
