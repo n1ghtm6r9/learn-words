@@ -1,0 +1,14 @@
+name = "learn-words-bot"
+main = "src/index.ts"
+compatibility_date = "2026-06-01"
+
+[vars]
+APP_URL = "https://n1ghtm6r9.github.io/learn-words/"
+ALLOWED_ORIGINS = "https://n1ghtm6r9.github.io,http://localhost:5173"
+
+[[kv_namespaces]]
+binding = "MENUS"
+id = "7565c8df50a542ea80f92345f4383ebf"
+
+[observability]
+enabled = true

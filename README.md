@@ -94,7 +94,7 @@ Signing out removes the words from that device; they stay in the account.
 ## Telegram Mini App
 
 The same deployed page runs inside Telegram (iOS, Android, macOS, Desktop) as a
-Mini App; no bot server is needed. In [@BotFather](https://t.me/BotFather):
+Mini App. In [@BotFather](https://t.me/BotFather):
 
 1. `/newbot` — create the bot.
 2. `/mybots` → the bot → *Bot Settings* → *Menu Button* — set the URL
@@ -108,6 +108,37 @@ loaded only there. Telegram keeps its own storage, separate from the browser, so
 sign in to get the account's words; sign-in always uses the emailed code there,
 because Google refuses to sign in inside embedded web views. Each time the Mini
 App comes back to the front it pulls the latest changes from the cloud.
+
+### Export and import through the bot
+
+Telegram web views can't download files, so the bot has a tiny server in `bot/`
+(a Cloudflare Worker, free plan). `/start` or `/menu` sends a menu with
+*📤 Экспорт*, *📥 Импорт* and *📚 Открыть словарь* and deletes the previous one,
+so the chat keeps a single menu (its id per chat lives in the `MENUS` KV
+namespace; Telegram lets a bot delete only messages younger than 48 hours):
+
+- *Экспорт* opens the export dialog; *Отправить в чат* sends the JSON file into
+  the chat with the bot and closes the Mini App. Every exported file gets an
+  *📥 Импортировать* button.
+- *Импорт* opens the import dialog with a file picker. Any `.json` sent or
+  forwarded to the bot gets the same *📥 Импортировать* button, which opens the
+  import dialog with that file already loaded.
+
+The Worker checks Telegram's signed launch data before it sends or reads a
+file, and a chat file can only be read by the user it was sent to. It keeps no
+data. Setup:
+
+```bash
+bunx wrangler@4 login
+bun run bot:token        # paste the bot token; stored as a Worker secret
+bun run bot:deploy       # prints https://learn-words-bot.<account>.workers.dev
+TELEGRAM_BOT_TOKEN=... BOT_URL=https://learn-words-bot.<account>.workers.dev bun run bot:setup
+```
+
+`bot:setup` sets the webhook, the `/menu`, `/export` and `/import` commands and
+the menu button. Then put the Worker URL in `.env.production` as
+`VITE_TELEGRAM_RELAY_URL`; without it export inside Telegram falls back to the
+browser download.
 
 ## Testing
 

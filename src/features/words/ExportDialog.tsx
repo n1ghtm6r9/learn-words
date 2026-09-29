@@ -2,15 +2,19 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FormAlert } from '@/components/ui/formAlert';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { pullCloudBeforeExport } from '@/cloud/pullCloudBeforeExport';
 import { useDb } from '@/db/useDb';
 import { buildExportPayload } from '@/lib/buildExportPayload';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { StudyLanguage } from '@/languages/studyLanguage.type';
 import { useUIStore } from '@/store/useUIStore';
+import { canSendToTelegramChat } from '@/telegram/canSendToTelegramChat';
+import { sendFileToTelegramChat } from '@/telegram/sendFileToTelegramChat';
 
 interface ExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSentToChat?: () => void;
 }
 
 function exportFileName(studyLanguage: StudyLanguage): string {
@@ -26,20 +30,30 @@ function currentSettingsSnapshot() {
 
 const OBJECT_URL_RELEASE_MS = 60_000;
 
-export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
+export function ExportDialog({ open, onOpenChange, onSentToChat }: ExportDialogProps) {
   const db = useDb();
   const studyLanguage = useUIStore((s) => s.studyLanguage);
   const [includeWords, setIncludeWords] = useState(true);
   const [includeSettings, setIncludeSettings] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [sentToChat, setSentToChat] = useState(false);
   const t = useTranslation();
+
+  function handleOpenChange(next: boolean) {
+    if (!next) {
+      setSentToChat(false);
+      setFailed(false);
+    }
+    onOpenChange(next);
+  }
 
   async function handleExport() {
     if (isExporting) return;
     setIsExporting(true);
     setFailed(false);
     try {
+      await pullCloudBeforeExport();
       const vocabulary = includeWords
         ? {
             words: await db.words.toArray(),
@@ -51,11 +65,21 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
       const settings = includeSettings ? currentSettingsSnapshot() : undefined;
       const payload = buildExportPayload({ ...vocabulary, settings });
 
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const fileName = exportFileName(studyLanguage);
+      const json = JSON.stringify(payload, null, 2);
+
+      if (canSendToTelegramChat()) {
+        await sendFileToTelegramChat(fileName, json);
+        setSentToChat(true);
+        onSentToChat?.();
+        return;
+      }
+
+      const blob = new Blob([json], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = exportFileName(studyLanguage);
+      anchor.download = fileName;
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);
@@ -70,7 +94,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogTitle>{t.exportDialogTitle}</DialogTitle>
         <div className="flex flex-col gap-4">
@@ -95,14 +119,25 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             {t.exportIncludeSettings}
           </label>
           {failed && <FormAlert tone="error">{t.exportFailed}</FormAlert>}
-          <Button
-            type="button"
-            size="lg"
-            onClick={() => void handleExport()}
-            disabled={(!includeWords && !includeSettings) || isExporting}
-          >
-            {t.exportConfirmButton}
-          </Button>
+          {sentToChat && (
+            <p aria-live="polite" className="text-sm text-status-mastered">
+              {t.exportSentToChat}
+            </p>
+          )}
+          {sentToChat ? (
+            <Button type="button" size="lg" onClick={() => handleOpenChange(false)} autoFocus>
+              {t.done}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="lg"
+              onClick={() => void handleExport()}
+              disabled={(!includeWords && !includeSettings) || isExporting}
+            >
+              {canSendToTelegramChat() ? t.exportSendToChatButton : t.exportConfirmButton}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

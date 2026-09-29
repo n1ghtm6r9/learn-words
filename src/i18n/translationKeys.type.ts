@@ -110,6 +110,10 @@ export interface TranslationKeys {
   exportIncludeWords: string;
   exportIncludeSettings: string;
   exportConfirmButton: string;
+  exportSendToChatButton: string;
+  exportSentToChat: string;
+  importChatFileLoading: string;
+  importChatFileFailed: string;
   importConfirmButton: string;
   importFileLabel: string;
   importSummary: (words: number, hasSettings: boolean) => string;

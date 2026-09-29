@@ -5,6 +5,8 @@ export function createFakeWebApp(colorScheme: 'light' | 'dark' = 'light') {
   const handlers = new Map<string, Array<() => void>>();
   const fake = {
     colorScheme,
+    initData: 'query_id=test',
+    close: vi.fn(),
     ready: vi.fn(),
     expand: vi.fn(),
     disableVerticalSwipes: vi.fn(),

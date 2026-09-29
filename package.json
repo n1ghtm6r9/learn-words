@@ -15,7 +15,10 @@
     "shots": "node scripts/screenshots.mjs",
     "e2e": "playwright test",
     "e2e:update": "playwright test --update-snapshots",
-    "icons": "node scripts/generateIcons.mjs"
+    "icons": "node scripts/generateIcons.mjs",
+    "bot:deploy": "bunx wrangler@4 deploy --config bot/wrangler.toml",
+    "bot:token": "bunx wrangler@4 secret put BOT_TOKEN --config bot/wrangler.toml",
+    "bot:setup": "bun bot/scripts/setupBot.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

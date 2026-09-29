@@ -110,6 +110,10 @@ export const ENGLISH_TRANSLATIONS: TranslationKeys = {
   exportIncludeWords: 'Words, progress, folders and tags',
   exportIncludeSettings: 'Settings',
   exportConfirmButton: 'Download',
+  exportSendToChatButton: 'Send to chat',
+  exportSentToChat: 'The file is in your chat with the bot',
+  importChatFileLoading: 'Loading the file from the chat…',
+  importChatFileFailed: 'Could not get the file from the chat. Pick it manually.',
   importConfirmButton: 'Import',
   importFileLabel: 'Choose a file',
   importSummary: (words, hasSettings) =>

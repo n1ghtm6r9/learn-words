@@ -35,3 +35,6 @@ dexie-cloud.key
 /screenshots
 /test-results
 /playwright-report
+
+# Wrangler local dev state
+.wrangler

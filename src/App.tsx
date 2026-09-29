@@ -12,6 +12,7 @@ import { LazyTagsDialog } from '@/features/organize/lazyTagsDialog';
 import { LazySettingsPage } from '@/features/settings/lazySettingsPage';
 import { LazyLoginDialog } from '@/features/settings/login/lazyLoginDialog';
 import { getCloud } from '@/cloud/getCloud';
+import { TelegramLaunchDialogs } from '@/telegram/TelegramLaunchDialogs';
 import { useUIStore } from '@/store/useUIStore';
 import { applyAccentColor } from '@/lib/applyAccentColor';
 import { STUDY_LANGUAGE_PROFILES } from '@/languages/studyLanguageProfiles';
@@ -154,6 +155,7 @@ function App() {
         <LazyFoldersDialog open={foldersOpen} onOpenChange={setFoldersOpen} />
         <LazyTagsDialog open={tagsOpen} onOpenChange={setTagsOpen} />
         {cloud && <LazyLoginDialog cloud={cloud} />}
+        <TelegramLaunchDialogs />
       </Suspense>
 
       <NavBar />

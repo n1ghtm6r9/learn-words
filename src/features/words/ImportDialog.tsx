@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FileUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormAlert } from '@/components/ui/formAlert';
@@ -12,9 +12,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 interface ImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  loadInitialFile?: () => Promise<File>;
 }
 
-export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
+export function ImportDialog({ open, onOpenChange, loadInitialFile }: ImportDialogProps) {
   const [parsed, setParsed] = useState<ParsedImportPayload | null>(null);
   const [importWords, setImportWords] = useState(false);
   const [importSettings, setImportSettings] = useState(false);
@@ -23,6 +24,8 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [failed, setFailed] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [chatFileState, setChatFileState] = useState<'idle' | 'loading' | 'failed'>('idle');
+  const initialFileRequested = useRef(false);
   const fileRequestId = useRef(0);
   const t = useTranslation();
 
@@ -47,9 +50,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     onOpenChange(next);
   }
 
-  async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  async function loadFile(file: File) {
     setFileName(file.name);
 
     const requestId = ++fileRequestId.current;
@@ -63,6 +64,31 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     setImportWords(result.words.length + result.folders.length + result.tags.length > 0);
     setImportSettings(result.settings !== null);
   }
+
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setChatFileState('idle');
+    void loadFile(file);
+  }
+
+  useEffect(() => {
+    if (!open || !loadInitialFile || initialFileRequested.current) return;
+    initialFileRequested.current = true;
+    const requestId = fileRequestId.current;
+    setChatFileState('loading');
+    loadInitialFile().then(
+      (file) => {
+        if (requestId !== fileRequestId.current) return;
+        setChatFileState('idle');
+        void loadFile(file);
+      },
+      () => {
+        if (requestId !== fileRequestId.current) return;
+        setChatFileState('failed');
+      },
+    );
+  }, [open, loadInitialFile]);
 
   async function handleImport() {
     if (!parsed || isImporting) return;
@@ -94,7 +120,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
                 type="file"
                 accept="application/json"
                 aria-label={t.importFileLabel}
-                onChange={(e) => void handleFileChange(e)}
+                onChange={handleFileChange}
                 className="sr-only"
               />
               <span className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-secondary px-3.5 text-sm font-medium text-foreground md:h-8 md:px-3">
@@ -102,10 +128,12 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
                 {t.chooseFile}
               </span>
               <span className={`min-w-0 truncate text-sm font-normal ${fileName ? 'text-foreground' : 'text-muted-foreground'}`}>
-                {fileName ?? t.noFileChosen}
+                {fileName ?? (chatFileState === 'loading' ? t.importChatFileLoading : t.noFileChosen)}
               </span>
             </span>
           </label>
+
+          {chatFileState === 'failed' && <FormAlert tone="error">{t.importChatFileFailed}</FormAlert>}
 
           {parsed && !parsed.valid && <FormAlert tone="error">{t.importError}</FormAlert>}
 

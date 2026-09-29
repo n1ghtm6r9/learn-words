@@ -26,6 +26,7 @@ export default defineConfig({
       VITE_DEXIE_CLOUD_URL: "",
       VITE_ALLOWED_EMAIL_HASHES: "",
       VITE_SIGN_IN_EMAIL: "",
+      VITE_TELEGRAM_RELAY_URL: "",
     },
   },
 })

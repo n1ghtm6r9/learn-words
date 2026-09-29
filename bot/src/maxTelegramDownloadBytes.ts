@@ -1,0 +1,1 @@
+export const MAX_TELEGRAM_DOWNLOAD_BYTES = 20 * 1024 * 1024;

@@ -239,5 +239,46 @@ describe('ImportDialog', () => {
     expect((await db.folders.toArray()).map((folder) => folder.name)).toEqual(['Travel']);
     expect(await db.tags.count()).toBe(2);
   });
+
+  it('loads the initial chat file and shows its summary', async () => {
+    const loadInitialFile = vi.fn(() =>
+      Promise.resolve(jsonFile({ version: 2, exportedAt: 0, words: [{ term: 'cat', translation: 'кот' }] }, 'chat.json')),
+    );
+    render(<ImportDialog open onOpenChange={vi.fn()} loadInitialFile={loadInitialFile} />);
+
+    expect(await screen.findByText('Найдено слов: 1')).toBeInTheDocument();
+    expect(screen.getByText('chat.json')).toBeInTheDocument();
+    expect(loadInitialFile).toHaveBeenCalledOnce();
+  });
+
+  it('shows an alert when the chat file cannot be fetched', async () => {
+    render(<ImportDialog open onOpenChange={vi.fn()} loadInitialFile={() => Promise.reject(new Error('nope'))} />);
+
+    expect(
+      await screen.findByText('Не удалось получить файл из чата. Выберите его вручную.'),
+    ).toBeInTheDocument();
+  });
+
+  it('lets a manually picked file win over a late chat file', async () => {
+    let resolveChatFile: (file: File) => void = () => {};
+    const loadInitialFile = () => new Promise<File>((resolve) => (resolveChatFile = resolve));
+    const user = userEvent.setup();
+    render(<ImportDialog open onOpenChange={vi.fn()} loadInitialFile={loadInitialFile} />);
+
+    expect(screen.getByText('Загружаем файл из чата…')).toBeInTheDocument();
+    await user.upload(
+      screen.getByLabelText('Выберите файл'),
+      jsonFile({ version: 2, exportedAt: 0, words: [{ term: 'a', translation: 'b' }] }, 'manual.json'),
+    );
+    await screen.findByText('Найдено слов: 1');
+
+    resolveChatFile(
+      jsonFile({ version: 2, exportedAt: 0, words: [{ term: 'a', translation: 'b' }, { term: 'c', translation: 'd' }] }, 'chat.json'),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(screen.getByText('manual.json')).toBeInTheDocument();
+    expect(screen.queryByText('Найдено слов: 2')).not.toBeInTheDocument();
+  });
 });
 

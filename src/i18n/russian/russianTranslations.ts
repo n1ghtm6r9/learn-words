@@ -110,6 +110,10 @@ export const RUSSIAN_TRANSLATIONS: TranslationKeys = {
   exportIncludeWords: 'Слова, прогресс, папки и теги',
   exportIncludeSettings: 'Настройки',
   exportConfirmButton: 'Скачать',
+  exportSendToChatButton: 'Отправить в чат',
+  exportSentToChat: 'Файл отправлен в чат с ботом',
+  importChatFileLoading: 'Загружаем файл из чата…',
+  importChatFileFailed: 'Не удалось получить файл из чата. Выберите его вручную.',
   importConfirmButton: 'Импортировать',
   importFileLabel: 'Выберите файл',
   importSummary: (words, hasSettings) =>
