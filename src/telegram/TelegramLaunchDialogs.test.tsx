@@ -1,5 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { loadExportDialog } from '@/features/words/loadExportDialog';
+import { loadImportDialog } from '@/features/words/loadImportDialog';
 import { TelegramLaunchDialogs } from './TelegramLaunchDialogs';
 import { createFakeWebApp } from './testing/createFakeWebApp';
 import { useTelegramStore } from './useTelegramStore';
@@ -11,6 +13,10 @@ vi.mock('./fetchTelegramChatFile', () => ({
 }));
 
 describe('TelegramLaunchDialogs', () => {
+  beforeAll(async () => {
+    await Promise.all([loadExportDialog(), loadImportDialog()]);
+  });
+
   afterEach(() => {
     useTelegramStore.setState({ webApp: null, launch: null });
   });
