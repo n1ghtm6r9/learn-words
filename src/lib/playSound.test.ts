@@ -1,5 +1,6 @@
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { playSound } from './playSound';
+import { releaseAudioContext } from './releaseAudioContext';
 import { SOUND_CUES } from './soundCues';
 import { useUIStore } from '@/store/useUIStore';
 
@@ -8,16 +9,20 @@ function createParam() {
 }
 
 const startedFrequencies: number[] = [];
-const resume = vi.fn(() => Promise.resolve());
-let contextState: AudioContextState = 'running';
+const contexts: FakeAudioContext[] = [];
 
 class FakeAudioContext {
   currentTime = 0;
   destination = {};
-  resume = resume;
+  state = 'running';
+  resume = vi.fn(() => Promise.resolve());
+  close = vi.fn(() => {
+    this.state = 'closed';
+    return Promise.resolve();
+  });
 
-  get state() {
-    return contextState;
+  constructor() {
+    contexts.push(this);
   }
 
   createOscillator() {
@@ -37,6 +42,21 @@ class FakeAudioContext {
   }
 }
 
+function setVisibility(state: 'visible' | 'hidden') {
+  Object.defineProperty(document, 'visibilityState', { value: state, configurable: true });
+  document.dispatchEvent(new Event('visibilitychange'));
+}
+
+function latestContext(): FakeAudioContext {
+  const context = contexts.at(-1);
+  if (!context) throw new Error('no audio context was created');
+  return context;
+}
+
+function frequenciesOf(cue: keyof typeof SOUND_CUES): number[] {
+  return SOUND_CUES[cue].map((tone) => tone.frequency);
+}
+
 describe('playSound', () => {
   beforeAll(() => {
     vi.stubGlobal('AudioContext', FakeAudioContext);
@@ -44,15 +64,17 @@ describe('playSound', () => {
 
   beforeEach(() => {
     startedFrequencies.length = 0;
-    resume.mockClear();
-    contextState = 'running';
     useUIStore.setState({ soundEffects: true });
+  });
+
+  afterEach(() => {
+    setVisibility('visible');
   });
 
   it('plays every tone of an answer cue right away', () => {
     playSound('correct');
 
-    expect(startedFrequencies).toEqual(SOUND_CUES.correct.map((tone) => tone.frequency));
+    expect(startedFrequencies).toEqual(frequenciesOf('correct'));
   });
 
   it('stays silent when sounds are turned off', () => {
@@ -66,10 +88,55 @@ describe('playSound', () => {
   });
 
   it('wakes up audio the browser has suspended', () => {
-    contextState = 'suspended';
+    playSound('correct');
+    const context = latestContext();
+    context.state = 'suspended';
 
     playSound('finish');
 
-    expect(resume).toHaveBeenCalledOnce();
+    expect(context.resume).toHaveBeenCalledOnce();
+    expect(latestContext()).toBe(context);
+  });
+
+  it('starts fresh audio after the app comes back from the background', () => {
+    playSound('wrong');
+    const beforeBackground = latestContext();
+
+    setVisibility('hidden');
+    expect(beforeBackground.close).toHaveBeenCalledOnce();
+
+    setVisibility('visible');
+    startedFrequencies.length = 0;
+    playSound('correct');
+
+    expect(latestContext()).not.toBe(beforeBackground);
+    expect(startedFrequencies).toEqual(frequenciesOf('correct'));
+  });
+
+  it('starts fresh audio once the old one is released', () => {
+    playSound('correct');
+    const released = latestContext();
+
+    releaseAudioContext();
+    expect(released.close).toHaveBeenCalledOnce();
+
+    startedFrequencies.length = 0;
+    playSound('wrong');
+
+    expect(latestContext()).not.toBe(released);
+    expect(startedFrequencies).toEqual(frequenciesOf('wrong'));
+  });
+
+  it('replaces audio the system has interrupted', () => {
+    playSound('correct');
+    const interrupted = latestContext();
+    interrupted.state = 'interrupted';
+
+    startedFrequencies.length = 0;
+    playSound('wrong');
+
+    expect(interrupted.close).toHaveBeenCalledOnce();
+    expect(latestContext()).not.toBe(interrupted);
+    expect(startedFrequencies).toEqual(frequenciesOf('wrong'));
   });
 });

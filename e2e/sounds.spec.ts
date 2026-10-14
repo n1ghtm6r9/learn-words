@@ -1,9 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import { audioStates } from './support/audioStates';
+import { backgroundApp } from './support/backgroundApp';
 import { clearPlayedTones } from './support/clearPlayedTones';
 import { goToScreen } from './support/goToScreen';
+import { minimizeTelegramApp } from './support/minimizeTelegramApp';
 import { openApp } from './support/openApp';
 import { openSettingsDialog } from './support/openSettingsDialog';
+import { openTelegramApp } from './support/openTelegramApp';
 import { playedTones } from './support/playedTones';
 import { recordSounds } from './support/recordSounds';
 import { seedWords } from './support/seedWords';
@@ -50,6 +53,20 @@ test.describe('sounds', () => {
     await expect.poll(() => playedTones(page)).toEqual(CORRECT);
   });
 
+  test('answers still make a sound after the app comes back from the background', async ({ page }) => {
+    await seedWords(page, [['apple', 'яблоко']]);
+    await goToScreen(page, 'Новые');
+    await answer(page, 'pear');
+    await expect.poll(() => playedTones(page)).toEqual(WRONG);
+
+    await backgroundApp(page);
+    await press(page, 'Повторить');
+    await answer(page, 'apple');
+
+    await expect.poll(() => playedTones(page)).toEqual(CORRECT);
+    await expect.poll(() => audioStates(page)).toEqual(['closed', 'running']);
+  });
+
   test('the settings switch silences answers', async ({ page }) => {
     const dialog = await openSettingsDialog(page);
     expect(await playedTones(page)).toEqual([]);
@@ -67,5 +84,27 @@ test.describe('sounds', () => {
     const reopened = await openSettingsDialog(page);
     await reopened.getByRole('group', { name: 'Звуки' }).getByRole('button', { name: 'Вкл' }).click();
     await expect.poll(() => playedTones(page)).toEqual(CORRECT);
+  });
+});
+
+test.describe('sounds in Telegram', () => {
+  test.beforeEach(async ({ page }) => {
+    await stubSpeech(page);
+    await recordSounds(page);
+    await openTelegramApp(page);
+  });
+
+  test('answers still make a sound after the mini app is minimized', async ({ page }) => {
+    await seedWords(page, [['apple', 'яблоко']]);
+    await goToScreen(page, 'Новые');
+    await answer(page, 'pear');
+    await expect.poll(() => playedTones(page)).toEqual(WRONG);
+
+    await minimizeTelegramApp(page);
+    await press(page, 'Повторить');
+    await answer(page, 'apple');
+
+    await expect.poll(() => playedTones(page)).toEqual(CORRECT);
+    await expect.poll(() => audioStates(page)).toEqual(['closed', 'running']);
   });
 });

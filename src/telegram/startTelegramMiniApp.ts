@@ -1,6 +1,7 @@
 import { followTelegramKeyboard } from './followTelegramKeyboard';
 import { keepTelegramChromeInTheme } from './keepTelegramChromeInTheme';
 import { pullCloudOnActivation } from './pullCloudOnActivation';
+import { releaseSoundsOnDeactivation } from './releaseSoundsOnDeactivation';
 import type { TelegramWebApp } from './telegramWebApp.type';
 
 export function startTelegramMiniApp(webApp: TelegramWebApp): void {
@@ -10,4 +11,5 @@ export function startTelegramMiniApp(webApp: TelegramWebApp): void {
   keepTelegramChromeInTheme(webApp);
   followTelegramKeyboard(webApp);
   pullCloudOnActivation(webApp);
+  releaseSoundsOnDeactivation(webApp);
 }

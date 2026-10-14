@@ -1,7 +1,8 @@
+import { releaseAudioContext } from './releaseAudioContext';
+import { sharedAudio } from './sharedAudio';
+
 type AudioContextConstructor = typeof AudioContext;
 type AudioSessionNavigator = Navigator & { audioSession?: { type: string } };
-
-let sharedContext: AudioContext | null = null;
 
 function findAudioContextConstructor(): AudioContextConstructor | undefined {
   if (typeof window === 'undefined') return undefined;
@@ -19,15 +20,25 @@ function mixWithOtherAudio(): void {
   }
 }
 
+function canResume(context: AudioContext): boolean {
+  return context.state === 'running' || context.state === 'suspended';
+}
+
+function releaseWhenHidden(): void {
+  if (document.visibilityState === 'hidden') releaseAudioContext();
+}
+
 export function getAudioContext(): AudioContext | null {
-  if (sharedContext) return sharedContext;
+  if (sharedAudio.context && canResume(sharedAudio.context)) return sharedAudio.context;
+  releaseAudioContext();
   const AudioContextClass = findAudioContextConstructor();
   if (!AudioContextClass) return null;
   try {
     mixWithOtherAudio();
-    sharedContext = new AudioContextClass();
+    sharedAudio.context = new AudioContextClass();
   } catch {
     return null;
   }
-  return sharedContext;
+  document.addEventListener('visibilitychange', releaseWhenHidden);
+  return sharedAudio.context;
 }
